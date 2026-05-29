@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/api/cron/(.*)', // Cron routes use their own CRON_SECRET auth, not Clerk
 ])
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])
