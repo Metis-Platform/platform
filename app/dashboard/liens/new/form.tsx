@@ -10,16 +10,15 @@ const initialState: LienFormState = {}
 
 export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) {
   const [state, formAction, pending] = useActionState(createLien, initialState)
+  const [stage, setStage] = useState<'LEAD' | 'ACTIVE'>('LEAD')
   const [selectedState, setSelectedState] = useState('')
 
-  // Unique states sorted alphabetically by name
   const states = useMemo(() => {
     const seen = new Map<string, string>()
     for (const j of jurisdictions) seen.set(j.state, j.stateName)
     return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]))
   }, [jurisdictions])
 
-  // Counties for the selected state
   const counties = useMemo(
     () => jurisdictions.filter(j => j.state === selectedState),
     [jurisdictions, selectedState],
@@ -27,41 +26,48 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
 
   return (
     <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
+      <input type="hidden" name="status" value={stage} />
 
       {state.message && (
-        <div className="px-6 py-4 bg-red-50 text-sm text-red-700">
-          {state.message}
-        </div>
+        <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.message}</div>
       )}
 
-      {/* Jurisdiction — two separate selects */}
+      {/* Stage toggle */}
+      <section className="px-6 py-5">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Deal Stage</h2>
+        <div className="inline-flex rounded-lg border border-zinc-200 overflow-hidden text-sm">
+          <button type="button" onClick={() => setStage('LEAD')}
+            className={`px-4 py-2 font-medium transition-colors ${stage === 'LEAD' ? 'bg-blue-600 text-white' : 'bg-white text-zinc-600 hover:bg-zinc-50'}`}>
+            Lead (Pre-Bid)
+          </button>
+          <button type="button" onClick={() => setStage('ACTIVE')}
+            className={`px-4 py-2 font-medium transition-colors border-l border-zinc-200 ${stage === 'ACTIVE' ? 'bg-blue-600 text-white' : 'bg-white text-zinc-600 hover:bg-zinc-50'}`}>
+            Active (Won)
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-zinc-400">
+          {stage === 'LEAD'
+            ? 'Track a property before the auction. Convert to Active after winning.'
+            : 'You won this lien. Deadlines will be generated from the issue date.'}
+        </p>
+      </section>
+
+      {/* Jurisdiction */}
       <section className="px-6 py-5 space-y-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Jurisdiction</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="State" error={state.errors?.jurisdictionId}>
-            <select
-              value={selectedState}
-              onChange={e => setSelectedState(e.target.value)}
-              className="input-base"
-            >
+            <select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="input-base">
               <option value="">Select state…</option>
-              {states.map(([abbr, name]) => (
-                <option key={abbr} value={abbr}>{name}</option>
-              ))}
+              {states.map(([abbr, name]) => <option key={abbr} value={abbr}>{name}</option>)}
             </select>
           </Field>
           <Field label="County" error={state.errors?.jurisdictionId}>
-            <select
-              name="jurisdictionId"
-              disabled={!selectedState}
-              className="input-base disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">
-                {selectedState ? 'Select county…' : '← Select state first'}
-              </option>
+            <select name="jurisdictionId" disabled={!selectedState} className="input-base disabled:opacity-50 disabled:cursor-not-allowed">
+              <option value="">{selectedState ? 'Select county…' : '← Select state first'}</option>
               {counties.map(j => (
                 <option key={j.id} value={j.id}>
-                  {j.county} County ({j.investmentType === 'LIEN' ? 'Lien' : 'Deed'})
+                  {j.county} County ({j.investmentType === 'LIEN' ? 'Lien' : j.investmentType === 'REDEEMABLE_DEED' ? 'Redeemable Deed' : 'Deed'})
                 </option>
               ))}
             </select>
@@ -82,45 +88,55 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
         </div>
       </section>
 
-      {/* Certificate */}
-      <section className="px-6 py-5 space-y-4">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Certificate Details</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Certificate Number" error={state.errors?.certificateNumber}>
-            <input type="text" name="certificateNumber" placeholder="e.g. 2024-0001234" className="input-base font-mono" />
-          </Field>
-          <Field label="Issue Date" error={state.errors?.issueDate}>
-            <input type="date" name="issueDate" className="input-base" />
-          </Field>
-          <Field label="Face Amount ($)" error={state.errors?.faceAmount}>
-            <input type="number" name="faceAmount" min="0.01" step="0.01" placeholder="5000.00" className="input-base" />
-          </Field>
-          <Field label="Interest Rate (%)" error={state.errors?.interestRate}>
-            <input type="number" name="interestRate" min="0" max="100" step="0.01" placeholder="18" className="input-base" />
-          </Field>
-        </div>
-      </section>
+      {/* Lead-only fields */}
+      {stage === 'LEAD' && (
+        <section className="px-6 py-5 space-y-4">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Auction Info (optional)</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Auction Date" error={state.errors?.auctionDate}>
+              <input type="date" name="auctionDate" className="input-base" />
+            </Field>
+            <Field label="Max Bid ($)" error={state.errors?.maxBid}>
+              <input type="number" name="maxBid" min="0.01" step="0.01" placeholder="5000.00" className="input-base" />
+            </Field>
+          </div>
+        </section>
+      )}
+
+      {/* Active-only fields */}
+      {stage === 'ACTIVE' && (
+        <section className="px-6 py-5 space-y-4">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Certificate Details</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Certificate Number" error={state.errors?.certificateNumber}>
+              <input type="text" name="certificateNumber" placeholder="e.g. 2024-0001234" className="input-base font-mono" />
+            </Field>
+            <Field label="Issue Date" error={state.errors?.issueDate}>
+              <input type="date" name="issueDate" className="input-base" />
+            </Field>
+            <Field label="Face Amount ($)" error={state.errors?.faceAmount}>
+              <input type="number" name="faceAmount" min="0.01" step="0.01" placeholder="5000.00" className="input-base" />
+            </Field>
+            <Field label="Interest Rate (%)" error={state.errors?.interestRate}>
+              <input type="number" name="interestRate" min="0" max="100" step="0.01" placeholder="18" className="input-base" />
+            </Field>
+          </div>
+        </section>
+      )}
 
       {/* Notes */}
-      <section className="px-6 py-5 space-y-4">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Notes (optional)</h2>
-        <Field label="" error={state.errors?.notes}>
-          <textarea name="notes" rows={3} placeholder="Additional notes…" className="input-base resize-none" />
+      <section className="px-6 py-5">
+        <Field label="Notes (optional)" error={state.errors?.notes}>
+          <textarea name="notes" rows={3} placeholder="Research notes, due diligence…" className="input-base resize-none" />
         </Field>
       </section>
 
-      {/* Actions */}
       <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {pending ? 'Saving…' : 'Create Lien & Generate Deadlines'}
+        <button type="submit" disabled={pending}
+          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          {pending ? 'Saving…' : stage === 'LEAD' ? 'Add to Watchlist' : 'Create Lien & Generate Deadlines'}
         </button>
-        <Link href="/dashboard/liens" className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">
-          Cancel
-        </Link>
+        <Link href="/dashboard/liens" className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
       </div>
     </form>
   )

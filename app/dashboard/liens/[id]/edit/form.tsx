@@ -10,10 +10,10 @@ type DealWithLien = {
   id: string
   notes: string | null
   taxLien: {
-    certificateNumber: string
-    faceAmount: { toString(): string }
-    interestRate: { toString(): string }
-    issueDate: Date
+    certificateNumber: string | null
+    faceAmount: { toString(): string } | null
+    interestRate: { toString(): string } | null
+    issueDate: Date | null
   } | null
 }
 
@@ -27,7 +27,7 @@ export function EditLienForm({ deal }: { deal: DealWithLien }) {
   // Convert stored decimal rate back to percentage for the input (0.18 → 18)
   const ratePercent = lien ? (Number(lien.interestRate) * 100).toFixed(2) : ''
   // Format date as YYYY-MM-DD for the date input
-  const issueDateStr = lien ? new Date(lien.issueDate).toISOString().slice(0, 10) : ''
+  const issueDateStr = lien?.issueDate ? new Date(lien.issueDate).toISOString().slice(0, 10) : ''
 
   return (
     <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
