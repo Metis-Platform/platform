@@ -8,7 +8,7 @@ import { generateEventsForDeal } from '@/lib/rules-engine'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 
 // ---------------------------------------------------------------------------
-// Validation schema
+// Schemas
 // ---------------------------------------------------------------------------
 
 const CreateLienSchema = z.object({
@@ -17,32 +17,40 @@ const CreateLienSchema = z.object({
   address:           z.string().max(200).optional(),
   certificateNumber: z.string().min(1, 'Certificate number is required').max(60),
   faceAmount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
-  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0).max(100),
+  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0, 'Must be 0 or greater').max(100, 'Must be 100 or less'),
   issueDate:         z.string().min(1, 'Issue date is required'),
   notes:             z.string().max(2000).optional(),
 })
 
-export type CreateLienFormState = {
+// Edit only allows updating certificate details — jurisdiction and APN are fixed
+const UpdateLienSchema = z.object({
+  certificateNumber: z.string().min(1, 'Certificate number is required').max(60),
+  faceAmount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
+  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0, 'Must be 0 or greater').max(100, 'Must be 100 or less'),
+  issueDate:         z.string().min(1, 'Issue date is required'),
+  notes:             z.string().max(2000).optional(),
+})
+
+export type LienFormState = {
   errors?: Record<string, string[]>
   message?: string
 }
 
 // ---------------------------------------------------------------------------
-// Server action
+// createLien
 // ---------------------------------------------------------------------------
 
 export async function createLien(
-  _prevState: CreateLienFormState,
+  _prevState: LienFormState,
   formData: FormData,
-): Promise<CreateLienFormState> {
+): Promise<LienFormState> {
   const { userId, orgId } = await auth()
   if (!userId || !orgId) return { message: 'Not authenticated. Please sign in.' }
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found. Please reload the page.' }
 
-  const raw = Object.fromEntries(formData)
-  const parsed = CreateLienSchema.safeParse(raw)
+  const parsed = CreateLienSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
   }
@@ -51,7 +59,6 @@ export async function createLien(
 
   let dealId: string
   try {
-    // Upsert property — same APN + jurisdiction + tenant = same physical property
     const property = await db.property.upsert({
       where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn, jurisdictionId } },
       update: { ...(address ? { address } : {}) },
@@ -69,8 +76,7 @@ export async function createLien(
           create: {
             certificateNumber,
             faceAmount,
-            interestRate: interestRate / 100, // store as decimal: 18% → 0.18
-            // Append T12:00:00Z so the date is stored as noon UTC regardless of timezone
+            interestRate: interestRate / 100,
             issueDate: new Date(`${issueDate}T12:00:00.000Z`),
           },
         },
@@ -84,6 +90,75 @@ export async function createLien(
     return { message: 'Failed to save lien. Please try again.' }
   }
 
-  // redirect() must be outside try/catch — it throws internally (NEXT_REDIRECT)
-  redirect(`/dashboard/liens?created=${dealId}`)
+  redirect(`/dashboard/liens/${dealId}`)
+}
+
+// ---------------------------------------------------------------------------
+// updateLien — bound as updateLien.bind(null, dealId)
+// ---------------------------------------------------------------------------
+
+export async function updateLien(
+  dealId: string,
+  _prevState: LienFormState,
+  formData: FormData,
+): Promise<LienFormState> {
+  const { userId, orgId } = await auth()
+  if (!userId || !orgId) return { message: 'Not authenticated.' }
+
+  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
+  if (!tenant) return { message: 'Account not found.' }
+
+  const parsed = UpdateLienSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) {
+    return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
+  }
+
+  const { certificateNumber, faceAmount, interestRate, issueDate, notes } = parsed.data
+
+  try {
+    // Confirm deal belongs to this tenant before updating
+    const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
+    if (!deal) return { message: 'Lien not found.' }
+
+    await db.dealTaxLien.update({
+      where: { dealId },
+      data: {
+        certificateNumber,
+        faceAmount,
+        interestRate: interestRate / 100,
+        issueDate: new Date(`${issueDate}T12:00:00.000Z`),
+      },
+    })
+
+    // Update notes on the deal
+    await db.deal.update({ where: { id: dealId }, data: { notes: notes || null } })
+
+    // Regenerate events — issue date may have changed
+    await generateEventsForDeal(dealId, tenant.id)
+  } catch (err) {
+    console.error('[updateLien] error:', err)
+    return { message: 'Failed to update lien. Please try again.' }
+  }
+
+  redirect(`/dashboard/liens/${dealId}`)
+}
+
+// ---------------------------------------------------------------------------
+// deleteLien — called directly from client component (no redirect)
+// ---------------------------------------------------------------------------
+
+export async function deleteLien(dealId: string): Promise<{ error?: string }> {
+  const { userId, orgId } = await auth()
+  if (!userId || !orgId) return { error: 'Not authenticated.' }
+
+  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
+  if (!tenant) return { error: 'Account not found.' }
+
+  try {
+    await db.deal.delete({ where: { id: dealId, tenantId: tenant.id } })
+    return {}
+  } catch (err) {
+    console.error('[deleteLien] error:', err)
+    return { error: 'Failed to delete. Please try again.' }
+  }
 }
