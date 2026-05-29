@@ -63,6 +63,7 @@ model Jurisdiction {
   timezone       String         @default("America/New_York")
   investmentType InvestmentType
   notes          String?
+  links          Json?          // { assessorUrl, taxCollectorUrl, recorderUrl, gisUrl }
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -200,12 +201,17 @@ model DealTaxLien {
   id                      String    @id @default(cuid())
   dealId                  String    @unique
   deal                    Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  certificateNumber       String
-  faceAmount              Decimal   @db.Decimal(14, 2)
-  interestRate            Decimal   @db.Decimal(6, 4)
+  // Certificate details — required for ACTIVE deals, optional for LEAD/pre-bid
+  certificateNumber       String?
+  faceAmount              Decimal?  @db.Decimal(14, 2)
+  interestRate            Decimal?  @db.Decimal(6, 4)
   penaltyRate             Decimal?  @db.Decimal(6, 4)
-  issueDate               DateTime
+  issueDate               DateTime?
   saleDate                DateTime?
+  // Lead / pre-bid tracking
+  auctionDate             DateTime? // scheduled auction date
+  maxBid                  Decimal?  @db.Decimal(14, 2)  // max bid amount
+  // Post-purchase tracking
   redemptionDeadline      DateTime?
   foreclosureEligibleDate DateTime?
   redemptionAmount        Decimal?  @db.Decimal(14, 2)
@@ -357,6 +363,7 @@ enum UserRole {
 enum InvestmentType {
   LIEN
   DEED
+  REDEEMABLE_DEED
 }
 
 enum StrategyType {

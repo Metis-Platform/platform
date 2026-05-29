@@ -1,0 +1,3215 @@
+[
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Alachua",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Baker",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Bay",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Bradford",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Brevard",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Broward",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Calhoun",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Charlotte",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Citrus",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Clay",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Collier",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Columbia",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "DeSoto",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Dixie",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Duval",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Escambia",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Flagler",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Franklin",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Gadsden",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Gilchrist",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Glades",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Gulf",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Hamilton",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Hardee",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Hendry",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Hernando",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Highlands",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Hillsborough",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Holmes",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Indian River",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Jackson",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Jefferson",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Lafayette",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Lake",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Lee",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Leon",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Levy",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Liberty",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Madison",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Manatee",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Marion",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Martin",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Miami-Dade",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Monroe",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Nassau",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Okaloosa",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Okeechobee",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Orange",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Osceola",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Palm Beach",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Pasco",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Pinellas",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Polk",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Putnam",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "St. Johns",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "St. Lucie",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Santa Rosa",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Sarasota",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Seminole",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Sumter",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Suwannee",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Taylor",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Union",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Volusia",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Wakulla",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Walton",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "FL",
+    "stateName": "Florida",
+    "county": "Washington",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Atlantic",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Bergen",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Burlington",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Camden",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Cape May",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Cumberland",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Essex",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Gloucester",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Hudson",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Hunterdon",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Mercer",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Middlesex",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Monmouth",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Morris",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Ocean",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Passaic",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Salem",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Somerset",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Sussex",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Union",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "NJ",
+    "stateName": "New Jersey",
+    "county": "Warren",
+    "timezone": "America/New_York",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Adams",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Alexander",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Bond",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Boone",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Brown",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Bureau",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Calhoun",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Carroll",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Cass",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Champaign",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Christian",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Clark",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Clay",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Clinton",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Coles",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Cook",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Crawford",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Cumberland",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "DeKalb",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "De Witt",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Douglas",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "DuPage",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Edgar",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Edwards",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Effingham",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Fayette",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Ford",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Franklin",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Fulton",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Gallatin",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Greene",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Grundy",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Hamilton",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Hancock",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Hardin",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Henderson",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Henry",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Iroquois",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Jackson",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Jasper",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Jefferson",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Jersey",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Jo Daviess",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Johnson",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Kane",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Kankakee",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Kendall",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Knox",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "LaSalle",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Lake",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Lawrence",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Lee",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Livingston",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Logan",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Macon",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Macoupin",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Madison",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Marion",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Marshall",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Mason",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Massac",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "McDonough",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "McHenry",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "McLean",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Menard",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Mercer",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Monroe",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Montgomery",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Morgan",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Moultrie",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Ogle",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Peoria",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Perry",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Piatt",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Pike",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Pope",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Pulaski",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Putnam",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Randolph",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Richland",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Rock Island",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Saline",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Sangamon",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Schuyler",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Scott",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Shelby",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "St. Clair",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Stark",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Stephenson",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Tazewell",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Union",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Vermilion",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Wabash",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Warren",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Washington",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Wayne",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "White",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Whiteside",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Will",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Williamson",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Winnebago",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "IL",
+    "stateName": "Illinois",
+    "county": "Woodford",
+    "timezone": "America/Chicago",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Apache",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Cochise",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Coconino",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Gila",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Graham",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Greenlee",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "La Paz",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Maricopa",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Mohave",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Navajo",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Pima",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Pinal",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Santa Cruz",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Yavapai",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "AZ",
+    "stateName": "Arizona",
+    "county": "Yuma",
+    "timezone": "America/Phoenix",
+    "type": "LIEN"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Anderson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Andrews",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Angelina",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Aransas",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Archer",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Armstrong",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Atascosa",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Austin",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bailey",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bandera",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bastrop",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Baylor",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bee",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bell",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bexar",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Blanco",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Borden",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bosque",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Bowie",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Brazoria",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Brazos",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Brewster",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Briscoe",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Brooks",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Brown",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Burleson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Burnet",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Caldwell",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Calhoun",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Callahan",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Cameron",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Camp",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Carson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Cass",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Castro",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Chambers",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Cherokee",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Childress",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Clay",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Cochran",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Coke",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Coleman",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Collin",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Collingsworth",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Colorado",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Comal",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Comanche",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Concho",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Cooke",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Coryell",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Cottle",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Crane",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Crockett",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Crosby",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Culberson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Dallam",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Dallas",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Dawson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Deaf Smith",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Delta",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Denton",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "DeWitt",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Dickens",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Dimmit",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Donley",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Duval",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Eastland",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Ector",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Edwards",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Ellis",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "El Paso",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Erath",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Falls",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Fannin",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Fayette",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Fisher",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Floyd",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Foard",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Fort Bend",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Franklin",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Freestone",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Frio",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Gaines",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Galveston",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Garza",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Gillespie",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Glasscock",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Goliad",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Gonzales",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Gray",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Grayson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Gregg",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Grimes",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Guadalupe",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hale",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hall",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hamilton",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hansford",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hardeman",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hardin",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Harris",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Harrison",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hartley",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Haskell",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hays",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hemphill",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Henderson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hidalgo",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hill",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hockley",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hood",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hopkins",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Houston",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Howard",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hudspeth",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hunt",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Hutchinson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Irion",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jack",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jackson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jasper",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jeff Davis",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jefferson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jim Hogg",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jim Wells",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Johnson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Jones",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Karnes",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kaufman",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kendall",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kenedy",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kent",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kerr",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kimble",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "King",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kinney",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Kleberg",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Knox",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "La Salle",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lamar",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lamb",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lampasas",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lavaca",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lee",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Leon",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Liberty",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Limestone",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lipscomb",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Live Oak",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Llano",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Loving",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lubbock",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Lynn",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Madison",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Marion",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Martin",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Mason",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Matagorda",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Maverick",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "McCulloch",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "McLennan",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "McMullen",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Medina",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Menard",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Midland",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Milam",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Mills",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Mitchell",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Montague",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Montgomery",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Moore",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Morris",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Motley",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Nacogdoches",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Navarro",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Newton",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Nolan",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Nueces",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Ochiltree",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Oldham",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Orange",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Palo Pinto",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Panola",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Parker",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Parmer",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Pecos",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Polk",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Potter",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Presidio",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Rains",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Randall",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Reagan",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Real",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Red River",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Reeves",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Refugio",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Roberts",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Robertson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Rockwall",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Runnels",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Rusk",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Sabine",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "San Augustine",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "San Jacinto",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "San Patricio",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "San Saba",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Schleicher",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Scurry",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Shackelford",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Shelby",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Sherman",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Smith",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Somervell",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Starr",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Stephens",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Sterling",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Stonewall",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Sutton",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Swisher",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Tarrant",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Taylor",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Terrell",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Terry",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Throckmorton",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Titus",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Tom Green",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Travis",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Trinity",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Tyler",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Upshur",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Upton",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Uvalde",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Val Verde",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Van Zandt",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Victoria",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Walker",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Waller",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Ward",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Washington",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Webb",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Wharton",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Wheeler",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Wichita",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Wilbarger",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Willacy",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Williamson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Wilson",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Winkler",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Wise",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Wood",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Yoakum",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Young",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Zapata",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  },
+  {
+    "state": "TX",
+    "stateName": "Texas",
+    "county": "Zavala",
+    "timezone": "America/Chicago",
+    "type": "REDEEMABLE_DEED"
+  }
+]

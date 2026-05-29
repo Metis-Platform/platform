@@ -7,101 +7,167 @@ import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 
+export type LienFormState = { errors?: Record<string, string[]>; message?: string }
+
 // ---------------------------------------------------------------------------
 // Schemas
 // ---------------------------------------------------------------------------
 
-const CreateLienSchema = z.object({
+const LeadSchema = z.object({
+  status:        z.literal('LEAD'),
+  jurisdictionId: z.string().min(1, 'Jurisdiction is required'),
+  apn:           z.string().min(1, 'APN is required').max(60),
+  address:       z.string().max(200).optional(),
+  auctionDate:   z.string().optional(),
+  maxBid:        z.coerce.number().positive('Must be greater than 0').optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+  notes:         z.string().max(2000).optional(),
+})
+
+const ActiveSchema = z.object({
+  status:            z.literal('ACTIVE'),
   jurisdictionId:    z.string().min(1, 'Jurisdiction is required'),
   apn:               z.string().min(1, 'APN is required').max(60),
   address:           z.string().max(200).optional(),
   certificateNumber: z.string().min(1, 'Certificate number is required').max(60),
   faceAmount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
-  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0, 'Must be 0 or greater').max(100, 'Must be 100 or less'),
+  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0).max(100),
   issueDate:         z.string().min(1, 'Issue date is required'),
   notes:             z.string().max(2000).optional(),
 })
 
-// Edit only allows updating certificate details — jurisdiction and APN are fixed
+const ConvertSchema = z.object({
+  certificateNumber: z.string().min(1, 'Certificate number is required').max(60),
+  faceAmount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
+  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0).max(100),
+  issueDate:         z.string().min(1, 'Issue date is required'),
+  notes:             z.string().max(2000).optional(),
+})
+
 const UpdateLienSchema = z.object({
   certificateNumber: z.string().min(1, 'Certificate number is required').max(60),
   faceAmount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
-  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0, 'Must be 0 or greater').max(100, 'Must be 100 or less'),
+  interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0).max(100),
   issueDate:         z.string().min(1, 'Issue date is required'),
   notes:             z.string().max(2000).optional(),
 })
-
-export type LienFormState = {
-  errors?: Record<string, string[]>
-  message?: string
-}
 
 // ---------------------------------------------------------------------------
 // createLien
 // ---------------------------------------------------------------------------
 
-export async function createLien(
-  _prevState: LienFormState,
-  formData: FormData,
-): Promise<LienFormState> {
+export async function createLien(_prev: LienFormState, formData: FormData): Promise<LienFormState> {
   const { userId, orgId } = await auth()
-  if (!userId || !orgId) return { message: 'Not authenticated. Please sign in.' }
+  if (!userId || !orgId) return { message: 'Not authenticated.' }
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
-  if (!tenant) return { message: 'Account not found. Please reload the page.' }
+  if (!tenant) return { message: 'Account not found.' }
 
-  const parsed = CreateLienSchema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) {
-    return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
-  }
+  const raw = Object.fromEntries(formData)
+  const schema = raw.status === 'LEAD'
+    ? LeadSchema
+    : ActiveSchema
 
-  const { jurisdictionId, apn, address, certificateNumber, faceAmount, interestRate, issueDate, notes } = parsed.data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parsed = (schema as any).safeParse(raw)
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors }
 
+  const data = parsed.data
   let dealId: string
+
   try {
     const property = await db.property.upsert({
-      where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn, jurisdictionId } },
-      update: { ...(address ? { address } : {}) },
-      create: { tenantId: tenant.id, jurisdictionId, apn, ...(address ? { address } : {}) },
+      where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn: data.apn, jurisdictionId: data.jurisdictionId } },
+      update: { ...(data.address ? { address: data.address } : {}) },
+      create: { tenantId: tenant.id, jurisdictionId: data.jurisdictionId, apn: data.apn, ...(data.address ? { address: data.address } : {}) },
     })
 
-    const deal = await db.deal.create({
-      data: {
-        tenantId:     tenant.id,
-        propertyId:   property.id,
-        strategyType: StrategyType.TAX_LIEN,
-        status:       DealStatus.ACTIVE,
-        notes:        notes || null,
-        taxLien: {
-          create: {
-            certificateNumber,
-            faceAmount,
-            interestRate: interestRate / 100,
-            issueDate: new Date(`${issueDate}T12:00:00.000Z`),
+    if (data.status === 'LEAD') {
+      const deal = await db.deal.create({
+        data: {
+          tenantId: tenant.id, propertyId: property.id,
+          strategyType: StrategyType.TAX_LIEN, status: DealStatus.LEAD,
+          notes: data.notes || null,
+          taxLien: {
+            create: {
+              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+              maxBid: (data.maxBid && data.maxBid !== '') ? Number(data.maxBid) : null,
+            },
           },
         },
-      },
-    })
-
-    await generateEventsForDeal(deal.id, tenant.id)
-    dealId = deal.id
+      })
+      dealId = deal.id
+    } else {
+      const d = data as z.infer<typeof ActiveSchema>
+      const deal = await db.deal.create({
+        data: {
+          tenantId: tenant.id, propertyId: property.id,
+          strategyType: StrategyType.TAX_LIEN, status: DealStatus.ACTIVE,
+          notes: d.notes || null,
+          taxLien: {
+            create: {
+              certificateNumber: d.certificateNumber,
+              faceAmount: d.faceAmount,
+              interestRate: d.interestRate / 100,
+              issueDate: new Date(`${d.issueDate}T12:00:00.000Z`),
+            },
+          },
+        },
+      })
+      await generateEventsForDeal(deal.id, tenant.id)
+      dealId = deal.id
+    }
   } catch (err) {
-    console.error('[createLien] error:', err)
-    return { message: 'Failed to save lien. Please try again.' }
+    console.error('[createLien]', err)
+    return { message: 'Failed to save. Please try again.' }
   }
 
   redirect(`/dashboard/liens/${dealId}`)
 }
 
 // ---------------------------------------------------------------------------
-// updateLien — bound as updateLien.bind(null, dealId)
+// convertToActive — LEAD → ACTIVE
 // ---------------------------------------------------------------------------
 
-export async function updateLien(
-  dealId: string,
-  _prevState: LienFormState,
-  formData: FormData,
-): Promise<LienFormState> {
+export async function convertToActive(dealId: string, _prev: LienFormState, formData: FormData): Promise<LienFormState> {
+  const { userId, orgId } = await auth()
+  if (!userId || !orgId) return { message: 'Not authenticated.' }
+
+  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
+  if (!tenant) return { message: 'Account not found.' }
+
+  const parsed = ConvertSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
+
+  const { certificateNumber, faceAmount, interestRate, issueDate, notes } = parsed.data
+
+  try {
+    const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
+    if (!deal) return { message: 'Lien not found.' }
+
+    await db.dealTaxLien.update({
+      where: { dealId },
+      data: { certificateNumber, faceAmount, interestRate: interestRate / 100, issueDate: new Date(`${issueDate}T12:00:00.000Z`) },
+    })
+
+    await db.deal.update({
+      where: { id: dealId },
+      data: { status: DealStatus.ACTIVE, notes: notes || null },
+    })
+
+    await generateEventsForDeal(dealId, tenant.id)
+  } catch (err) {
+    console.error('[convertToActive]', err)
+    return { message: 'Failed to convert. Please try again.' }
+  }
+
+  redirect(`/dashboard/liens/${dealId}`)
+}
+
+// ---------------------------------------------------------------------------
+// updateLien
+// ---------------------------------------------------------------------------
+
+export async function updateLien(dealId: string, _prev: LienFormState, formData: FormData): Promise<LienFormState> {
   const { userId, orgId } = await auth()
   if (!userId || !orgId) return { message: 'Not authenticated.' }
 
@@ -109,42 +175,30 @@ export async function updateLien(
   if (!tenant) return { message: 'Account not found.' }
 
   const parsed = UpdateLienSchema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) {
-    return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
-  }
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
 
   const { certificateNumber, faceAmount, interestRate, issueDate, notes } = parsed.data
 
   try {
-    // Confirm deal belongs to this tenant before updating
     const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
     if (!deal) return { message: 'Lien not found.' }
 
     await db.dealTaxLien.update({
       where: { dealId },
-      data: {
-        certificateNumber,
-        faceAmount,
-        interestRate: interestRate / 100,
-        issueDate: new Date(`${issueDate}T12:00:00.000Z`),
-      },
+      data: { certificateNumber, faceAmount, interestRate: interestRate / 100, issueDate: new Date(`${issueDate}T12:00:00.000Z`) },
     })
-
-    // Update notes on the deal
     await db.deal.update({ where: { id: dealId }, data: { notes: notes || null } })
-
-    // Regenerate events — issue date may have changed
     await generateEventsForDeal(dealId, tenant.id)
   } catch (err) {
-    console.error('[updateLien] error:', err)
-    return { message: 'Failed to update lien. Please try again.' }
+    console.error('[updateLien]', err)
+    return { message: 'Failed to update. Please try again.' }
   }
 
   redirect(`/dashboard/liens/${dealId}`)
 }
 
 // ---------------------------------------------------------------------------
-// deleteLien — called directly from client component (no redirect)
+// deleteLien
 // ---------------------------------------------------------------------------
 
 export async function deleteLien(dealId: string): Promise<{ error?: string }> {
@@ -158,7 +212,7 @@ export async function deleteLien(dealId: string): Promise<{ error?: string }> {
     await db.deal.delete({ where: { id: dealId, tenantId: tenant.id } })
     return {}
   } catch (err) {
-    console.error('[deleteLien] error:', err)
-    return { error: 'Failed to delete. Please try again.' }
+    console.error('[deleteLien]', err)
+    return { error: 'Failed to delete.' }
   }
 }
