@@ -1,0 +1,459 @@
+// ============================================================
+// Metis Platform — Prisma Schema  v1.0
+// Phase 1: Core entities + Tax Lien module
+// Import path: import { PrismaClient } from "@/generated/prisma"
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// TENANT AND USERS
+// ============================================================
+
+model Tenant {
+  id         String   @id @default(cuid())
+  clerkOrgId String   @unique
+  name       String
+  slug       String   @unique
+  plan       PlanTier @default(STARTER)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users      User[]
+  properties Property[]
+  deals      Deal[]
+  contacts   Contact[]
+  documents  Document[]
+  auditLogs  AuditLog[]
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkUserId String   @unique
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role        UserRole @default(ANALYST)
+  email       String
+  name        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignedTasks Task[]
+  auditLogs     AuditLog[]
+
+  @@index([tenantId])
+}
+
+// ============================================================
+// JURISDICTIONS AND RULES ENGINE
+// ============================================================
+
+model Jurisdiction {
+  id             String         @id @default(cuid())
+  state          String
+  stateName      String
+  county         String
+  timezone       String         @default("America/New_York")
+  investmentType InvestmentType
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  ruleSets   RuleSet[]
+  properties Property[]
+
+  @@unique([state, county])
+}
+
+model RuleSet {
+  id             String       @id @default(cuid())
+  jurisdictionId String
+  jurisdiction   Jurisdiction @relation(fields: [jurisdictionId], references: [id])
+  name           String
+  effectiveDate  DateTime
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  rules Rule[]
+
+  @@index([jurisdictionId])
+}
+
+// Formula: dueDate = deal[anchorField] + offsetDays
+model Rule {
+  id          String    @id @default(cuid())
+  ruleSetId   String
+  ruleSet     RuleSet   @relation(fields: [ruleSetId], references: [id], onDelete: Cascade)
+  eventType   EventType
+  label       String
+  anchorField String
+  offsetDays  Int
+  description String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([ruleSetId])
+}
+
+// ============================================================
+// PROPERTY AND CONTACTS
+// ============================================================
+
+model Property {
+  id               String       @id @default(cuid())
+  tenantId         String
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jurisdictionId   String
+  jurisdiction     Jurisdiction @relation(fields: [jurisdictionId], references: [id])
+  apn              String
+  address          String?
+  city             String?
+  state            String?
+  zip              String?
+  legalDescription String?
+  propertyType     String?
+  acres            Decimal?     @db.Decimal(10, 4)
+  sqft             Int?
+  beds             Int?
+  baths            Decimal?     @db.Decimal(4, 1)
+  yearBuilt        Int?
+  assessedValue    Decimal?     @db.Decimal(14, 2)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  deals     Deal[]
+  contacts  Contact[]  @relation("PropertyContacts")
+  documents Document[]
+
+  @@unique([tenantId, apn, jurisdictionId])
+  @@index([tenantId])
+}
+
+model Contact {
+  id        String      @id @default(cuid())
+  tenantId  String
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      ContactType
+  firstName String?
+  lastName  String?
+  company   String?
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  zip       String?
+  notes     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  properties Property[] @relation("PropertyContacts")
+  deals      Deal[]
+
+  @@index([tenantId])
+}
+
+// ============================================================
+// DEAL — Universal investment container
+// ============================================================
+
+model Deal {
+  id            String       @id @default(cuid())
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  propertyId    String
+  property      Property     @relation(fields: [propertyId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  strategyType  StrategyType
+  status        DealStatus   @default(ACTIVE)
+  purchasePrice Decimal?     @db.Decimal(14, 2)
+  purchaseDate  DateTime?
+  exitPrice     Decimal?     @db.Decimal(14, 2)
+  exitDate      DateTime?
+  notes         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  taxLien      DealTaxLien?
+  events       Event[]
+  tasks        Task[]
+  transactions FinancialTransaction[]
+  documents    Document[]
+  auditLogs    AuditLog[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, strategyType])
+}
+
+// Extension table — Tax Lien / Tax Deed strategy
+model DealTaxLien {
+  id                      String    @id @default(cuid())
+  dealId                  String    @unique
+  deal                    Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  certificateNumber       String
+  faceAmount              Decimal   @db.Decimal(14, 2)
+  interestRate            Decimal   @db.Decimal(6, 4)
+  penaltyRate             Decimal?  @db.Decimal(6, 4)
+  issueDate               DateTime
+  saleDate                DateTime?
+  redemptionDeadline      DateTime?
+  foreclosureEligibleDate DateTime?
+  redemptionAmount        Decimal?  @db.Decimal(14, 2)
+  redemptionDate          DateTime?
+  isRedeemed              Boolean   @default(false)
+  subsequentTaxesPaid     Decimal?  @db.Decimal(14, 2)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+// ============================================================
+// EVENTS — Rule-derived milestones
+// ============================================================
+
+model Event {
+  id            String      @id @default(cuid())
+  dealId        String
+  deal          Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  ruleId        String?
+  eventType     EventType
+  label         String
+  dueDate       DateTime
+  completedDate DateTime?
+  status        EventStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tasks Task[]
+
+  @@index([dealId])
+  @@index([dueDate, status])
+}
+
+// ============================================================
+// TASKS — Operational actions
+// ============================================================
+
+model Task {
+  id           String     @id @default(cuid())
+  dealId       String
+  deal         Deal       @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  eventId      String?
+  event        Event?     @relation(fields: [eventId], references: [id])
+  assignedToId String?
+  assignedTo   User?      @relation(fields: [assignedToId], references: [id])
+  tenantId     String
+  taskType     TaskType
+  title        String
+  description  String?
+  dueDate      DateTime?
+  completedAt  DateTime?
+  status       TaskStatus @default(OPEN)
+  priority     Priority   @default(MEDIUM)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([assignedToId, status])
+}
+
+// ============================================================
+// FINANCIALS
+// ============================================================
+
+model FinancialTransaction {
+  id          String          @id @default(cuid())
+  dealId      String
+  deal        Deal            @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  tenantId    String
+  type        TransactionType
+  amount      Decimal         @db.Decimal(14, 2)
+  date        DateTime
+  description String?
+  createdAt   DateTime        @default(now())
+
+  @@index([dealId])
+  @@index([tenantId])
+}
+
+// ============================================================
+// DOCUMENTS
+// ============================================================
+
+model Document {
+  id            String       @id @default(cuid())
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dealId        String?
+  deal          Deal?        @relation(fields: [dealId], references: [id])
+  propertyId    String?
+  property      Property?    @relation(fields: [propertyId], references: [id])
+  fileName      String
+  fileSize      Int
+  mimeType      String
+  r2Key         String       @unique
+  docType       DocumentType
+  extractedData Json?
+  uploadedAt    DateTime     @default(now())
+
+  @@index([tenantId])
+  @@index([dealId])
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  dealId     String?
+  deal       Deal?    @relation(fields: [dealId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([dealId])
+  @@index([entityType, entityId])
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum PlanTier {
+  STARTER
+  PROFESSIONAL
+  TEAM
+  ENTERPRISE
+}
+
+enum UserRole {
+  OWNER
+  ANALYST
+  ATTORNEY
+  ASSISTANT
+  READ_ONLY
+}
+
+enum InvestmentType {
+  LIEN
+  DEED
+}
+
+enum StrategyType {
+  TAX_LIEN
+  TAX_DEED
+  FIX_FLIP
+  WHOLESALE
+  BUY_HOLD
+  LAND
+  MULTIFAMILY
+}
+
+enum DealStatus {
+  LEAD
+  ACTIVE
+  REDEEMED
+  FORECLOSURE_INITIATED
+  DEEDED
+  SOLD
+  CLOSED
+  EXPIRED
+}
+
+enum EventType {
+  REDEMPTION_DEADLINE
+  NOTICE_MAIL_BY
+  PUBLICATION_START
+  FORECLOSURE_ELIGIBLE
+  FORECLOSURE_DEADLINE
+  AUCTION_DATE
+  DEED_ISSUED
+  CUSTOM
+}
+
+enum EventStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+  SKIPPED
+}
+
+enum TaskType {
+  SEND_NOTICE
+  FILE_SUIT
+  ORDER_TITLE_SEARCH
+  RECORD_DOCUMENT
+  PAY_SUBSEQUENT_TAXES
+  REVIEW_REDEMPTION
+  INITIATE_FORECLOSURE
+  FOLLOW_UP
+  CUSTOM
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TransactionType {
+  PURCHASE
+  SUBSEQUENT_TAX
+  LEGAL_FEE
+  TITLE_SEARCH
+  RECORDING_FEE
+  REDEMPTION_RECEIVED
+  OTHER_INCOME
+  OTHER_EXPENSE
+}
+
+enum DocumentType {
+  LIEN_CERTIFICATE
+  TAX_DEED
+  PURCHASE_CONTRACT
+  NOTICE_LETTER
+  USPS_RECEIPT
+  COURT_FILING
+  TITLE_REPORT
+  DEED
+  LEASE
+  OTHER
+}
+
+enum ContactType {
+  OWNER
+  ATTORNEY
+  AGENT
+  LENDER
+  BUYER
+  SELLER
+  OTHER
+}
