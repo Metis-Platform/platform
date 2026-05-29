@@ -100,6 +100,27 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Tailwind for all styling. No CSS modules, no styled-components.
 - Error messages must be user-readable. No raw stack traces exposed to the browser.
 
+### Prisma 7 + Next.js 16 Breaking Changes (Lessons Learned)
+
+These breaking changes bit us during Phase 0/1A. Don't repeat them.
+
+**Prisma 7:**
+- `schema.prisma` datasource block has NO `url` property — it was removed. The datasource block is just `provider = "postgresql"` with no url line. The connection string is passed via the driver adapter at runtime.
+- Generator must use `provider = "prisma-client-js"` (not `"prisma-client"` — that provider requires zero-arg constructor which Prisma 7 disallows).
+- `new PrismaClient()` with zero args throws at runtime. Always pass `{ adapter }`.
+- Driver adapter: `import { PrismaNeon } from '@prisma/adapter-neon'` then `new PrismaNeon({ connectionString: process.env.DATABASE_URL! })`.
+- Import path for the generated client is `@/app/generated/prisma` (output configured in schema generator). Do NOT import from `@prisma/client`.
+- `app/generated/` is gitignored — build script MUST run `prisma generate` before `next build`. In `package.json`: `"build": "prisma generate && next build"`.
+- Prisma Studio exits with `ERR_STREAM_PREMATURE_CLOSE` when using the Neon serverless adapter. This is cosmetic — Studio still works and data is accessible. Not a blocker.
+- CLI configuration lives in `prisma.config.ts` (not in `schema.prisma`). The `datasource.url` for migrations is set there via `dotenv` + `defineConfig`.
+
+**Clerk v7 + Next.js 16:**
+- Middleware file is `proxy.ts` at the project root, NOT `middleware.ts`. Next.js 16 changed the middleware entrypoint name.
+- `auth()` is async — always `await auth()`.
+- `clerkClient()` is async — always `const client = await clerkClient()`.
+- `<UserButton>` no longer accepts `afterSignOutUrl` prop — remove it.
+- Default Clerk sign-up collects email only. To collect first/last name: Clerk Dashboard → User & Authentication → Email, Phone, Username → enable First name + Last name as required fields.
+
 ### Git & GitHub
 - Branch naming: `feature/<issue-number>-short-description`, `fix/<issue-number>-short-description`
 - Every PR references the GitHub Issue it closes (`Closes #<number>` in the PR body).
