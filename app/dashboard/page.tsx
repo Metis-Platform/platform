@@ -1,58 +1,141 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { syncUserToDatabase } from '@/lib/sync-user'
+import { db } from '@/lib/db'
+import { EventStatus, StrategyType } from '@/app/generated/prisma'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type EventRow = {
+  id: string
+  dealId: string
+  label: string
+  dueDate: Date
+  deal: { property: { apn: string; address: string | null } }
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default async function DashboardPage() {
   const { userId, orgId } = await auth()
-
   if (!userId || !orgId) redirect('/sign-in')
 
-  // Sync Clerk identity to our database on first visit
   const synced = await syncUserToDatabase()
   if (!synced) redirect('/onboarding')
 
-  const { tenant, user } = synced
+  const { tenant } = synced
+  const tenantId = tenant.id
+  const now = new Date()
+  const in7d  = new Date(now.getTime() + 7  * 86_400_000)
+  const in30d = new Date(now.getTime() + 30 * 86_400_000)
+
+  const include = { deal: { include: { property: true } } } as const
+
+  const [activeCount, valueResult, overdueEvents, urgentEvents, upcomingEvents] = await Promise.all([
+    db.deal.count({ where: { tenantId, strategyType: StrategyType.TAX_LIEN, status: 'ACTIVE' } }),
+    db.dealTaxLien.aggregate({ where: { deal: { tenantId } }, _sum: { faceAmount: true } }),
+    db.event.findMany({ where: { status: EventStatus.OVERDUE,  deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
+    db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { lte: in7d  }, deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
+    db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { gt: in7d, lte: in30d }, deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
+  ])
+
+  const totalValue = Number(valueResult._sum.faceAmount ?? 0)
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-semibold text-zinc-900">
-        Welcome, {user.name ?? user.email}
-      </h1>
-      <p className="mt-1 text-zinc-500">
-        {tenant.name} &mdash; {tenant.plan} plan
-      </p>
-
-      <div className="mt-8 rounded-lg border border-zinc-200 bg-white p-6">
-        <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wide">
-          Account
-        </h2>
-        <dl className="mt-4 space-y-3 text-sm">
-          <div className="flex gap-2">
-            <dt className="w-28 text-zinc-500">User ID</dt>
-            <dd className="font-mono text-zinc-900">{user.id}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-28 text-zinc-500">Email</dt>
-            <dd className="text-zinc-900">{user.email}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-28 text-zinc-500">Role</dt>
-            <dd className="text-zinc-900">{user.role}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-28 text-zinc-500">Tenant ID</dt>
-            <dd className="font-mono text-zinc-900">{tenant.id}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-28 text-zinc-500">Org</dt>
-            <dd className="text-zinc-900">{tenant.name}</dd>
-          </div>
-        </dl>
+    <div>
+      {/* Header */}
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
+        <Link
+          href="/dashboard/liens/new"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <span>+</span> New Lien
+        </Link>
       </div>
 
-      <p className="mt-6 text-sm text-zinc-400">
-        ✓ Database sync confirmed — your account is active.
-      </p>
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard label="Active Liens"    value={activeCount} />
+        <StatCard label="Portfolio Value" value={`$${totalValue.toLocaleString()}`} />
+        <StatCard label="Overdue"         value={overdueEvents.length}  accent={overdueEvents.length > 0 ? 'red' : undefined} />
+        <StatCard label="Due in 7 Days"   value={urgentEvents.length}   accent={urgentEvents.length  > 0 ? 'yellow' : undefined} />
+      </div>
+
+      {/* Deadline buckets */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Bucket title="Overdue"        events={overdueEvents  as EventRow[]} color="red" />
+        <Bucket title="Due in 7 Days"  events={urgentEvents   as EventRow[]} color="yellow" />
+        <Bucket title="Due in 30 Days" events={upcomingEvents as EventRow[]} color="blue" />
+      </div>
+
+      {/* Empty state */}
+      {activeCount === 0 && (
+        <div className="mt-12 text-center py-16 bg-white rounded-xl border border-zinc-200">
+          <p className="text-zinc-500 mb-4">No liens yet. Add your first lien to see deadlines here.</p>
+          <Link
+            href="/dashboard/liens/new"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Add First Lien
+          </Link>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: 'red' | 'yellow' }) {
+  const bg   = accent === 'red' ? 'bg-red-50 border-red-200' : accent === 'yellow' ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-zinc-200'
+  const text = accent === 'red' ? 'text-red-700'             : accent === 'yellow' ? 'text-yellow-700'                 : 'text-zinc-900'
+  return (
+    <div className={`rounded-xl border p-4 ${bg}`}>
+      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">{label}</p>
+      <p className={`text-2xl font-bold ${text}`}>{value}</p>
+    </div>
+  )
+}
+
+function Bucket({ title, events, color }: { title: string; events: EventRow[]; color: 'red' | 'yellow' | 'blue' }) {
+  const styles = {
+    red:    { border: 'border-red-200',    header: 'bg-red-50 text-red-800',       badge: 'bg-red-100 text-red-700' },
+    yellow: { border: 'border-yellow-200', header: 'bg-yellow-50 text-yellow-800', badge: 'bg-yellow-100 text-yellow-700' },
+    blue:   { border: 'border-blue-200',   header: 'bg-blue-50 text-blue-800',     badge: 'bg-blue-100 text-blue-700' },
+  }[color]
+
+  return (
+    <div className={`rounded-xl border ${styles.border} overflow-hidden`}>
+      <div className={`px-4 py-3 flex items-center justify-between ${styles.header}`}>
+        <span className="text-sm font-semibold">{title}</span>
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${styles.badge}`}>{events.length}</span>
+      </div>
+      <div className="divide-y divide-zinc-100 bg-white">
+        {events.length === 0 ? (
+          <p className="px-4 py-8 text-sm text-zinc-400 text-center">None</p>
+        ) : (
+          events.map(ev => {
+            const days = Math.round((ev.dueDate.getTime() - Date.now()) / 86_400_000)
+            const dayLabel = days < 0 ? `${Math.abs(days)}d overdue` : `${days}d remaining`
+            const dayColor = days < 0 ? 'text-red-600' : days <= 7 ? 'text-yellow-600' : 'text-blue-600'
+            return (
+              <Link key={ev.id} href={`/dashboard/liens/${ev.dealId}`} className="flex flex-col px-4 py-3 hover:bg-zinc-50 text-sm transition-colors">
+                <span className="font-medium text-zinc-900 truncate">{ev.deal.property.apn}</span>
+                <span className="text-zinc-500 truncate text-xs mt-0.5">{ev.label}</span>
+                <span className={`text-xs font-medium mt-1 ${dayColor}`}>{dayLabel}</span>
+              </Link>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }
