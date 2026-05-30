@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
+import { getCurrentUser, hasRole } from '@/lib/auth'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 
 export type LienFormState = { errors?: Record<string, string[]>; message?: string }
@@ -202,11 +203,10 @@ export async function updateLien(dealId: string, _prev: LienFormState, formData:
 // ---------------------------------------------------------------------------
 
 export async function deleteLien(dealId: string): Promise<{ error?: string }> {
-  const { userId, orgId } = await auth()
-  if (!userId || !orgId) return { error: 'Not authenticated.' }
-
-  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
-  if (!tenant) return { error: 'Account not found.' }
+  const result = await getCurrentUser()
+  if (!result) return { error: 'Not authenticated.' }
+  const { tenant, user } = result
+  if (!hasRole(user.role, 'ANALYST')) return { error: 'Insufficient permissions.' }
 
   try {
     await db.deal.delete({ where: { id: dealId, tenantId: tenant.id } })
