@@ -21,6 +21,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               Liens
             </Link>
+            <Link
+              href="/dashboard/calendar"
+              className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
+            >
+              Calendar
+            </Link>
+            <Link
+              href="/dashboard/tasks"
+              className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
+            >
+              Tasks
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-3">
