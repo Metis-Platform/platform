@@ -1,7 +1,7 @@
 # Metis Platform — Build Roadmap
 
-> **Last Updated:** 2026-05-29
-> **Status:** Phase 1D — Alerts, CSV Import, Document Upload (next up)
+> **Last Updated:** 2026-05-30
+> **Status:** Phase 1 ✅ Complete — Phase 2 (AI Layer) or Phase 3 (SaaS) next
 > **Phase Sequence:** 1 → 3 → 4-partial (Deed/Foreclosure) → 2 (AI) → 4-full
 > **Source of Truth:** This file (phase-level) + GitHub Issues (task-level backlog and bugs)
 > **Backlog:** https://github.com/Metis-Platform/platform/issues
@@ -192,12 +192,22 @@ Extension table pattern — each strategy adds its own table extending the core 
 - Content filter applies to sub-agent output too; write data files directly via Write tool instead
 
 #### 1D — Alerts, Import & Documents
-**Status: Next up — Issues #19, #20, #21**
-- [ ] Email alerts via Resend: daily digest + urgent same-day (#19)
-- [ ] CSV import: per-jurisdiction template, server validation, bulk event generation (#20)
-- [ ] Document upload: drag-and-drop to R2, linked to lien or event (#21)
+**Status: ✅ Complete — PRs #49, #51, #52, #54**
+- [x] Lien list filtering and sorting: search by APN/cert#/address, status tabs, state dropdown, sortable headers (#22 — PR #49)
+- [x] Document upload: drag-and-drop to Cloudflare R2, per-lien document list, presigned URLs, delete (#21 — PR #51)
+- [x] CSV import: template download, two-step preview+confirm flow, per-row validation, bulk event generation (#20 — PR #52)
+- [x] Email alerts via Resend: daily digest (07:00 UTC cron) with Overdue / 7-day / 30-day buckets per tenant (#19 — PR #54)
 
-**Deliverable:** Fully usable tax lien tracker. You can manage a real portfolio with it.
+**Key learnings (Phase 1D):**
+- Cloudflare R2 is S3-compatible — use `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` with `endpoint: https://<accountId>.r2.cloudflarestorage.com`
+- Presigned PUT uploads go browser → R2 directly (no proxy through Next.js) — use `XMLHttpRequest` for upload progress tracking
+- R2 bucket should be private; use presigned GET URLs for downloads, not public bucket access
+- TypeScript narrows union type inside `if (phase === 'preview')` block — comparisons against other union variants become type errors; use a separate boolean state for submitting
+- CSV RFC 4180 parsing is ~30 lines inline — avoid adding `papaparse` for simple cases
+- `EMAIL_FROM` for Resend must be a verified domain address — the placeholder `noreply@yourdomain.com` will fail silently
+- Write/Edit tools use Windows paths; WSL files must be written via UNC path `\\\\wsl.localhost\\Ubuntu\\...` or `cp` from Windows temp
+
+**Deliverable:** ✅ Fully usable tax lien tracker. You can manage a real portfolio with it.
 
 ---
 
