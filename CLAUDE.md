@@ -179,6 +179,11 @@ The Python script uses `pathlib.Path('/home/xovox/dev/metis-platform/...').write
 - Commits are small and logically grouped. One concern per commit.
 - Never force-push to `main`.
 - Never skip pre-commit hooks.
+- **After every `gh pr create`, immediately queue auto-merge:**
+  ```bash
+  gh pr merge <number> --auto --squash
+  ```
+  The repo has auto-merge enabled and branches auto-delete on merge. This lets PRs land without the user needing to manually click Merge.
 
 ### Cost Awareness
 - This project runs on free tiers. Before adding any new dependency or service, confirm it has a usable free tier and note it in the PR.
