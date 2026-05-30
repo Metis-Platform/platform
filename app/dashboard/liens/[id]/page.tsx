@@ -5,6 +5,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { EventStatus, DealStatus } from '@/app/generated/prisma'
 import { DeleteButton } from './delete-button'
+import DocumentSection, { type DocRow } from './DocumentSection'
 
 function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string) {
   const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
@@ -26,11 +27,26 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
-  const deal = await db.deal.findUnique({
-    where: { id, tenantId: tenant.id },
-    include: { property: { include: { jurisdiction: true } }, taxLien: true, events: { orderBy: { dueDate: 'asc' } } },
-  })
+  const [deal, rawDocs] = await Promise.all([
+    db.deal.findUnique({
+      where: { id, tenantId: tenant.id },
+      include: { property: { include: { jurisdiction: true } }, taxLien: true, events: { orderBy: { dueDate: 'asc' } } },
+    }),
+    db.document.findMany({
+      where: { dealId: id, tenantId: tenant.id },
+      orderBy: { uploadedAt: 'desc' },
+    }),
+  ])
   if (!deal) notFound()
+
+  const docs: DocRow[] = rawDocs.map(d => ({
+    id:         d.id,
+    fileName:   d.fileName,
+    fileSize:   d.fileSize,
+    mimeType:   d.mimeType,
+    docType:    d.docType,
+    uploadedAt: d.uploadedAt.toISOString(),
+  }))
 
   const { taxLien, property, events } = deal
   const jur = property.jurisdiction
@@ -144,7 +160,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Research Links */}
-      <div className="bg-white rounded-xl border border-zinc-200 p-6">
+      <div className="bg-white rounded-xl border border-zinc-200 p-6 mb-6">
         <h2 className="text-sm font-semibold text-zinc-900 mb-4">Research Links</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {researchLinks.map(link => (
@@ -156,6 +172,9 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           ))}
         </div>
       </div>
+
+      {/* Documents */}
+      <DocumentSection dealId={deal.id} initialDocs={docs} />
     </div>
   )
 }
