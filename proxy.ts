@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/cron/(.*)', // Cron routes use their own CRON_SECRET auth, not Clerk
+  '/api/webhooks/(.*)', // Stripe webhooks use their own signature verification
 ])
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])
