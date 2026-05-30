@@ -207,6 +207,16 @@ Extension table pattern — each strategy adds its own table extending the core 
 - `EMAIL_FROM` for Resend must be a verified domain address — the placeholder `noreply@yourdomain.com` will fail silently
 - Write/Edit tools use Windows paths; WSL files must be written via UNC path `\\\\wsl.localhost\\Ubuntu\\...` or `cp` from Windows temp
 
+**Design decisions locked in:**
+- Import never accepts a `status` column — status is always inferred: rows with cert data → ACTIVE (historical portfolio), rows without → LEAD. Manual "New Lien" form → always LEAD (see #61).
+
+**Backlog issues filed from Phase 1D review (2026-05-30):**
+- #60 Bug: New Lien form is broken — investigate and fix
+- #61 Feature: Lead-first creation — enforce lifecycle, remove Active toggle from new form
+- #62 Feature: NOT_WON status — track auction losses, retain for re-listing next year
+- #63 Feature: Import error download report — downloadable CSV of failed rows with error in notes
+- #64 Feature: XLS/XLSX import support (SheetJS)
+
 **Deliverable:** ✅ Fully usable tax lien tracker. You can manage a real portfolio with it.
 
 ---
