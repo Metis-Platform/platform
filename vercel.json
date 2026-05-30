@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/deadline-sweep",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/send-alerts",
+      "schedule": "0 7 * * *"
     }
   ]
 }
