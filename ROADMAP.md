@@ -262,15 +262,26 @@ Extension table pattern — each strategy adds its own table extending the core 
 ---
 
 ### Phase 4 — Module Expansion
-**Target: Ongoing after Phase 3 | Build in order of demand**
+**Target: Ongoing after Phase 3 | Build in priority order below**
 
-| Module | Key Features |
-|--------|-------------|
-| Fix & Flip | Rehab budget, scope of work, contractor mgmt, ARV calc, Gantt timeline |
-| Wholesaling | Buyer CRM, assignment pipeline, Dispo Kanban, EMD tracking |
-| Buy & Hold | Tenant management, lease tracking, rent roll, maintenance, cash flow |
-| Land Investing | Due diligence checklist, zoning research, option contracts |
-| Multifamily | T12 importer, unit economics, DSCR modeling, vacancy metrics |
+Prerequisite before any new module: Issue #34 (module-aware dashboard architecture)
+
+| Priority | Module | Issue | Key Differentiator | Effort |
+|----------|--------|-------|-------------------|--------|
+| 1 | **Tax Deed** | #37 | 80% built — same rules engine, same audience as liens | Very Low |
+| 2 | **Foreclosure Auction** | #38 | Calendar + research links already built, overlaps lien audience | Low |
+| 3 | **Land Investing** | #39 | Underserved market, no dedicated tools, research infra ready | Low-Med |
+| 4 | **Wholesale** | #40 | High deal velocity, CRM-like pipeline, large market | Medium |
+| 5 | **Fix & Flip** | #41 | Rehab budget, contractor mgmt, ARV calc, Gantt timeline | High |
+| 6 | **Buy & Hold + Section 8** | #42 | Section 8 HAP/HQS tracking is unique differentiator | High |
+| 7 | **Multifamily** | #43 | T12 importer, DSCR modeling, highest price point | High |
+
+**Research Links Framework (Issue #44) — build before or alongside module expansion:**
+Each deal type gets tiered research links:
+- Tier 1 Universal: Google Maps, Bing, Zillow, NETRonline (already built)
+- Tier 2 Strategy-specific: auction sites, comps tools, due diligence resources per strategy
+- Tier 3 Jurisdiction-specific: stored in Jurisdiction.links JSON (assessor, GIS, tax collector)
+- Tier 4 User-defined: custom links per deal (attorney portal, Dropbox, etc.)
 
 ---
 
