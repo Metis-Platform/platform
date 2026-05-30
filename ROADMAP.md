@@ -1,7 +1,7 @@
 # Metis Platform — Build Roadmap
 
 > **Last Updated:** 2026-05-29
-> **Status:** Phase 1C — Core UI (in progress, 1C-A/B done, 1C-C remaining)
+> **Status:** Phase 1D — Alerts, CSV Import, Document Upload (next up)
 > **Source of Truth:** This file (phase-level) + GitHub Issues (task-level backlog and bugs)
 > **Backlog:** https://github.com/Metis-Platform/platform/issues
 > **Milestones:** Phase 1 (#1) · Phase 2 (#2)
@@ -169,9 +169,17 @@ Extension table pattern — each strategy adds its own table extending the core 
 - [x] InvestmentType: LIEN / DEED / REDEEMABLE_DEED
 - [x] Nav: Dashboard / Liens links in layout
 
-**1C-C (Next — GitHub Issue to create):**
-- [ ] Calendar view: events + tasks by month/week
-- [ ] Task board: assign, complete, comment on tasks
+**1C-C (Done — PR #14):**
+- [x] Calendar view: monthly grid, events color-coded by urgency
+- [x] Task board: Open/In Progress/Completed tabs, status toggle, priority badges
+- [x] Calendar + Tasks added to nav
+
+**Known enhancements filed as backlog issues:**
+- #29 Calendar month/year picker with 12-month overview
+- #30 Calendar sync (Google Calendar, Outlook, iCal)
+- #31 Tasks on calendar with distinct color
+- #32 Full task management (create, edit, delete)
+- #33 Edit jurisdiction/APN on existing lien
 
 **Key learnings (Phase 1C):**
 - Vercel Deployment Protection blocks external curl tests; Vercel's own cron bypasses it automatically
@@ -182,10 +190,11 @@ Extension table pattern — each strategy adds its own table extending the core 
 - Large data generation (3000+ county names) triggers Anthropic content filter — write via file tools, not inline output
 - Content filter applies to sub-agent output too; write data files directly via Write tool instead
 
-#### 1D — Alerts & Import (Weeks 6–8)
-- [ ] Email alerts via Resend: daily digest + urgent same-day
-- [ ] CSV import: per-jurisdiction template, server validation, bulk event generation
-- [ ] Document upload: drag-and-drop to R2, linked to lien or event
+#### 1D — Alerts, Import & Documents
+**Status: Next up — Issues #19, #20, #21**
+- [ ] Email alerts via Resend: daily digest + urgent same-day (#19)
+- [ ] CSV import: per-jurisdiction template, server validation, bulk event generation (#20)
+- [ ] Document upload: drag-and-drop to R2, linked to lien or event (#21)
 
 **Deliverable:** Fully usable tax lien tracker. You can manage a real portfolio with it.
 
