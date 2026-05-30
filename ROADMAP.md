@@ -2,6 +2,7 @@
 
 > **Last Updated:** 2026-05-29
 > **Status:** Phase 1D — Alerts, CSV Import, Document Upload (next up)
+> **Phase Sequence:** 1 → 3 → 4-partial (Deed/Foreclosure) → 2 (AI) → 4-full
 > **Source of Truth:** This file (phase-level) + GitHub Issues (task-level backlog and bugs)
 > **Backlog:** https://github.com/Metis-Platform/platform/issues
 > **Milestones:** Phase 1 (#1) · Phase 2 (#2)
@@ -201,11 +202,19 @@ Extension table pattern — each strategy adds its own table extending the core 
 ---
 
 ### Phase 2 — AI Layer
-**Target: 4–6 weeks | Status: Not started**
+**Target: After Phase 3 + early Phase 4 | Status: Deliberately deferred**
 
-#### 2A — Document Extraction (The Killer Feature)
+**Why deferred:** AI features require paying users and real portfolio data to deliver value.
+Document extraction saves ~2 min/lien — not a dealbreaker at small scale. Deal Copilot
+is compelling only when an investor has 50+ deals. Claude API costs money per call —
+build this after billing exists to cover it. Revisit after Phase 3 ships and first
+paying cohort is onboarded.
+
+**GitHub Issues:** #25 (document extraction), #26 (Deal Copilot)
+
+#### 2A — Document Extraction
 - [ ] Upload certificate → Claude API extracts cert #, parcel, amounts, dates, jurisdiction, owner
-- [ ] Auto-populates `Deal_TaxLien` fields with review + confirm step
+- [ ] Auto-populates DealTaxLien fields with review + confirm step
 - [ ] Extend to: purchase contracts, redemption notices, deeds, title reports, leases
 - [ ] Confidence scoring per field; user can override
 
@@ -225,12 +234,13 @@ Extension table pattern — each strategy adds its own table extending the core 
 - [ ] ROI analysis: cost basis vs redemption vs projected
 - [ ] Export-ready for attorneys, partners, lenders
 
-**Deliverable:** Upload a certificate, have it auto-parsed. Chat with an assistant that knows your portfolio. This is a premium product.
+**Deliverable:** Premium upsell to existing paying customers. Upload a certificate,
+have it auto-parsed. Chat with an assistant that knows your portfolio.
 
 ---
 
 ### Phase 3 — SaaS Infrastructure
-**Target: 4–5 weeks | Status: Not started**
+**Target: 4–5 weeks | Status: Not started | Builds before AI layer**
 
 #### 3A — Multi-Tenant Hardening
 - [ ] Row-level tenant isolation audit (every Prisma query scoped to `tenantId`)
@@ -262,7 +272,9 @@ Extension table pattern — each strategy adds its own table extending the core 
 ---
 
 ### Phase 4 — Module Expansion
-**Target: Ongoing after Phase 3 | Build in priority order below**
+**Target: Ongoing | Build in priority order below**
+**Phase 4 is split:** Tax Deed + Foreclosure (priorities 1-2) build BEFORE the AI layer.
+Remaining modules (Land through Multifamily) build AFTER the AI layer.
 
 Prerequisite before any new module: Issue #34 (module-aware dashboard architecture)
 

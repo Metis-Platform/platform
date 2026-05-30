@@ -98,10 +98,16 @@ export default function LienList({ deals }: { deals: LienRow[] }) {
             {active} active · {leads} leads{overdue > 0 ? ` · ${overdue} overdue` : ''}
           </p>
         </div>
-        <Link href="/dashboard/liens/new"
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-          + New Lien
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/liens/import"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
+            ↑ Import CSV
+          </Link>
+          <Link href="/dashboard/liens/new"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            + New Lien
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
