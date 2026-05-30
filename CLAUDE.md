@@ -12,9 +12,30 @@ Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) wor
 
 - **Stack:** Next.js 14+ (TypeScript), Prisma, Neon (PostgreSQL), Clerk (auth), Anthropic Claude API, Cloudflare R2, Resend, Stripe, Vercel
 - **Repo:** Metis Platform GitHub org → `platform` repository
-- **Roadmap:** See `../ROADMAP.md` (one level up from this repo)
+- **Roadmap:** See `ROADMAP.md` in this repo root
 - **Current Phase:** See ROADMAP.md Phase status
 - **System of Record:** GitHub Issues — every task is an Issue with acceptance criteria
+
+---
+
+## New Session Checklist
+
+**Read these before touching any code:**
+1. This file (CLAUDE.md) — you are here
+2. `ROADMAP.md` in this same repo — current phase status and what's next
+3. `git log --oneline -5` — see what was last merged
+
+**Critical environment facts (do not rediscover these):**
+- Repo lives in WSL at: `/home/xovox/dev/metis-platform/`
+- This is NOT under the Windows filesystem — it is a native WSL2 Ubuntu path
+- Always source nvm before any Node/npm/npx command:
+  `source /home/xovox/.nvm/nvm.sh && <your command>`
+- The Windows machine username is `aswit`; WSL username is `xovox`
+- Windows temp path for scripts: `C:\Users\aswit\AppData\Local\Temp\`
+- WSL sees Windows C: drive at: `/mnt/c/`
+
+**File writing — use UNC path to write directly to WSL (read the section below):**
+`\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
 
 ---
 
@@ -124,26 +145,33 @@ These breaking changes bit us during Phase 0/1A. Don't repeat them.
 
 ### File Writing in WSL — CRITICAL
 
-The `Write` and `Edit` tools operate on the **Windows filesystem**, not WSL. Writing to a path like `/home/xovox/...` from the Write tool will either fail or write to the wrong place.
+The `Write` and `Edit` tools are Windows-native. They **cannot** use Linux paths like `/home/xovox/...` directly.
 
-**The only reliable pattern for creating/editing files in the WSL repo:**
+**The correct pattern — use the UNC path to reach WSL directly:**
 
-1. Write a Python script to a Windows temp path using the Write tool:
-   ```
-   Write → C:\Users\aswit\AppData\Local\Temp\myscript.py
-   ```
-2. Copy it to WSL and execute it:
-   ```bash
-   wsl bash -c "cp '/mnt/c/Users/aswit/AppData/Local/Temp/myscript.py' /tmp/myscript.py && python3 /tmp/myscript.py"
-   ```
+```
+Write  → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
+Edit   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
+Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
+```
 
-The Python script uses `pathlib.Path('/home/xovox/dev/metis-platform/...').write_text(...)` to write the actual file.
+Example — writing a new server action:
+```
+Write → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\lib\actions\deal.ts
+```
 
-**Never do this** (Write tool cannot reach WSL paths):
-- `Write → /home/xovox/dev/metis-platform/app/...`
-- `Edit → /home/xovox/dev/metis-platform/lib/...`
+This writes directly into WSL. No temp files, no copy step needed.
 
-**Signs this went wrong:** New routes not showing in build output, `find` shows empty directories, files exist on Windows but not in WSL.
+**Never do this** (Linux paths are invisible to the Write/Edit tools):
+- `Write → /home/xovox/dev/metis-platform/app/...`  ❌
+- `Edit → /home/xovox/dev/metis-platform/lib/...`   ❌
+
+**Fallback if UNC write fails** (e.g. complex content with escaping issues):
+1. Write a Python script to Windows temp: `C:\Users\aswit\AppData\Local\Temp\script.py`
+2. Execute in WSL: `wsl bash -c "cp '/mnt/c/Users/aswit/AppData/Local/Temp/script.py' /tmp/s.py && python3 /tmp/s.py"`
+The Python script uses `pathlib.Path('/home/xovox/dev/metis-platform/...').write_text(...)`.
+
+**Signs something went wrong:** New routes missing from build output, `find` shows empty directories.
 
 ### Git & GitHub
 - Branch naming: `feature/<issue-number>-short-description`, `fix/<issue-number>-short-description`
