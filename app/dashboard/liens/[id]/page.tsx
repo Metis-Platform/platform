@@ -8,7 +8,7 @@ import { DeleteButton } from './delete-button'
 
 function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string) {
   const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
-  const netro = `https://www.netronline.com/${stateName.toLowerCase()}/county/${county.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')}`
+  const netro = `https://publicrecords.netronline.com/state/${state}/county/${county.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')}`
   return [
     { label: 'Google Maps',  href: `https://www.google.com/maps/search/${mapQuery}`,          icon: '🗺️' },
     { label: 'Bing Maps',    href: `https://www.bing.com/maps?q=${mapQuery}`,                  icon: '🗺️' },

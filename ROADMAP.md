@@ -2,7 +2,9 @@
 
 > **Last Updated:** 2026-05-29
 > **Status:** Phase 1C — Core UI (in progress, 1C-A/B done, 1C-C remaining)
-> **Source of Truth:** This file + GitHub Issues in the `platform` repo
+> **Source of Truth:** This file (phase-level) + GitHub Issues (task-level backlog and bugs)
+> **Backlog:** https://github.com/Metis-Platform/platform/issues
+> **Milestones:** Phase 1 (#1) · Phase 2 (#2)
 
 ---
 
