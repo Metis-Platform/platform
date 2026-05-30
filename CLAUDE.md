@@ -20,19 +20,37 @@ Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) wor
 
 ## New Session Checklist
 
-**Read these before touching any code:**
-1. This file (CLAUDE.md) — you are here
-2. `ROADMAP.md` in this same repo — current phase status and what's next
-3. `git log --oneline -5` — see what was last merged
+> ⚠️ STOP — READ THIS FIRST BEFORE DOING ANYTHING ELSE
+
+**Step 1 — Read files via WSL. Not Windows. WSL.**
+```bash
+wsl bash -c "cat /home/xovox/dev/metis-platform/CLAUDE.md"
+wsl bash -c "cat /home/xovox/dev/metis-platform/ROADMAP.md"
+wsl bash -c "cd /home/xovox/dev/metis-platform && git log --oneline -5"
+```
+Do NOT attempt to read these as Windows paths. The repo is in WSL, not on the Windows filesystem.
 
 **Critical environment facts (do not rediscover these):**
-- Repo lives in WSL at: `/home/xovox/dev/metis-platform/`
-- This is NOT under the Windows filesystem — it is a native WSL2 Ubuntu path
+- Repo is in WSL at: `/home/xovox/dev/metis-platform/`
+- This is NOT a Windows path — do not look for it under C:\ or OneDrive
+- The ONLY way to reach it from FleetView is via `wsl bash -c "..."`
 - Always source nvm before any Node/npm/npx command:
   `source /home/xovox/.nvm/nvm.sh && <your command>`
-- The Windows machine username is `aswit`; WSL username is `xovox`
-- Windows temp path for scripts: `C:\Users\aswit\AppData\Local\Temp\`
+- Write/Edit files via UNC path: `\\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<file>`
+- Windows machine username: `aswit` | WSL username: `xovox`
+- Windows temp path: `C:\Users\aswit\AppData\Local\Temp\`
 - WSL sees Windows C: drive at: `/mnt/c/`
+
+**Step 2 — After reading ROADMAP.md, check open PRs and current branch:**
+```bash
+wsl bash -c "cd /home/xovox/dev/metis-platform && git checkout main && git pull origin main"
+wsl bash -c "cd /home/xovox/dev/metis-platform && gh pr list --state open"
+```
+
+**Step 3 — After every `gh pr create`, immediately queue auto-merge:**
+```bash
+gh pr merge <number> --auto --squash
+```
 
 **File writing — use UNC path to write directly to WSL (read the section below):**
 `\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
