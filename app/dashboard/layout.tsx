@@ -34,6 +34,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Tasks
             </Link>
             <Link
+              href="/dashboard/billing"
+              className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
+            >
+              Billing
+            </Link>
+            <Link
               href="/dashboard/settings/team"
               className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
             >
