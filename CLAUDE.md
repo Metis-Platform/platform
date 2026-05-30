@@ -121,6 +121,30 @@ These breaking changes bit us during Phase 0/1A. Don't repeat them.
 - `<UserButton>` no longer accepts `afterSignOutUrl` prop — remove it.
 - Default Clerk sign-up collects email only. To collect first/last name: Clerk Dashboard → User & Authentication → Email, Phone, Username → enable First name + Last name as required fields.
 
+
+### File Writing in WSL — CRITICAL
+
+The `Write` and `Edit` tools operate on the **Windows filesystem**, not WSL. Writing to a path like `/home/xovox/...` from the Write tool will either fail or write to the wrong place.
+
+**The only reliable pattern for creating/editing files in the WSL repo:**
+
+1. Write a Python script to a Windows temp path using the Write tool:
+   ```
+   Write → C:\Users\aswit\AppData\Local\Temp\myscript.py
+   ```
+2. Copy it to WSL and execute it:
+   ```bash
+   wsl bash -c "cp '/mnt/c/Users/aswit/AppData/Local/Temp/myscript.py' /tmp/myscript.py && python3 /tmp/myscript.py"
+   ```
+
+The Python script uses `pathlib.Path('/home/xovox/dev/metis-platform/...').write_text(...)` to write the actual file.
+
+**Never do this** (Write tool cannot reach WSL paths):
+- `Write → /home/xovox/dev/metis-platform/app/...`
+- `Edit → /home/xovox/dev/metis-platform/lib/...`
+
+**Signs this went wrong:** New routes not showing in build output, `find` shows empty directories, files exist on Windows but not in WSL.
+
 ### Git & GitHub
 - Branch naming: `feature/<issue-number>-short-description`, `fix/<issue-number>-short-description`
 - Every PR references the GitHub Issue it closes (`Closes #<number>` in the PR body).
