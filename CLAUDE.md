@@ -12,9 +12,29 @@ Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) wor
 
 - **Stack:** Next.js 14+ (TypeScript), Prisma, Neon (PostgreSQL), Clerk (auth), Anthropic Claude API, Cloudflare R2, Resend, Stripe, Vercel
 - **Repo:** Metis Platform GitHub org → `platform` repository
-- **Roadmap:** See `../ROADMAP.md` (one level up from this repo)
+- **Roadmap:** See `ROADMAP.md` in this repo root
 - **Current Phase:** See ROADMAP.md Phase status
 - **System of Record:** GitHub Issues — every task is an Issue with acceptance criteria
+
+---
+
+## New Session Checklist
+
+**Read these before touching any code:**
+1. This file (CLAUDE.md) — you are here
+2. `ROADMAP.md` in this same repo — current phase status and what's next
+3. `git log --oneline -5` — see what was last merged
+
+**Critical environment facts (do not rediscover these):**
+- Repo lives in WSL at: `/home/xovox/dev/metis-platform/`
+- This is NOT under the Windows filesystem — it is a native WSL2 Ubuntu path
+- Always source nvm before any Node/npm/npx command:
+  `source /home/xovox/.nvm/nvm.sh && <your command>`
+- The Windows machine username is `aswit`; WSL username is `xovox`
+- Windows temp path for scripts: `C:\Users\aswit\AppData\Local\Temp\`
+- WSL sees Windows C: drive at: `/mnt/c/`
+
+**File writing pattern (read the section below before creating any files)**
 
 ---
 
