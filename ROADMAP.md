@@ -208,7 +208,7 @@ Extension table pattern — each strategy adds its own table extending the core 
 - Write/Edit tools use Windows paths; WSL files must be written via UNC path `\\\\wsl.localhost\\Ubuntu\\...` or `cp` from Windows temp
 
 **Design decisions locked in:**
-- Import never accepts a `status` column — status is always inferred: rows with cert data → ACTIVE (historical portfolio), rows without → LEAD. Manual "New Lien" form → always LEAD (see #61).
+- Import accepts an optional `status` column. If omitted, status is inferred from data present (cert fields → ACTIVE, no cert fields → LEAD). If provided, the status drives which fields are required for that row. Manual "New Lien" form → always LEAD (see #61).
 
 **Backlog issues filed from Phase 1D review (2026-05-30):**
 - #60 Bug: New Lien form is broken — investigate and fix
