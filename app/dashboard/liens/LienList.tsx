@@ -26,6 +26,7 @@ const STATUS_OPTIONS = ['All', 'Active', 'Lead', 'Overdue'] as const
 
 export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: LienRow[]; strategy?: string }) {
   const isTaxDeed = strategy === 'TAX_DEED'
+  const isForeclosure = strategy === 'FORECLOSURE'
   const [search, setSearch]       = useState('')
   const [statusFilter, setStatus] = useState<string>('All')
   const [stateFilter, setState]   = useState<string>('All')
@@ -189,7 +190,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('state')}>
                   Jurisdiction <SortIcon col="state" />
                 </th>
-                <th className="px-4 py-3">{isTaxDeed ? 'Deed #' : 'Certificate #'}</th>
+                <th className="px-4 py-3">{isTaxDeed ? 'Deed #' : isForeclosure ? 'Type' : 'Certificate #'}</th>
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('date')}>
                   Date <SortIcon col="date" />
                 </th>

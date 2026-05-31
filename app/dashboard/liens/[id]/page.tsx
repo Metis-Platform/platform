@@ -7,15 +7,24 @@ import { EventStatus, DealStatus } from '@/app/generated/prisma'
 import { DeleteButton } from './delete-button'
 import DocumentSection, { type DocRow } from './DocumentSection'
 
-function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string) {
+function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string, strategyType: string) {
   const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
   const netro = `https://publicrecords.netronline.com/state/${state}/county/${county.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')}`
-  return [
+  const base = [
     { label: 'Google Maps',  href: `https://www.google.com/maps/search/${mapQuery}`,          icon: '🗺️' },
     { label: 'Bing Maps',    href: `https://www.bing.com/maps?q=${mapQuery}`,                  icon: '🗺️' },
     { label: 'NETRonline',   href: netro,                                                       icon: '🔍' },
     { label: 'Zillow',       href: `https://www.zillow.com/homes/${mapQuery}_rb/`,              icon: '🏠' },
   ]
+  if (strategyType === 'FORECLOSURE') {
+    return [
+      ...base,
+      { label: 'Auction.com',     href: `https://www.auction.com/search#q=${mapQuery}`,             icon: '🏛️' },
+      { label: 'RealtyTrac',      href: `https://www.realtytrac.com/search/foreclosure/?q=${mapQuery}`, icon: '📋' },
+      { label: 'HUD Home Store',  href: 'https://www.hudhomestore.gov/Home/Index.aspx',              icon: '🏠' },
+    ]
+  }
+  return base
 }
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +39,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const [deal, rawDocs] = await Promise.all([
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
-      include: { property: { include: { jurisdiction: true } }, taxLien: true, taxDeed: true, events: { orderBy: { dueDate: 'asc' } } },
+      include: { property: { include: { jurisdiction: true } }, taxLien: true, taxDeed: true, foreclosure: true, events: { orderBy: { dueDate: 'asc' } } },
     }),
     db.document.findMany({
       where: { dealId: id, tenantId: tenant.id },
@@ -48,12 +57,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     uploadedAt: d.uploadedAt.toISOString(),
   }))
 
-  const { taxLien, taxDeed, property, events } = deal
+  const { taxLien, taxDeed, foreclosure, property, events } = deal
   const isTaxDeed = deal.strategyType === 'TAX_DEED'
+  const isForeclosure = deal.strategyType === 'FORECLOSURE'
   const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
   const overdueCount = events.filter(e => e.status === EventStatus.OVERDUE).length
-  const researchLinks = buildResearchLinks(property.apn, property.address, jur.stateName, jur.county, jur.state)
+  const researchLinks = buildResearchLinks(property.apn, property.address, jur.stateName, jur.county, jur.state, deal.strategyType)
 
   return (
     <div className="max-w-4xl">
@@ -103,22 +113,33 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         {/* Certificate / Lead details */}
         <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
-            {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : 'Certificate Details'}
+            {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : isForeclosure ? 'Auction Details' : 'Certificate Details'}
           </h2>
           <dl className="space-y-3 text-sm">
             {isLead ? (
               <>
                 <Row label="Status" value={<span className="text-blue-700 font-medium">Watchlist / Lead</span>} />
                 <Row label="Auction Date" value={
-                  (isTaxDeed ? taxDeed?.auctionDate : taxLien?.auctionDate)
-                    ? new Date((isTaxDeed ? taxDeed!.auctionDate! : taxLien!.auctionDate!)).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                  (isForeclosure ? foreclosure?.auctionDate : isTaxDeed ? taxDeed?.auctionDate : taxLien?.auctionDate)
+                    ? new Date((isForeclosure ? foreclosure!.auctionDate! : isTaxDeed ? taxDeed!.auctionDate! : taxLien!.auctionDate!)).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
                     : '—'
                 } />
                 <Row label="Max Bid" value={
-                  (isTaxDeed ? taxDeed?.maxBid : taxLien?.maxBid)
-                    ? `$${Number(isTaxDeed ? taxDeed!.maxBid : taxLien!.maxBid).toLocaleString()}`
+                  (isForeclosure ? foreclosure?.maxBid : isTaxDeed ? taxDeed?.maxBid : taxLien?.maxBid)
+                    ? `$${Number(isForeclosure ? foreclosure!.maxBid : isTaxDeed ? taxDeed!.maxBid : taxLien!.maxBid).toLocaleString()}`
                     : '—'
                 } />
+                {isForeclosure && foreclosure?.estimatedLiens && (
+                  <Row label="Est. Junior Liens" value={`$${Number(foreclosure.estimatedLiens).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
+                )}
+              </>
+            ) : isForeclosure ? (
+              <>
+                <Row label="Type" value={foreclosure?.foreclosureType ?? '—'} />
+                <Row label="Auction Date" value={foreclosure?.auctionDate ? new Date(foreclosure.auctionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'} />
+                <Row label="Opening Bid" value={foreclosure?.openingBid ? `$${Number(foreclosure.openingBid).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'} />
+                <Row label="Winning Bid" value={foreclosure?.winningBid ? `$${Number(foreclosure.winningBid).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'} />
+                <Row label="Redemption Deadline" value={foreclosure?.redemptionDeadline ? new Date(foreclosure.redemptionDeadline).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'} />
               </>
             ) : isTaxDeed ? (
               <>

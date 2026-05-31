@@ -3,8 +3,9 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
 const STRATEGIES = [
-  { key: 'TAX_LIEN', label: 'Tax Liens' },
-  { key: 'TAX_DEED', label: 'Tax Deeds' },
+  { key: 'TAX_LIEN',    label: 'Tax Liens' },
+  { key: 'TAX_DEED',    label: 'Tax Deeds' },
+  { key: 'FORECLOSURE', label: 'Foreclosures' },
 ] as const
 
 export default function StrategyNav() {

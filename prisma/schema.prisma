@@ -191,6 +191,7 @@ model Deal {
 
   taxLien      DealTaxLien?
   taxDeed      DealTaxDeed?
+  foreclosure  DealForeclosure?
   events       Event[]
   tasks        Task[]
   transactions FinancialTransaction[]
@@ -223,6 +224,29 @@ model DealTaxDeed {
   deedRecordedDate    DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+}
+
+// Extension table — Foreclosure Auction strategy
+model DealForeclosure {
+  id                   String    @id @default(cuid())
+  dealId               String    @unique
+  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  foreclosureType      String    @default("MORTGAGE") // MORTGAGE | TAX | HOA
+  // Pre-foreclosure / lead tracking
+  nodFiledDate         DateTime? // Notice of Default filed date
+  lisFiledDate         DateTime? // Lis pendens filed date
+  estimatedLiens       Decimal?  @db.Decimal(14, 2)
+  auctionDate          DateTime?
+  maxBid               Decimal?  @db.Decimal(14, 2)
+  // Post-auction
+  openingBid           Decimal?  @db.Decimal(14, 2)
+  winningBid           Decimal?  @db.Decimal(14, 2)
+  redemptionDeadline   DateTime?
+  // Title / condition
+  titleIssues          Json?
+  propertyCondition    String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 // Extension table — Tax Lien strategy
@@ -398,6 +422,7 @@ enum InvestmentType {
 enum StrategyType {
   TAX_LIEN
   TAX_DEED
+  FORECLOSURE
   FIX_FLIP
   WHOLESALE
   BUY_HOLD

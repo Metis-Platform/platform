@@ -18,7 +18,9 @@ export default async function LiensPage({
   const { tenant } = synced
 
   const { strategy: strategyParam } = await searchParams
-  const strategy = strategyParam === 'TAX_DEED' ? StrategyType.TAX_DEED : StrategyType.TAX_LIEN
+  const strategy = strategyParam === 'TAX_DEED' ? StrategyType.TAX_DEED
+    : strategyParam === 'FORECLOSURE' ? StrategyType.FORECLOSURE
+    : StrategyType.TAX_LIEN
 
   const deals = await db.deal.findMany({
     where: { tenantId: tenant.id, strategyType: strategy },
@@ -26,6 +28,7 @@ export default async function LiensPage({
       property: { include: { jurisdiction: true } },
       taxLien: true,
       taxDeed: true,
+      foreclosure: true,
       events: { where: { status: EventStatus.PENDING }, orderBy: { dueDate: 'asc' }, take: 1 },
       _count: { select: { events: { where: { status: EventStatus.OVERDUE } } } },
     },
@@ -36,10 +39,12 @@ export default async function LiensPage({
 
   const rows: LienRow[] = deals.map(d => {
     const next = d.events[0] ?? null
-    // For tax deeds, use winningBid as the "face amount" column
-    const faceAmt = strategy === StrategyType.TAX_LIEN
-      ? (d.taxLien?.faceAmount != null ? Number(d.taxLien.faceAmount) : null)
-      : (d.taxDeed?.winningBid  != null ? Number(d.taxDeed.winningBid)  : null)
+    const faceAmt =
+      strategy === StrategyType.TAX_LIEN
+        ? (d.taxLien?.faceAmount != null ? Number(d.taxLien.faceAmount) : null)
+        : strategy === StrategyType.TAX_DEED
+          ? (d.taxDeed?.winningBid != null ? Number(d.taxDeed.winningBid) : null)
+          : (d.foreclosure?.winningBid != null ? Number(d.foreclosure.winningBid) : null)
 
     return {
       id:                d.id,
@@ -50,8 +55,13 @@ export default async function LiensPage({
       county:            d.property.jurisdiction.county,
       state:             d.property.jurisdiction.state,
       certificateNumber: d.taxLien?.certificateNumber ?? null,
-      issueDate:         d.taxLien?.issueDate?.toISOString() ?? d.taxDeed?.saleDate?.toISOString() ?? null,
-      auctionDate:       d.taxLien?.auctionDate?.toISOString() ?? null,
+      issueDate:         d.taxLien?.issueDate?.toISOString()
+                          ?? d.taxDeed?.saleDate?.toISOString()
+                          ?? d.foreclosure?.auctionDate?.toISOString()
+                          ?? null,
+      auctionDate:       d.taxLien?.auctionDate?.toISOString()
+                          ?? d.foreclosure?.auctionDate?.toISOString()
+                          ?? null,
       faceAmount:        faceAmt,
       nextDeadlineLabel: next?.label ?? null,
       nextDeadlineDays:  next ? Math.round((next.dueDate.getTime() - now) / 86_400_000) : null,

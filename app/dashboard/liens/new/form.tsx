@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useActionState } from 'react'
 import Link from 'next/link'
-import { createLien, createDeed } from '@/lib/actions/lien'
+import { createLien, createDeed, createForeclosure } from '@/lib/actions/lien'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { Jurisdiction } from '@/app/generated/prisma'
 
@@ -16,7 +16,8 @@ export function NewLienForm({
   strategy?: string
 }) {
   const isTaxDeed = strategy === 'TAX_DEED'
-  const action = isTaxDeed ? createDeed : createLien
+  const isForeclosure = strategy === 'FORECLOSURE'
+  const action = isTaxDeed ? createDeed : isForeclosure ? createForeclosure : createLien
 
   const [state, formAction, pending] = useActionState(action, initialState)
   const [stage, setStage] = useState<'LEAD' | 'ACTIVE'>('LEAD')
@@ -39,7 +40,9 @@ export function NewLienForm({
       ? 'Add to Watchlist'
       : isTaxDeed
         ? 'Create Deed & Generate Deadlines'
-        : 'Create Lien & Generate Deadlines'
+        : isForeclosure
+          ? 'Record Win & Generate Deadlines'
+          : 'Create Lien & Generate Deadlines'
 
   return (
     <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
@@ -64,10 +67,12 @@ export function NewLienForm({
         </div>
         <p className="mt-2 text-xs text-zinc-400">
           {stage === 'LEAD'
-            ? 'Track a property before the auction. Convert to Active after winning.'
+            ? 'Track a pre-foreclosure property. Convert to Active after winning at auction.'
             : isTaxDeed
               ? 'You won this deed. Redemption deadlines will be generated from the sale date.'
-              : 'You won this lien. Deadlines will be generated from the issue date.'}
+              : isForeclosure
+                ? 'You won this auction. Record the details to track post-sale obligations.'
+                : 'You won this lien. Deadlines will be generated from the issue date.'}
         </p>
       </section>
 
@@ -107,8 +112,8 @@ export function NewLienForm({
         </div>
       </section>
 
-      {/* Lead-only fields (same for both lien and deed) */}
-      {stage === 'LEAD' && (
+      {/* Lead-only fields */}
+      {stage === 'LEAD' && !isForeclosure && (
         <section className="px-6 py-5 space-y-4">
           <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Auction Info (optional)</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -117,6 +122,31 @@ export function NewLienForm({
             </Field>
             <Field label="Max Bid ($)" error={state.errors?.maxBid}>
               <input type="number" name="maxBid" min="0.01" step="0.01" placeholder="5000.00" className="input-base" />
+            </Field>
+          </div>
+        </section>
+      )}
+
+      {/* Foreclosure lead fields */}
+      {stage === 'LEAD' && isForeclosure && (
+        <section className="px-6 py-5 space-y-4">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Pre-Foreclosure Info</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Foreclosure Type" error={state.errors?.foreclosureType}>
+              <select name="foreclosureType" className="input-base">
+                <option value="MORTGAGE">Mortgage</option>
+                <option value="TAX">Tax</option>
+                <option value="HOA">HOA</option>
+              </select>
+            </Field>
+            <Field label="Auction Date (optional)" error={state.errors?.auctionDate}>
+              <input type="date" name="auctionDate" className="input-base" />
+            </Field>
+            <Field label="Max Bid ($) (optional)" error={state.errors?.maxBid}>
+              <input type="number" name="maxBid" min="0.01" step="0.01" placeholder="75000.00" className="input-base" />
+            </Field>
+            <Field label="Estimated Junior Liens ($) (optional)" error={state.errors?.estimatedLiens}>
+              <input type="number" name="estimatedLiens" min="0.01" step="0.01" placeholder="10000.00" className="input-base" />
             </Field>
           </div>
         </section>
@@ -138,6 +168,31 @@ export function NewLienForm({
             </Field>
             <Field label="Interest Rate (%)" error={state.errors?.interestRate}>
               <input type="number" name="interestRate" min="0" max="100" step="0.01" placeholder="18" className="input-base" />
+            </Field>
+          </div>
+        </section>
+      )}
+
+      {/* Active foreclosure fields */}
+      {stage === 'ACTIVE' && isForeclosure && (
+        <section className="px-6 py-5 space-y-4">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Auction Results</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Foreclosure Type" error={state.errors?.foreclosureType}>
+              <select name="foreclosureType" className="input-base">
+                <option value="MORTGAGE">Mortgage</option>
+                <option value="TAX">Tax</option>
+                <option value="HOA">HOA</option>
+              </select>
+            </Field>
+            <Field label="Auction Date" error={state.errors?.auctionDate}>
+              <input type="date" name="auctionDate" className="input-base" />
+            </Field>
+            <Field label="Opening Bid ($) (optional)" error={state.errors?.openingBid}>
+              <input type="number" name="openingBid" min="0.01" step="0.01" placeholder="50000.00" className="input-base" />
+            </Field>
+            <Field label="Winning Bid ($)" error={state.errors?.winningBid}>
+              <input type="number" name="winningBid" min="0.01" step="0.01" placeholder="75000.00" className="input-base" />
             </Field>
           </div>
         </section>
