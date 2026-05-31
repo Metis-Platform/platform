@@ -2,8 +2,11 @@ import { Suspense } from 'react'
 import { UserButton, OrganizationSwitcher } from '@clerk/nextjs'
 import Link from 'next/link'
 import StrategyNav, { DealsNavLink } from './StrategyNav'
+import { isSuperAdmin } from '@/lib/admin-auth'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const superAdmin = await isSuperAdmin()
+
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50">
       {/* Top nav */}
@@ -52,6 +55,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            {superAdmin && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 border border-zinc-200 rounded-lg hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-colors"
+              >
+                ⚙ Admin
+              </Link>
+            )}
             <OrganizationSwitcher
               hidePersonal
               afterSelectOrganizationUrl="/dashboard"

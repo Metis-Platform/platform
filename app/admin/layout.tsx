@@ -19,8 +19,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </Link>
           </nav>
         </div>
-        <Link href="/dashboard" className="text-xs text-zinc-400 hover:text-white transition-colors">
-          ← Back to app
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-zinc-300 border border-zinc-600 rounded-lg hover:bg-zinc-700 hover:text-white transition-colors"
+        >
+          ← Back to Dashboard
         </Link>
       </header>
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">{children}</main>
