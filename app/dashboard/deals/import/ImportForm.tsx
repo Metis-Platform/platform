@@ -5,9 +5,34 @@ import { useRouter } from 'next/navigation'
 import type { ImportRow } from '@/app/api/liens/import/route'
 
 type PreviewResult = { rows: ImportRow[]; total: number; valid: number }
-type ImportResult  = { imported: number; skipped: number; errors: { rowNum: number; error: string }[] }
+type ImportError   = { rowNum: number; error: string; raw: Record<string, string> }
+type ImportResult  = { imported: number; skipped: number; errors: ImportError[] }
 
 type Phase = 'idle' | 'parsing' | 'preview' | 'importing' | 'done'
+
+const TEMPLATE_HEADERS = ['status', 'state', 'county', 'apn', 'certificate_number', 'face_amount', 'interest_rate', 'issue_date', 'address', 'notes']
+
+function buildErrorCsv(errors: { raw: Record<string, string>; message: string }[]): string {
+  const escape = (v: string) =>
+    v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v
+
+  const rows = errors.map(({ raw, message }) => {
+    const originalNotes = raw.notes || ''
+    const errorNote = `IMPORT ERROR: ${message}${originalNotes ? ` | ${originalNotes}` : ''}`
+    return TEMPLATE_HEADERS.map(h => escape(h === 'notes' ? errorNote : (raw[h] || ''))).join(',')
+  })
+  return [TEMPLATE_HEADERS.join(','), ...rows].join('\n')
+}
+
+function triggerCsvDownload(csv: string) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = `metis-import-errors-${Date.now()}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 export default function ImportForm() {
   const [phase, setPhase]         = useState<Phase>('idle')
@@ -28,13 +53,13 @@ export default function ImportForm() {
     fd.append('file', f)
 
     try {
-      const res = await fetch('/api/liens/import?preview=true', { method: 'POST', body: fd })
+      const res  = await fetch('/api/liens/import?preview=true', { method: 'POST', body: fd })
       const data = await res.json() as PreviewResult | { error: string }
       if (!res.ok) { setError((data as { error: string }).error); setPhase('idle'); return }
       setPreview(data as PreviewResult)
       setPhase('preview')
     } catch {
-      setError('Failed to parse CSV. Check your network connection.')
+      setError('Failed to parse file. Check your network connection.')
       setPhase('idle')
     }
   }
@@ -47,7 +72,7 @@ export default function ImportForm() {
     fd.append('file', file)
 
     try {
-      const res = await fetch('/api/liens/import', { method: 'POST', body: fd })
+      const res  = await fetch('/api/liens/import', { method: 'POST', body: fd })
       const data = await res.json() as ImportResult | { error: string }
       if (!res.ok) { setError((data as { error: string }).error); setSubmit(false); return }
       setResult(data as ImportResult)
@@ -56,6 +81,15 @@ export default function ImportForm() {
       setError('Import failed. Please try again.')
       setSubmit(false)
     }
+  }
+
+  function downloadPreviewErrors(invalidRows: ImportRow[]) {
+    const errors = invalidRows.map(r => ({ raw: r.raw, message: r.errors.join('; ') }))
+    triggerCsvDownload(buildErrorCsv(errors))
+  }
+
+  function downloadImportErrors(errors: ImportError[]) {
+    triggerCsvDownload(buildErrorCsv(errors.map(e => ({ raw: e.raw, message: e.error }))))
   }
 
   function reset() {
@@ -83,7 +117,15 @@ export default function ImportForm() {
             ))}
           </div>
         )}
-        <div className="flex justify-center gap-3">
+        <div className="flex justify-center gap-3 flex-wrap">
+          {result.errors.length > 0 && (
+            <button
+              onClick={() => downloadImportErrors(result.errors)}
+              className="px-4 py-2 text-sm font-medium text-red-700 border border-red-300 rounded-lg hover:bg-red-50"
+            >
+              ↓ Download {result.errors.length} failed row{result.errors.length !== 1 ? 's' : ''}
+            </button>
+          )}
           <button onClick={reset} className="px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50">
             Import Another File
           </button>
@@ -114,10 +156,18 @@ export default function ImportForm() {
 
         {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
 
-        {/* Error rows first */}
+        {/* Error rows */}
         {invalidRows.length > 0 && (
           <div className="mb-4">
-            <h3 className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Rows with errors ({invalidRows.length})</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-red-600 uppercase tracking-wide">Rows with errors ({invalidRows.length})</h3>
+              <button
+                onClick={() => downloadPreviewErrors(invalidRows)}
+                className="text-xs text-red-600 hover:text-red-700 underline"
+              >
+                ↓ Download error report
+              </button>
+            </div>
             <div className="bg-red-50 rounded-xl border border-red-200 overflow-hidden">
               <table className="w-full text-xs">
                 <thead>
@@ -149,6 +199,7 @@ export default function ImportForm() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-zinc-400 font-semibold uppercase tracking-wide">
+                    <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">APN</th>
                     <th className="px-3 py-2">Jurisdiction</th>
                     <th className="px-3 py-2">Cert #</th>
@@ -160,17 +211,26 @@ export default function ImportForm() {
                 <tbody className="divide-y divide-zinc-100">
                   {validRows.slice(0, 50).map(row => (
                     <tr key={row.rowNum} className="text-zinc-700">
+                      <td className="px-3 py-2">
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                          row.data!.effectiveStatus === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                          row.data!.effectiveStatus === 'LEAD'   ? 'bg-blue-100 text-blue-700' :
+                          'bg-zinc-100 text-zinc-600'
+                        }`}>
+                          {row.data!.effectiveStatus}
+                        </span>
+                      </td>
                       <td className="px-3 py-2 font-mono">{row.data!.apn}</td>
                       <td className="px-3 py-2">{row.data!.county}, {row.data!.state}</td>
-                      <td className="px-3 py-2 font-mono">{row.data!.certificate_number}</td>
-                      <td className="px-3 py-2 text-right">${row.data!.face_amount.toLocaleString()}</td>
-                      <td className="px-3 py-2">{row.data!.interest_rate}%</td>
-                      <td className="px-3 py-2">{row.data!.issue_date}</td>
+                      <td className="px-3 py-2 font-mono">{row.data!.certificate_number || '—'}</td>
+                      <td className="px-3 py-2 text-right">{row.data!.face_amount != null ? `$${row.data!.face_amount.toLocaleString()}` : '—'}</td>
+                      <td className="px-3 py-2">{row.data!.interest_rate != null ? `${row.data!.interest_rate}%` : '—'}</td>
+                      <td className="px-3 py-2">{row.data!.issue_date || '—'}</td>
                     </tr>
                   ))}
                   {validRows.length > 50 && (
                     <tr>
-                      <td colSpan={6} className="px-3 py-2 text-zinc-400 text-center">
+                      <td colSpan={7} className="px-3 py-2 text-zinc-400 text-center">
                         … and {validRows.length - 50} more
                       </td>
                     </tr>
@@ -200,7 +260,7 @@ export default function ImportForm() {
   // --- Upload screen ---
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-5">
-      <h2 className="text-sm font-semibold text-zinc-900 mb-3">Step 2 — Upload your CSV</h2>
+      <h2 className="text-sm font-semibold text-zinc-900 mb-3">Step 2 — Upload your file</h2>
 
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
 
@@ -215,18 +275,18 @@ export default function ImportForm() {
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="hidden"
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }}
         />
         {phase === 'parsing' ? (
-          <p className="text-sm text-blue-600">Parsing CSV…</p>
+          <p className="text-sm text-blue-600">Parsing file…</p>
         ) : (
           <>
             <svg className="mx-auto mb-2 w-8 h-8 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
             </svg>
-            <p className="text-sm text-zinc-500">Drag & drop your CSV, or <span className="text-blue-600">browse</span></p>
+            <p className="text-sm text-zinc-500">Drag & drop your CSV, XLS, or XLSX, or <span className="text-blue-600">browse</span></p>
             <p className="text-xs text-zinc-400 mt-1">Up to 500 liens per file</p>
           </>
         )}

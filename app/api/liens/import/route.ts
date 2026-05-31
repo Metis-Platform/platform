@@ -6,21 +6,40 @@ import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { parseCsv, rowsToObjects } from '@/lib/csv'
+import * as XLSX from 'xlsx'
 
 // ---------------------------------------------------------------------------
-// Row schema
+// Status types
+// ---------------------------------------------------------------------------
+
+const IMPORTABLE_STATUSES = ['LEAD', 'ACTIVE', 'NOT_WON', 'REDEEMED', 'FORECLOSURE_INITIATED', 'DEEDED'] as const
+type ImportStatus = typeof IMPORTABLE_STATUSES[number]
+
+const STATUS_VALID_MSG = `Valid values: ${IMPORTABLE_STATUSES.join(', ')}`
+
+const dealStatusMap: Record<ImportStatus, DealStatus> = {
+  LEAD:                   DealStatus.LEAD,
+  ACTIVE:                 DealStatus.ACTIVE,
+  NOT_WON:               DealStatus.NOT_WON,
+  REDEEMED:              DealStatus.REDEEMED,
+  FORECLOSURE_INITIATED: DealStatus.FORECLOSURE_INITIATED,
+  DEEDED:                DealStatus.DEEDED,
+}
+
+// ---------------------------------------------------------------------------
+// Row schema — cert fields optional; status determines requirements
 // ---------------------------------------------------------------------------
 
 const RowSchema = z.object({
   state:              z.string().length(2, 'Must be a 2-letter state code (e.g. FL)').transform(v => v.toUpperCase()),
   county:             z.string().min(1, 'Required'),
   apn:                z.string().min(1, 'Required').max(60),
-  certificate_number: z.string().min(1, 'Required').max(60),
-  face_amount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be > 0'),
-  interest_rate:      z.coerce.number({ error: 'Must be a number' }).min(0).max(100),
-  issue_date:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
-  address:            z.string().max(200).optional(),
-  notes:              z.string().max(2000).optional(),
+  certificate_number: z.string().max(60).optional().transform(v => v || undefined),
+  face_amount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be > 0').optional().or(z.literal('')).transform(v => v === '' ? undefined : v as number | undefined),
+  interest_rate:      z.coerce.number({ error: 'Must be a number' }).min(0).max(100).optional().or(z.literal('')).transform(v => v === '' ? undefined : v as number | undefined),
+  issue_date:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional().or(z.literal('')).transform(v => v || undefined),
+  address:            z.string().max(200).optional().transform(v => v || undefined),
+  notes:              z.string().max(2000).optional().transform(v => v || undefined),
 })
 
 export type ImportRow = {
@@ -28,7 +47,56 @@ export type ImportRow = {
   raw: Record<string, string>
   valid: boolean
   errors: string[]
-  data?: z.infer<typeof RowSchema>
+  data?: z.infer<typeof RowSchema> & { effectiveStatus: ImportStatus }
+}
+
+// ---------------------------------------------------------------------------
+// File parsing — CSV, XLSX, or XLS
+// ---------------------------------------------------------------------------
+
+async function parseFile(file: File): Promise<Record<string, string>[]> {
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  if (ext === 'xlsx' || ext === 'xls') {
+    const buf = Buffer.from(await file.arrayBuffer())
+    const workbook = XLSX.read(buf, { type: 'buffer' })
+    const sheet = workbook.Sheets[workbook.SheetNames[0]]
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
+    return rows.map(row => {
+      const obj: Record<string, string> = {}
+      for (const [k, v] of Object.entries(row)) {
+        obj[k.toLowerCase().replace(/\s+/g, '_')] = String(v)
+      }
+      return obj
+    })
+  }
+  const text = await file.text()
+  const rawRows = parseCsv(text)
+  return rowsToObjects(rawRows)
+}
+
+// ---------------------------------------------------------------------------
+// Status helpers
+// ---------------------------------------------------------------------------
+
+function resolveStatus(obj: Record<string, string>, data: z.infer<typeof RowSchema>): ImportStatus {
+  const raw = (obj.status ?? '').trim().toUpperCase()
+  if (raw) return raw as ImportStatus
+  return data.certificate_number && data.face_amount != null && data.interest_rate != null && data.issue_date
+    ? 'ACTIVE'
+    : 'LEAD'
+}
+
+function validateStatusFields(status: ImportStatus, data: z.infer<typeof RowSchema>): string[] {
+  const errs: string[] = []
+  if (status === 'ACTIVE') {
+    if (!data.certificate_number) errs.push('certificate_number: Required for ACTIVE')
+    if (data.face_amount == null)  errs.push('face_amount: Required for ACTIVE')
+    if (data.interest_rate == null) errs.push('interest_rate: Required for ACTIVE')
+    if (!data.issue_date)          errs.push('issue_date: Required for ACTIVE')
+  } else if (status === 'REDEEMED' || status === 'FORECLOSURE_INITIATED' || status === 'DEEDED') {
+    if (!data.certificate_number) errs.push(`certificate_number: Required for ${status}`)
+  }
+  return errs
 }
 
 // ---------------------------------------------------------------------------
@@ -46,19 +114,20 @@ export async function POST(req: NextRequest) {
   const url = new URL(req.url)
   const preview = url.searchParams.get('preview') === 'true'
 
-  // Parse multipart form with CSV file
   const formData = await req.formData()
   const file = formData.get('file')
   if (!(file instanceof File)) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-  const text = await file.text()
-  const rawRows = parseCsv(text)
-  const objects = rowsToObjects(rawRows)
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  if (!['csv', 'xlsx', 'xls'].includes(ext ?? '')) {
+    return NextResponse.json({ error: 'Unsupported file type. Please upload a CSV, XLS, or XLSX file.' }, { status: 400 })
+  }
 
-  if (objects.length === 0) return NextResponse.json({ error: 'CSV has no data rows' }, { status: 400 })
+  const objects = await parseFile(file)
+
+  if (objects.length === 0) return NextResponse.json({ error: 'File has no data rows' }, { status: 400 })
   if (objects.length > 500) return NextResponse.json({ error: 'Max 500 rows per import' }, { status: 400 })
 
-  // Load jurisdictions for this import's states (to resolve state+county → jurisdictionId)
   const states = [...new Set(objects.map(o => (o.state ?? '').toUpperCase()))]
   const jurisdictions = await db.jurisdiction.findMany({
     where: { state: { in: states } },
@@ -66,31 +135,45 @@ export async function POST(req: NextRequest) {
   })
   const jurMap = new Map(jurisdictions.map(j => [`${j.state}::${j.county.toLowerCase()}`, j.id]))
 
-  // Validate each row
+  // Validate rows
   const rows: ImportRow[] = objects.map((obj, i) => {
-    const rowNum = i + 2 // 1-indexed, +1 for header
+    const rowNum = i + 2
+
+    // Status check before schema parse
+    const rawStatus = (obj.status ?? '').trim().toUpperCase()
+    if (rawStatus && !IMPORTABLE_STATUSES.includes(rawStatus as ImportStatus)) {
+      return { rowNum, raw: obj, valid: false, errors: [`status: Invalid value "${obj.status}". ${STATUS_VALID_MSG}`] }
+    }
+
     const parsed = RowSchema.safeParse(obj)
     if (!parsed.success) {
       const errors = parsed.error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
       return { rowNum, raw: obj, valid: false, errors }
     }
+
     const data = parsed.data
     const jurKey = `${data.state}::${data.county.toLowerCase()}`
-    const jurId = jurMap.get(jurKey)
-    if (!jurId) {
+    if (!jurMap.get(jurKey)) {
       return { rowNum, raw: obj, valid: false, errors: [`Jurisdiction not found: ${data.county}, ${data.state}`] }
     }
-    return { rowNum, raw: obj, valid: true, errors: [], data: { ...data } }
+
+    const effectiveStatus = resolveStatus(obj, data)
+    const statusErrors = validateStatusFields(effectiveStatus, data)
+    if (statusErrors.length > 0) {
+      return { rowNum, raw: obj, valid: false, errors: statusErrors }
+    }
+
+    return { rowNum, raw: obj, valid: true, errors: [], data: { ...data, effectiveStatus } }
   })
 
   if (preview) {
     return NextResponse.json({ rows, total: rows.length, valid: rows.filter(r => r.valid).length })
   }
 
-  // --- Import phase ---
+  // Import phase
   const validRows = rows.filter(r => r.valid && r.data)
   let imported = 0
-  const importErrors: { rowNum: number; error: string }[] = []
+  const importErrors: { rowNum: number; error: string; raw: Record<string, string> }[] = []
 
   for (const row of validRows) {
     const d = row.data!
@@ -109,23 +192,28 @@ export async function POST(req: NextRequest) {
           tenantId: tenant.id,
           propertyId: property.id,
           strategyType: StrategyType.TAX_LIEN,
-          status: DealStatus.ACTIVE,
+          status: dealStatusMap[d.effectiveStatus],
           notes: d.notes || null,
           taxLien: {
             create: {
-              certificateNumber: d.certificate_number,
-              faceAmount: d.face_amount,
-              interestRate: d.interest_rate / 100,
-              issueDate: new Date(`${d.issue_date}T12:00:00.000Z`),
+              ...(d.certificate_number ? { certificateNumber: d.certificate_number } : {}),
+              ...(d.face_amount != null ? {
+                faceAmount:   d.face_amount,
+                interestRate: d.interest_rate! / 100,
+                issueDate:    new Date(`${d.issue_date}T12:00:00.000Z`),
+              } : {}),
             },
           },
         },
       })
 
-      await generateEventsForDeal(deal.id, tenant.id)
+      if (d.effectiveStatus === 'ACTIVE') {
+        await generateEventsForDeal(deal.id, tenant.id)
+      }
+
       imported++
     } catch (err) {
-      importErrors.push({ rowNum: row.rowNum, error: err instanceof Error ? err.message : 'Unknown error' })
+      importErrors.push({ rowNum: row.rowNum, error: err instanceof Error ? err.message : 'Unknown error', raw: row.raw })
     }
   }
 
