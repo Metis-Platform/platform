@@ -12,7 +12,7 @@ export default async function TasksPage() {
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
-  const [tasks, users] = await Promise.all([
+  const [tasks, users, deals] = await Promise.all([
     db.task.findMany({
       where: { tenantId: tenant.id, status: { not: 'CANCELLED' } },
       include: {
@@ -24,6 +24,12 @@ export default async function TasksPage() {
     db.user.findMany({
       where: { tenantId: tenant.id },
       select: { id: true, name: true, email: true },
+    }),
+    db.deal.findMany({
+      where: { tenantId: tenant.id, status: { not: 'CLOSED' } },
+      include: { property: true },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
     }),
   ])
 
@@ -46,6 +52,7 @@ export default async function TasksPage() {
           : null,
       }))}
       users={users}
+      deals={deals.map(d => ({ id: d.id, apn: d.property.apn, address: d.property.address }))}
     />
   )
 }
