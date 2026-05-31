@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { syncUserToDatabase } from '@/lib/sync-user'
 
 export async function POST() {
@@ -12,7 +12,7 @@ export async function POST() {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: tenant.stripeCustomerId,
     return_url: `${appUrl}/dashboard/billing`,
   })
