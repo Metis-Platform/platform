@@ -231,7 +231,7 @@ export function NewLienForm({
           className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
           {submitLabel}
         </button>
-        <Link href="/dashboard/liens" className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+        <Link href="/dashboard/deals" className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
       </div>
     </form>
   )

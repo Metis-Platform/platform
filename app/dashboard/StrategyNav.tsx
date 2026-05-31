@@ -49,8 +49,8 @@ export function DealsNavLink({ className }: { className: string }) {
   const params = useSearchParams()
   const pathname = usePathname()
   const strategy = params.get('strategy') ?? 'TAX_LIEN'
-  const href = `/dashboard/liens?strategy=${strategy}`
-  const isActive = pathname.startsWith('/dashboard/liens')
+  const href = `/dashboard/deals?strategy=${strategy}`
+  const isActive = pathname.startsWith('/dashboard/deals')
 
   return (
     <Link

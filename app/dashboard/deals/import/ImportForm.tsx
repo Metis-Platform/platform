@@ -87,7 +87,7 @@ export default function ImportForm() {
           <button onClick={reset} className="px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50">
             Import Another File
           </button>
-          <button onClick={() => router.push('/dashboard/liens')} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+          <button onClick={() => router.push('/dashboard/deals')} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
             View Liens →
           </button>
         </div>

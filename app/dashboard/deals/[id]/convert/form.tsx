@@ -44,7 +44,7 @@ export function ConvertForm({ dealId }: { dealId: string }) {
           className="px-5 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
           {pending ? 'Converting…' : 'Mark as Won & Generate Deadlines'}
         </button>
-        <Link href={`/dashboard/liens/${dealId}`} className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700">Cancel</Link>
+        <Link href={`/dashboard/deals/${dealId}`} className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700">Cancel</Link>
       </div>
     </form>
   )

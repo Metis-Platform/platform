@@ -161,7 +161,7 @@ export default function CalendarClient({
                       {dayEvents.slice(0, 3).map(e => (
                         <Link
                           key={e.id}
-                          href={`/dashboard/liens/${e.dealId}`}
+                          href={`/dashboard/deals/${e.dealId}`}
                           className={`block truncate text-xs px-1.5 py-0.5 rounded ${STATUS_COLORS[e.status] ?? 'bg-zinc-100 text-zinc-600'} hover:opacity-80`}
                           title={`${e.label} — APN ${e.apn}`}
                         >

@@ -67,7 +67,7 @@ export default async function DashboardPage({
       ? Number((await db.dealTaxDeed.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
       : Number((await db.dealForeclosure.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
 
-  const newDealHref = `/dashboard/liens/new?strategy=${strategy}`
+  const newDealHref = `/dashboard/deals/new?strategy=${strategy}`
 
   return (
     <div>
@@ -150,7 +150,7 @@ function Bucket({ title, events, color }: { title: string; events: EventRow[]; c
             const dayLabel = days < 0 ? `${Math.abs(days)}d overdue` : `${days}d remaining`
             const dayColor = days < 0 ? 'text-red-600' : days <= 7 ? 'text-yellow-600' : 'text-blue-600'
             return (
-              <Link key={ev.id} href={`/dashboard/liens/${ev.dealId}`} className="flex flex-col px-4 py-3 hover:bg-zinc-50 text-sm transition-colors">
+              <Link key={ev.id} href={`/dashboard/deals/${ev.dealId}`} className="flex flex-col px-4 py-3 hover:bg-zinc-50 text-sm transition-colors">
                 <span className="font-medium text-zinc-900 truncate">{ev.deal.property.apn}</span>
                 <span className="text-zinc-500 truncate text-xs mt-0.5">{ev.label}</span>
                 <span className={`text-xs font-medium mt-1 ${dayColor}`}>{dayLabel}</span>

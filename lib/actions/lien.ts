@@ -170,7 +170,7 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
     return { message: 'Failed to save. Please try again.' }
   }
 
-  redirect(`/dashboard/liens/${dealId}`)
+  redirect(`/dashboard/deals/${dealId}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -209,7 +209,7 @@ export async function convertToActive(dealId: string, _prev: LienFormState, form
     return { message: 'Failed to convert. Please try again.' }
   }
 
-  redirect(`/dashboard/liens/${dealId}`)
+  redirect(`/dashboard/deals/${dealId}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -243,7 +243,7 @@ export async function updateLien(dealId: string, _prev: LienFormState, formData:
     return { message: 'Failed to update. Please try again.' }
   }
 
-  redirect(`/dashboard/liens/${dealId}`)
+  redirect(`/dashboard/deals/${dealId}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -319,7 +319,7 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
     return { message: 'Failed to save. Please try again.' }
   }
 
-  redirect(`/dashboard/liens/${dealId}`)
+  redirect(`/dashboard/deals/${dealId}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -391,7 +391,7 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
     return { message: 'Failed to save. Please try again.' }
   }
 
-  redirect(`/dashboard/liens/${dealId}`)
+  redirect(`/dashboard/deals/${dealId}`)
 }
 
 // ---------------------------------------------------------------------------

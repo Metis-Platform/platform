@@ -15,7 +15,7 @@ export function DeleteButton({ dealId }: { dealId: string }) {
       if (result.error) {
         alert(result.error)
       } else {
-        router.push('/dashboard/liens')
+        router.push('/dashboard/deals')
       }
     })
   }

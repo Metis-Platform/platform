@@ -132,11 +132,11 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/dashboard/liens/import"
+          <Link href="/dashboard/deals/import"
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
             ↑ Import CSV
           </Link>
-          <Link href={`/dashboard/liens/new?strategy=${strategy}`}
+          <Link href={`/dashboard/deals/new?strategy=${strategy}`}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
             {meta.newLabel}
           </Link>
@@ -245,7 +245,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                 return (
                   <tr key={deal.id} className="hover:bg-zinc-50 transition-colors">
                     <td className="px-4 py-3">
-                      <Link href={`/dashboard/liens/${deal.id}`} className="font-medium text-blue-600 hover:underline font-mono text-xs">
+                      <Link href={`/dashboard/deals/${deal.id}`} className="font-medium text-blue-600 hover:underline font-mono text-xs">
                         {deal.apn}
                       </Link>
                       {deal.address && <div className="text-xs text-zinc-400 truncate max-w-52 mt-0.5">{deal.address}</div>}

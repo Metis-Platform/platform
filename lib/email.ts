@@ -76,7 +76,7 @@ function buildDigestHtml({
     return events.map(e => `
       <tr>
         <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;">
-          <a href="${appUrl}/dashboard/liens/${e.dealId}"
+          <a href="${appUrl}/dashboard/deals/${e.dealId}"
              style="font-family:monospace;font-size:13px;color:#2563eb;text-decoration:none;">
             ${e.apn}
           </a>

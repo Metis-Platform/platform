@@ -207,7 +207,7 @@ export default function TaskBoard({
                         <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium ${PRIORITY_BADGE[task.priority] ?? 'bg-zinc-100 text-zinc-500'}`}>{task.priority}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
-                        <Link href={`/dashboard/liens/${task.dealId}`} onClick={e => e.stopPropagation()} className="font-mono hover:text-blue-600 transition-colors">{task.apn}</Link>
+                        <Link href={`/dashboard/deals/${task.dealId}`} onClick={e => e.stopPropagation()} className="font-mono hover:text-blue-600 transition-colors">{task.apn}</Link>
                         {task.dueDate && <span className={overdue ? 'text-red-500 font-medium' : ''}>{overdue ? `${Math.abs(daysUntil!)}d overdue` : daysUntil === 0 ? 'Due today' : `${daysUntil}d`}</span>}
                         {task.assignedTo && <span>{task.assignedTo.name ?? task.assignedTo.email}</span>}
                       </div>
@@ -306,7 +306,7 @@ export default function TaskBoard({
               <div>
                 <dt className="text-xs text-zinc-400 font-medium uppercase tracking-wide mb-0.5">Property</dt>
                 <dd>
-                  <Link href={`/dashboard/liens/${selectedTask.dealId}`} className="text-blue-600 hover:underline font-mono text-xs">{selectedTask.apn}</Link>
+                  <Link href={`/dashboard/deals/${selectedTask.dealId}`} className="text-blue-600 hover:underline font-mono text-xs">{selectedTask.apn}</Link>
                   {selectedTask.address && <div className="text-xs text-zinc-500 mt-0.5">{selectedTask.address}</div>}
                 </dd>
               </div>

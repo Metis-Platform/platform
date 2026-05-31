@@ -97,7 +97,7 @@ export function EditLienForm({ deal }: { deal: DealWithLien }) {
           {pending ? 'Saving…' : 'Save Changes'}
         </button>
         <Link
-          href={`/dashboard/liens/${deal.id}`}
+          href={`/dashboard/deals/${deal.id}`}
           className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
         >
           Cancel
