@@ -14,13 +14,16 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
-  const deal = await db.deal.findUnique({
-    where: { id, tenantId: tenant.id },
-    include: {
-      property: { include: { jurisdiction: true } },
-      taxLien: true,
-    },
-  })
+  const [deal, jurisdictions] = await Promise.all([
+    db.deal.findUnique({
+      where: { id, tenantId: tenant.id },
+      include: {
+        property: { include: { jurisdiction: true } },
+        taxLien: true,
+      },
+    }),
+    db.jurisdiction.findMany({ orderBy: [{ stateName: 'asc' }, { county: 'asc' }] }),
+  ])
 
   if (!deal) notFound()
 
@@ -36,18 +39,11 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
         </div>
         <h1 className="text-2xl font-semibold text-zinc-900">Edit Lien</h1>
         <p className="text-sm text-zinc-500 mt-0.5">
-          Jurisdiction and APN cannot be changed. Updating the issue date will regenerate all deadlines.
+          Changing jurisdiction or APN creates a new property record — existing events will be regenerated.
         </p>
       </div>
 
-      {/* Read-only jurisdiction + APN context */}
-      <div className="bg-zinc-50 rounded-lg border border-zinc-200 px-4 py-3 mb-4 text-sm text-zinc-600">
-        <span className="font-medium text-zinc-800">{deal.property.apn}</span>
-        {' · '}
-        {deal.property.jurisdiction.county} County, {deal.property.jurisdiction.stateName}
-      </div>
-
-      <EditLienForm deal={deal} />
+      <EditLienForm deal={deal} jurisdictions={jurisdictions} />
     </div>
   )
 }

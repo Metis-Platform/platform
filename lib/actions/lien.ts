@@ -45,6 +45,9 @@ const ConvertSchema = z.object({
 })
 
 const UpdateLienSchema = z.object({
+  jurisdictionId:    z.string().min(1, 'Jurisdiction is required'),
+  apn:               z.string().min(1, 'APN is required').max(60),
+  address:           z.string().max(200).optional(),
   certificateNumber: z.string().min(1, 'Certificate number is required').max(60),
   faceAmount:        z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
   interestRate:      z.coerce.number({ error: 'Must be a number' }).min(0).max(100),
@@ -226,17 +229,24 @@ export async function updateLien(dealId: string, _prev: LienFormState, formData:
   const parsed = UpdateLienSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
 
-  const { certificateNumber, faceAmount, interestRate, issueDate, notes } = parsed.data
+  const { jurisdictionId, apn, address, certificateNumber, faceAmount, interestRate, issueDate, notes } = parsed.data
 
   try {
     const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
     if (!deal) return { message: 'Lien not found.' }
 
+    // Upsert property — if jurisdiction or APN changed, this creates/finds the right record
+    const property = await db.property.upsert({
+      where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn, jurisdictionId } },
+      update: { ...(address ? { address } : {}) },
+      create: { tenantId: tenant.id, jurisdictionId, apn, ...(address ? { address } : {}) },
+    })
+
+    await db.deal.update({ where: { id: dealId }, data: { propertyId: property.id, notes: notes || null } })
     await db.dealTaxLien.update({
       where: { dealId },
       data: { certificateNumber, faceAmount, interestRate: interestRate / 100, issueDate: new Date(`${issueDate}T12:00:00.000Z`) },
     })
-    await db.deal.update({ where: { id: dealId }, data: { notes: notes || null } })
     await generateEventsForDeal(dealId, tenant.id)
   } catch (err) {
     console.error('[updateLien]', err)
