@@ -1,6 +1,11 @@
 import { db } from '@/lib/db'
 import { NewLienForm } from './form'
 
+// Force server-render on every request so the jurisdiction list always
+// comes from a live DB query. Without this Next.js prerenders at build time
+// and the dropdown can be empty if Neon is cold during the Vercel build.
+export const dynamic = 'force-dynamic'
+
 export default async function NewLienPage() {
   const jurisdictions = await db.jurisdiction.findMany({
     orderBy: [{ stateName: 'asc' }, { county: 'asc' }],
