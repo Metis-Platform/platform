@@ -225,7 +225,7 @@ Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\t
 
 Dev accounts do not exist in production and vice versa. To access the production app, sign up fresh at `metisplatforms.com/sign-up`.
 
-**The `ADMIN_USER_IDS` Vercel env var** holds the Clerk production user ID for the super-admin dashboard (`/admin`). Get it from Clerk Dashboard → Production → Users after signing up on the live site.
+**The `SUPER_ADMIN_EMAILS` Vercel env var** controls access to the super-admin dashboard (`/admin`). Set it to the email address the admin user signs in with (e.g. `you@gmail.com`). It is checked by `lib/admin-auth.ts` — it is an email address, NOT a Clerk user ID. Multiple admins: comma-separated.
 
 ### Dev → Production Workflow
 
