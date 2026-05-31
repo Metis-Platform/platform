@@ -24,9 +24,40 @@ type SortDir = 'asc' | 'desc'
 
 const STATUS_OPTIONS = ['All', 'Active', 'Lead', 'Overdue'] as const
 
+const STRATEGY_META: Record<string, { title: string; singular: string; newLabel: string; emptyText: string; searchPlaceholder: string; dateCol: string; amountCol: string }> = {
+  TAX_LIEN: {
+    title:             'Tax Liens',
+    singular:          'Tax Lien',
+    newLabel:          '+ New Lien',
+    emptyText:         'No liens match your filters.',
+    searchPlaceholder: 'Search APN, cert #, address…',
+    dateCol:           'Issue Date',
+    amountCol:         'Face Amount',
+  },
+  TAX_DEED: {
+    title:             'Tax Deeds',
+    singular:          'Tax Deed',
+    newLabel:          '+ New Deed',
+    emptyText:         'No deeds match your filters.',
+    searchPlaceholder: 'Search APN, address…',
+    dateCol:           'Sale Date',
+    amountCol:         'Winning Bid',
+  },
+  FORECLOSURE: {
+    title:             'Foreclosures',
+    singular:          'Foreclosure',
+    newLabel:          '+ New Foreclosure',
+    emptyText:         'No foreclosures match your filters.',
+    searchPlaceholder: 'Search APN, address…',
+    dateCol:           'Auction Date',
+    amountCol:         'Winning Bid',
+  },
+}
+
 export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: LienRow[]; strategy?: string }) {
   const isTaxDeed = strategy === 'TAX_DEED'
   const isForeclosure = strategy === 'FORECLOSURE'
+  const meta = STRATEGY_META[strategy] ?? STRATEGY_META['TAX_LIEN']
   const [search, setSearch]       = useState('')
   const [statusFilter, setStatus] = useState<string>('All')
   const [stateFilter, setState]   = useState<string>('All')
@@ -95,7 +126,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Tax Liens</h1>
+          <h1 className="text-2xl font-semibold text-zinc-900">{meta.title}</h1>
           <p className="text-sm text-zinc-500 mt-0.5">
             {active} active · {leads} leads{overdue > 0 ? ` · ${overdue} overdue` : ''}
           </p>
@@ -105,9 +136,9 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
             ↑ Import CSV
           </Link>
-          <Link href="/dashboard/liens/new"
+          <Link href={`/dashboard/liens/new?strategy=${strategy}`}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            + New Lien
+            {meta.newLabel}
           </Link>
         </div>
       </div>
@@ -121,7 +152,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
           </svg>
           <input
             type="text"
-            placeholder="Search APN, cert #, address…"
+            placeholder={meta.searchPlaceholder}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 text-sm border border-zinc-200 rounded-lg bg-white text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -177,7 +208,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
       {/* Table */}
       {sorted.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-zinc-200">
-          <p className="text-zinc-400 text-sm">No liens match your filters.</p>
+          <p className="text-zinc-400 text-sm">{meta.emptyText}</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
@@ -192,10 +223,10 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                 </th>
                 <th className="px-4 py-3">{isTaxDeed ? 'Deed #' : isForeclosure ? 'Type' : 'Certificate #'}</th>
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('date')}>
-                  Date <SortIcon col="date" />
+                  {meta.dateCol} <SortIcon col="date" />
                 </th>
                 <th className="px-4 py-3 text-right cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('amount')}>
-                  Amount <SortIcon col="amount" />
+                  {meta.amountCol} <SortIcon col="amount" />
                 </th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('deadline')}>
@@ -245,7 +276,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                           )}
                         </div>
                       ) : (
-                        <span className="text-zinc-400 text-xs">{isLead ? 'Pending win' : '—'}</span>
+                        <span className="text-zinc-400 text-xs">{isLead ? `Pending ${meta.singular.toLowerCase()}` : '—'}</span>
                       )}
                     </td>
                   </tr>
