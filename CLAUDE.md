@@ -206,6 +206,57 @@ Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\t
   git fetch origin && git reset --hard origin/main
   ```
 
+### Production Environment
+
+**The app is live at `https://metisplatforms.com`.**
+
+| Layer | Production value |
+|-------|----------------|
+| Domain | `metisplatforms.com` (Cloudflare registrar, DNS-only → Vercel) |
+| Hosting | Vercel — auto-deploys on every merge to `main` |
+| Database | Neon PostgreSQL — same DB used by production and local dev |
+| Auth | Clerk **Production** instance (`pk_live_` / `sk_live_` keys) |
+| Email | Resend — `metisplatforms.com` verified, sends from `noreply@metisplatforms.com` |
+| Storage | Cloudflare R2 bucket `metis-documents` |
+
+**Clerk has two completely separate instances:**
+- **Development** (`pk_test_` keys) — used by `localhost:3000`, `.env.local`
+- **Production** (`pk_live_` keys) — used by `metisplatforms.com`, Vercel env vars
+
+Dev accounts do not exist in production and vice versa. To access the production app, sign up fresh at `metisplatforms.com/sign-up`.
+
+**The `ADMIN_USER_IDS` Vercel env var** holds the Clerk production user ID for the super-admin dashboard (`/admin`). Get it from Clerk Dashboard → Production → Users after signing up on the live site.
+
+### Dev → Production Workflow
+
+```
+Local WSL (localhost:3000)
+  → git push → open PR on GitHub
+  → Vercel creates a Preview deployment (uses production env vars, production Clerk)
+  → Merge PR to main
+  → GitHub Action runs prisma migrate deploy (if schema changed)
+  → Vercel auto-deploys to metisplatforms.com (~2 min)
+```
+
+**Never manually deploy.** Every merge to `main` is automatic.
+
+**Preview deployments** use the production Clerk instance and production DB — they are real tests, not sandboxes. Don't create test data on a preview URL.
+
+### Schema Migrations — Fully Automated
+
+A GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` automatically on every merge to `main` when `prisma/schema.prisma` or `prisma/migrations/**` changes.
+
+- The Action uses the `DATABASE_URL` GitHub repository secret (set in GitHub → Settings → Secrets → Actions)
+- It runs **before** Vercel picks up the deploy, so the schema is always updated first
+- **You never need to remember to run migrations manually** — just merge the PR
+
+If you add a new migration locally:
+1. Run `npx prisma migrate dev --name <description>` in WSL to create the migration file
+2. Commit the new file in `prisma/migrations/`
+3. Open and merge a PR — the Action handles the rest
+
+**The `DATABASE_URL` GitHub secret** must be kept in sync with `.env.local` if the Neon connection string ever rotates.
+
 ### Cost Awareness
 - This project runs on free tiers. Before adding any new dependency or service, confirm it has a usable free tier and note it in the PR.
 - Claude API calls should be designed to minimize token usage. Cache extracted document data — never re-extract what's already stored.
