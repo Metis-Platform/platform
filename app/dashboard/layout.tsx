@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { UserButton, OrganizationSwitcher } from '@clerk/nextjs'
 import Link from 'next/link'
-import StrategyNav from './StrategyNav'
+import StrategyNav, { DealsNavLink } from './StrategyNav'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,12 +18,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 Dashboard
               </Link>
-              <Link
-                href="/dashboard/liens"
-                className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
-              >
-                Deals
-              </Link>
+              <Suspense fallback={
+                <Link href="/dashboard/liens" className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors">
+                  Deals
+                </Link>
+              }>
+                <DealsNavLink className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors" />
+              </Suspense>
               <Link
                 href="/dashboard/calendar"
                 className="px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"

@@ -1,6 +1,7 @@
 'use client'
 
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 
 const STRATEGIES = [
   { key: 'TAX_LIEN',    label: 'Tax Liens' },
@@ -8,6 +9,7 @@ const STRATEGIES = [
   { key: 'FORECLOSURE', label: 'Foreclosures' },
 ] as const
 
+/** Module pill switcher — updates the ?strategy= param on the current page. */
 export default function StrategyNav() {
   const router = useRouter()
   const pathname = usePathname()
@@ -36,5 +38,26 @@ export default function StrategyNav() {
         </button>
       ))}
     </div>
+  )
+}
+
+/**
+ * "Deals" nav link that carries the current ?strategy= param so switching
+ * modules on the dashboard or deals page doesn't reset when you click Deals.
+ */
+export function DealsNavLink({ className }: { className: string }) {
+  const params = useSearchParams()
+  const pathname = usePathname()
+  const strategy = params.get('strategy') ?? 'TAX_LIEN'
+  const href = `/dashboard/liens?strategy=${strategy}`
+  const isActive = pathname.startsWith('/dashboard/liens')
+
+  return (
+    <Link
+      href={href}
+      className={`${className} ${isActive ? 'text-zinc-900 bg-zinc-100' : ''}`}
+    >
+      Deals
+    </Link>
   )
 }
