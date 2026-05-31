@@ -22,13 +22,15 @@ Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) wor
 
 > ⚠️ STOP — READ THIS FIRST BEFORE DOING ANYTHING ELSE
 
-**Step 1 — Read files via WSL. Not Windows. WSL.**
+**Step 1 — Read these three files via WSL. Not Windows. WSL.**
 ```bash
 wsl bash -c "cat /home/xovox/dev/metis-platform/CLAUDE.md"
-wsl bash -c "cat /home/xovox/dev/metis-platform/ROADMAP.md"
+wsl bash -c "cat /home/xovox/dev/metis-platform/STATUS.md"
 wsl bash -c "cd /home/xovox/dev/metis-platform && git log --oneline -5"
 ```
-Do NOT attempt to read these as Windows paths. The repo is in WSL, not on the Windows filesystem.
+- `STATUS.md` is the lean session reference: last session summary, next-up issues, data model, ADRs. (~2KB vs 17KB for ROADMAP.md)
+- `ROADMAP.md` has full vision, phase history, and architecture — read it only when the task requires that context.
+- Do NOT attempt to read these as Windows paths. The repo is in WSL, not on the Windows filesystem.
 
 **Critical environment facts (do not rediscover these):**
 - Repo is in WSL at: `/home/xovox/dev/metis-platform/`
@@ -61,6 +63,15 @@ gh pr merge <number> --auto --squash
 > ```
 
 Put it at the END of your response when creating the PR — not buried in a sentence. Do not run it yourself. The GitHub Action handles `migrate deploy` automatically; this only regenerates the local TypeScript client so the dev server picks up new enum values and model types.
+
+**Step 5 — End of every session: update STATUS.md.**
+Before closing, update the "Last Session" and "Next Up" sections so the next session starts oriented without needing to rediscover context. This is how behavior stays consistent across sessions — the handoff lives in the repo, not in memory.
+
+```
+- Move completed PRs into the Last Session table
+- Update Next Up to reflect what's remaining / what's highest priority
+- Note any gotchas or decisions made this session
+```
 
 **File writing — use UNC path to write directly to WSL:**
 `\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
