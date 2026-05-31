@@ -53,11 +53,25 @@ Use `git reset --hard origin/main` (not `git pull`) — local branch tracking ge
 gh pr merge <number> --auto --squash
 ```
 
-**Step 4 — Schema changes require `prisma generate` in the user's WSL terminal.**
-If a PR includes a migration, tell the user to run `npx prisma generate` in their WSL terminal before using the app. Do NOT try to run this yourself and tell them to restart — just tell them the command.
+**Step 4 — After any PR that includes a schema migration, end your response with this exact callout:**
+
+> ⚠️ **WSL required:** After this PR merges, run in your WSL terminal:
+> ```bash
+> npx prisma generate
+> ```
+
+Put it at the END of your response when creating the PR — not buried in a sentence. Do not run it yourself. The GitHub Action handles `migrate deploy` automatically; this only regenerates the local TypeScript client so the dev server picks up new enum values and model types.
 
 **File writing — use UNC path to write directly to WSL:**
 `\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
+
+⚠️ **Exception — migration SQL files must NOT be written via UNC path.**
+UNC-written files get Windows/root ownership in WSL and break `git reset --hard`.
+Always use the temp-copy method for `prisma/migrations/*/migration.sql`:
+```
+Write  → C:\Users\aswit\AppData\Local\Temp\migration.sql
+wsl bash -c "mkdir -p /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name> && cp /mnt/c/Users/aswit/AppData/Local/Temp/migration.sql /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name>/migration.sql"
+```
 
 ---
 
@@ -225,6 +239,18 @@ Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\t
 
 Dev accounts do not exist in production and vice versa. To access the production app, sign up fresh at `metisplatforms.com/sign-up`.
 
+**Clerk production requires 5 CNAME records in Cloudflare DNS** (all DNS only, not proxied):
+| Name | Points to |
+|------|-----------|
+| `clerk` | `frontend-api.clerk.services` |
+| `accounts` | `accounts.clerk.services` |
+| `clkmail` | `mail.<instance>.clerk.services` |
+| `clk._domainkey` | `dkim1.<instance>.clerk.services` |
+| `clk2._domainkey` | `dkim2.<instance>.clerk.services` |
+Get exact values from Clerk Dashboard → Production → Configure → Domains → Primary. Without these, the sign-in page is a blank screen.
+
+**Clerk sends its own verification emails** (sign-in codes, magic links) through `clkmail.metisplatforms.com` — this is separate from Resend. New domains may land in spam until sending reputation builds. Resend is only used for the app's own digest emails.
+
 **The `SUPER_ADMIN_EMAILS` Vercel env var** controls access to the super-admin dashboard (`/admin`). Set it to the email address the admin user signs in with (e.g. `you@gmail.com`). It is checked by `lib/admin-auth.ts` — it is an email address, NOT a Clerk user ID. Multiple admins: comma-separated.
 
 ### Dev → Production Workflow
@@ -251,14 +277,24 @@ A GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` a
 - **You never need to remember to run migrations manually** — just merge the PR
 
 **FleetView workflow for schema changes (FleetView cannot run interactive commands):**
-1. FleetView updates `prisma/schema.prisma`
-2. FleetView writes the migration SQL manually to `prisma/migrations/<timestamp>_<name>/migration.sql` — this is correct and safe; `prisma migrate deploy` accepts hand-written SQL files
+1. FleetView updates `prisma/schema.prisma` via UNC path (normal)
+2. FleetView writes the migration SQL via **Windows temp + WSL copy** — NOT directly via UNC path.
+   Writing directly via UNC path gives the file Windows/root ownership in WSL, which makes
+   `git reset --hard` fail with "Permission denied" (even sudo chmod cannot fix it).
+   Use this pattern:
+   ```
+   # Write SQL to Windows temp first
+   Write → C:\Users\aswit\AppData\Local\Temp\migration.sql
+   # Copy into WSL via wsl bash (creates file as xovox with correct ownership)
+   wsl bash -c "mkdir -p /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name> && cp /mnt/c/Users/aswit/AppData/Local/Temp/migration.sql /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name>/migration.sql"
+   ```
 3. FleetView commits both files in the PR
-4. After the PR merges, tell the user to run in their WSL terminal:
+4. After the PR merges, tell the user to run ONE command in their WSL terminal:
    ```bash
    npx prisma generate
    ```
-   (The GitHub Action handles `migrate deploy` automatically — only `generate` is needed locally)
+   The GitHub Action handles `migrate deploy` automatically. With correct file ownership,
+   `git reset --hard origin/main` at session start works with no extra steps.
 
 **User-initiated migrations (when running in your own WSL terminal):**
 1. Run `npx prisma migrate dev --name <description>` — this creates the migration file with proper checksums
