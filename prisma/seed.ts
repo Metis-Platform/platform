@@ -44,6 +44,18 @@ async function main() {
   const az = await prisma.jurisdiction.findUniqueOrThrow({ where: { state_county: { state: 'AZ', county: 'Maricopa' } } })
   const tx = await prisma.jurisdiction.findUniqueOrThrow({ where: { state_county: { state: 'TX', county: 'Harris' } } })
 
+  // Georgia tax deed jurisdictions
+  const gaFulton = await prisma.jurisdiction.upsert({
+    where: { state_county: { state: 'GA', county: 'Fulton' } },
+    update: {},
+    create: { state: 'GA', stateName: 'Georgia', county: 'Fulton', timezone: 'America/New_York', investmentType: 'DEED' },
+  })
+  const gaGwinnett = await prisma.jurisdiction.upsert({
+    where: { state_county: { state: 'GA', county: 'Gwinnett' } },
+    update: {},
+    create: { state: 'GA', stateName: 'Georgia', county: 'Gwinnett', timezone: 'America/New_York', investmentType: 'DEED' },
+  })
+
   await seedRuleSet(fl.id, 'Orange County FL — Standard Tax Lien Rules', [
     { eventType: 'NOTICE_MAIL_BY',       label: 'Mail Certified Notice (30-day warning)',  anchorField: 'issueDate', offsetDays: 700,  sortOrder: 1, description: 'Certified mail notice to owner 30 days before 2-year redemption deadline.' },
     { eventType: 'REDEMPTION_DEADLINE',  label: 'Redemption Deadline (2 Years)',            anchorField: 'issueDate', offsetDays: 730,  sortOrder: 2, description: "Owner's right to redeem expires 2 years after certificate issuance. FL Stat. § 197.502." },
@@ -76,6 +88,15 @@ async function main() {
     { eventType: 'FORECLOSURE_ELIGIBLE', label: 'Non-Homestead Redemption Expires (6 Mo)',  anchorField: 'issueDate', offsetDays: 180,  sortOrder: 1, description: 'Non-homestead right of redemption expires 6 months after deed sale. Tex. Tax Code § 34.21(b).' },
     { eventType: 'REDEMPTION_DEADLINE',  label: 'Homestead Redemption Expires (2 Years)',   anchorField: 'issueDate', offsetDays: 730,  sortOrder: 2, description: 'Homestead/agricultural right of redemption expires 2 years after deed sale. Tex. Tax Code § 34.21(a).' },
   ])
+
+  // GA Tax Deed rules — redemption period is 1 year (O.C.G.A. § 48-4-40)
+  const gaRules = [
+    { eventType: 'NOTICE_MAIL_BY',      label: 'Mail Notice of Right to Redeem',          anchorField: 'saleDate', offsetDays: 30,  sortOrder: 1, description: 'Purchaser must notify record title holders of right to redeem within 30 days. O.C.G.A. § 48-4-45.' },
+    { eventType: 'REDEMPTION_DEADLINE', label: 'Redemption Deadline (1 Year)',             anchorField: 'saleDate', offsetDays: 365, sortOrder: 2, description: "Owner's right to redeem expires 1 year from date of sale. O.C.G.A. § 48-4-40." },
+    { eventType: 'FORECLOSURE_ELIGIBLE', label: 'Eligible to Foreclose Equity of Redemption', anchorField: 'saleDate', offsetDays: 365, sortOrder: 3, description: 'After redemption deadline, purchaser may file to bar equity of redemption. O.C.G.A. § 48-4-46.' },
+  ]
+  await seedRuleSet(gaFulton.id,   'Fulton County GA — Tax Deed Rules',   gaRules)
+  await seedRuleSet(gaGwinnett.id, 'Gwinnett County GA — Tax Deed Rules', gaRules)
 
   console.log('\nSeed complete.')
 }

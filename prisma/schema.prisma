@@ -190,6 +190,7 @@ model Deal {
   updatedAt     DateTime     @updatedAt
 
   taxLien      DealTaxLien?
+  taxDeed      DealTaxDeed?
   events       Event[]
   tasks        Task[]
   transactions FinancialTransaction[]
@@ -201,7 +202,30 @@ model Deal {
   @@index([tenantId, strategyType])
 }
 
-// Extension table — Tax Lien / Tax Deed strategy
+// Extension table — Tax Deed strategy
+model DealTaxDeed {
+  id                  String    @id @default(cuid())
+  dealId              String    @unique
+  deal                Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  // Auction details
+  saleDate            DateTime?
+  openingBid          Decimal?  @db.Decimal(14, 2)
+  winningBid          Decimal?  @db.Decimal(14, 2)
+  auctionDate         DateTime? // for leads — scheduled auction date
+  maxBid              Decimal?  @db.Decimal(14, 2)
+  // Redemption tracking
+  redemptionPeriodDays Int?
+  redemptionDeadline  DateTime?
+  isRedeemed          Boolean   @default(false)
+  redemptionAmount    Decimal?  @db.Decimal(14, 2)
+  redemptionDate      DateTime?
+  // Deed recorded
+  deedRecordedDate    DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+// Extension table — Tax Lien strategy
 model DealTaxLien {
   id                      String    @id @default(cuid())
   dealId                  String    @unique
