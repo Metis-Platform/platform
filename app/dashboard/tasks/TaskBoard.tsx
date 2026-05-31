@@ -140,9 +140,10 @@ export default function TaskBoard({
       if (!res.ok) { setFormError('Failed to create task.'); return }
       const created = await res.json()
       const deal = deals.find(d => d.id === form.dealId)
+      const assignedTo = created.assignedTo ?? (form.assignedToId ? users.find(u => u.id === form.assignedToId) ?? null : null)
       setTasks(prev => [{ id: created.id, dealId: created.dealId, title: created.title, description: created.description,
         taskType: created.taskType, status: created.status, priority: created.priority,
-        dueDate: created.dueDate, completedAt: null, apn: deal?.apn ?? '', address: deal?.address ?? null, assignedTo: null }, ...prev])
+        dueDate: created.dueDate, completedAt: null, apn: deal?.apn ?? '', address: deal?.address ?? null, assignedTo }, ...prev])
       setShowCreate(false); setForm(emptyForm)
       router.refresh()
     } catch { setFormError('Failed to create task.') }
@@ -194,16 +195,10 @@ export default function TaskBoard({
                 <div key={task.id}
                   className={`bg-white rounded-xl border transition-colors cursor-pointer ${selectedTask?.id === task.id ? 'border-blue-400 shadow-sm' : 'border-zinc-200 hover:border-zinc-300'}`}
                   onClick={() => { setSelected(prev => prev?.id === task.id ? null : task); setShowCreate(false); setEditing(false); setEditForm({}) }}>
-                  <div className="flex items-start gap-3 p-4">
-                    <button onClick={e => { e.stopPropagation(); handleStatusToggle(task) }} disabled={isPending}
-                      className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${task.status === 'COMPLETED' ? 'border-green-500 bg-green-500' : task.status === 'IN_PROGRESS' ? 'border-purple-400 bg-purple-50' : 'border-zinc-300 bg-white hover:border-blue-400'}`}
-                      title={NEXT_LABEL[task.status]}>
-                      {task.status === 'COMPLETED' && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 6l3 3 5-5"/></svg>}
-                      {task.status === 'IN_PROGRESS' && <span className="w-2 h-2 rounded-full bg-purple-400"/>}
-                    </button>
+                  <div className="flex items-center gap-3 p-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm font-medium ${task.status === 'COMPLETED' ? 'line-through text-zinc-400' : 'text-zinc-900'}`}>{task.title}</p>
+                        <p className={`text-sm font-medium ${task.status === 'COMPLETED' ? 'line-through text-zinc-400 opacity-60' : 'text-zinc-900'}`}>{task.title}</p>
                         <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium ${PRIORITY_BADGE[task.priority] ?? 'bg-zinc-100 text-zinc-500'}`}>{task.priority}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
@@ -212,6 +207,16 @@ export default function TaskBoard({
                         {task.assignedTo && <span>{task.assignedTo.name ?? task.assignedTo.email}</span>}
                       </div>
                     </div>
+                    <button onClick={e => { e.stopPropagation(); handleStatusToggle(task) }} disabled={isPending}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        task.status === 'COMPLETED'
+                          ? 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'
+                          : task.status === 'IN_PROGRESS'
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                      }`}>
+                      {task.status === 'OPEN' ? 'Start →' : task.status === 'IN_PROGRESS' ? 'Complete ✓' : 'Reopen'}
+                    </button>
                   </div>
                 </div>
               )
