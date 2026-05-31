@@ -18,8 +18,9 @@ type EventRow = {
 }
 
 const STRATEGY_LABELS: Record<string, string> = {
-  TAX_LIEN: 'Tax Lien',
-  TAX_DEED: 'Tax Deed',
+  TAX_LIEN:    'Tax Lien',
+  TAX_DEED:    'Tax Deed',
+  FORECLOSURE: 'Foreclosure',
 }
 
 // ---------------------------------------------------------------------------
@@ -41,7 +42,9 @@ export default async function DashboardPage({
   const tenantId = tenant.id
 
   const { strategy: strategyParam } = await searchParams
-  const strategy = strategyParam === 'TAX_DEED' ? StrategyType.TAX_DEED : StrategyType.TAX_LIEN
+  const strategy = strategyParam === 'TAX_DEED' ? StrategyType.TAX_DEED
+    : strategyParam === 'FORECLOSURE' ? StrategyType.FORECLOSURE
+    : StrategyType.TAX_LIEN
   const strategyLabel = STRATEGY_LABELS[strategy] ?? 'Tax Lien'
 
   const now = new Date()
@@ -57,10 +60,12 @@ export default async function DashboardPage({
     db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { gt: in7d, lte: in30d }, deal: { tenantId, strategyType: strategy } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
   ])
 
-  // Portfolio value — lien face amount or deed winning bid
+  // Portfolio value — lien face amount, deed/foreclosure winning bid
   const totalValue = strategy === StrategyType.TAX_LIEN
     ? Number((await db.dealTaxLien.aggregate({ where: { deal: { tenantId } }, _sum: { faceAmount: true } }))._sum.faceAmount ?? 0)
-    : Number((await db.dealTaxDeed.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
+    : strategy === StrategyType.TAX_DEED
+      ? Number((await db.dealTaxDeed.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
+      : Number((await db.dealForeclosure.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
 
   const newDealHref = `/dashboard/liens/new?strategy=${strategy}`
 

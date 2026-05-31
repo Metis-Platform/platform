@@ -75,6 +75,31 @@ const DeedActiveSchema = z.object({
   notes:               z.string().max(2000).optional(),
 })
 
+// Foreclosure schemas
+const ForeclosureLeadSchema = z.object({
+  status:         z.literal('LEAD'),
+  jurisdictionId: z.string().min(1, 'Jurisdiction is required'),
+  apn:            z.string().min(1, 'APN is required').max(60),
+  address:        z.string().max(200).optional(),
+  auctionDate:    z.string().optional(),
+  maxBid:         z.coerce.number().positive('Must be greater than 0').optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+  foreclosureType: z.enum(['MORTGAGE', 'TAX', 'HOA']).default('MORTGAGE'),
+  estimatedLiens: z.coerce.number().positive().optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+  notes:          z.string().max(2000).optional(),
+})
+
+const ForeclosureActiveSchema = z.object({
+  status:         z.literal('ACTIVE'),
+  jurisdictionId: z.string().min(1, 'Jurisdiction is required'),
+  apn:            z.string().min(1, 'APN is required').max(60),
+  address:        z.string().max(200).optional(),
+  auctionDate:    z.string().min(1, 'Auction date is required'),
+  openingBid:     z.coerce.number().positive('Must be greater than 0').optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+  winningBid:     z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
+  foreclosureType: z.enum(['MORTGAGE', 'TAX', 'HOA']).default('MORTGAGE'),
+  notes:          z.string().max(2000).optional(),
+})
+
 // ---------------------------------------------------------------------------
 // createLien
 // ---------------------------------------------------------------------------
@@ -291,6 +316,78 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
     }
   } catch (err) {
     console.error('[createDeed]', err)
+    return { message: 'Failed to save. Please try again.' }
+  }
+
+  redirect(`/dashboard/liens/${dealId}`)
+}
+
+// ---------------------------------------------------------------------------
+// createForeclosure — Foreclosure Auction (lead or active)
+// ---------------------------------------------------------------------------
+
+export async function createForeclosure(_prev: LienFormState, formData: FormData): Promise<LienFormState> {
+  const { userId, orgId } = await auth()
+  if (!userId || !orgId) return { message: 'Not authenticated.' }
+
+  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
+  if (!tenant) return { message: 'Account not found.' }
+
+  const raw = Object.fromEntries(formData)
+  const schema = raw.status === 'LEAD' ? ForeclosureLeadSchema : ForeclosureActiveSchema
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parsed = (schema as any).safeParse(raw)
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors }
+
+  const data = parsed.data
+  let dealId: string
+
+  try {
+    const property = await db.property.upsert({
+      where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn: data.apn, jurisdictionId: data.jurisdictionId } },
+      update: { ...(data.address ? { address: data.address } : {}) },
+      create: { tenantId: tenant.id, jurisdictionId: data.jurisdictionId, apn: data.apn, ...(data.address ? { address: data.address } : {}) },
+    })
+
+    if (data.status === 'LEAD') {
+      const deal = await db.deal.create({
+        data: {
+          tenantId: tenant.id, propertyId: property.id,
+          strategyType: StrategyType.FORECLOSURE, status: DealStatus.LEAD,
+          notes: data.notes || null,
+          foreclosure: {
+            create: {
+              foreclosureType: data.foreclosureType,
+              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+              maxBid: data.maxBid ? Number(data.maxBid) : null,
+              estimatedLiens: data.estimatedLiens ? Number(data.estimatedLiens) : null,
+            },
+          },
+        },
+      })
+      dealId = deal.id
+    } else {
+      const d = data as z.infer<typeof ForeclosureActiveSchema>
+      const deal = await db.deal.create({
+        data: {
+          tenantId: tenant.id, propertyId: property.id,
+          strategyType: StrategyType.FORECLOSURE, status: DealStatus.ACTIVE,
+          notes: d.notes || null,
+          foreclosure: {
+            create: {
+              foreclosureType: d.foreclosureType,
+              auctionDate: new Date(`${d.auctionDate}T12:00:00.000Z`),
+              openingBid: d.openingBid ? Number(d.openingBid) : null,
+              winningBid: d.winningBid,
+            },
+          },
+        },
+      })
+      await generateEventsForDeal(deal.id, tenant.id)
+      dealId = deal.id
+    }
+  } catch (err) {
+    console.error('[createForeclosure]', err)
     return { message: 'Failed to save. Please try again.' }
   }
 
