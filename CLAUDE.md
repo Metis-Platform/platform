@@ -251,16 +251,24 @@ A GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` a
 - **You never need to remember to run migrations manually** — just merge the PR
 
 **FleetView workflow for schema changes (FleetView cannot run interactive commands):**
-1. FleetView updates `prisma/schema.prisma`
-2. FleetView writes the migration SQL manually to `prisma/migrations/<timestamp>_<name>/migration.sql` — this is correct and safe; `prisma migrate deploy` accepts hand-written SQL files
+1. FleetView updates `prisma/schema.prisma` via UNC path (normal)
+2. FleetView writes the migration SQL via **Windows temp + WSL copy** — NOT directly via UNC path.
+   Writing directly via UNC path gives the file Windows/root ownership in WSL, which makes
+   `git reset --hard` fail with "Permission denied" (even sudo chmod cannot fix it).
+   Use this pattern:
+   ```
+   # Write SQL to Windows temp first
+   Write → C:\Users\aswit\AppData\Local\Temp\migration.sql
+   # Copy into WSL via wsl bash (creates file as xovox with correct ownership)
+   wsl bash -c "mkdir -p /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name> && cp /mnt/c/Users/aswit/AppData/Local/Temp/migration.sql /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name>/migration.sql"
+   ```
 3. FleetView commits both files in the PR
-4. After the PR merges, tell the user to run in their WSL terminal:
+4. After the PR merges, tell the user to run ONE command in their WSL terminal:
    ```bash
-   sudo chmod -R 755 prisma/migrations/<migration-directory>/
-   git fetch origin && git reset --hard origin/main
    npx prisma generate
    ```
-   The `sudo chmod` is required because files written by FleetView via the UNC path get Windows permissions that WSL cannot unlink without elevated access. The GitHub Action handles `migrate deploy` automatically — only `generate` is needed locally.
+   The GitHub Action handles `migrate deploy` automatically. With correct file ownership,
+   `git reset --hard origin/main` at session start works with no extra steps.
 
 **User-initiated migrations (when running in your own WSL terminal):**
 1. Run `npx prisma migrate dev --name <description>` — this creates the migration file with proper checksums
