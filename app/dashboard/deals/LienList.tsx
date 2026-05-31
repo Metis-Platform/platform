@@ -22,7 +22,7 @@ export type LienRow = {
 type SortKey = 'apn' | 'state' | 'amount' | 'date' | 'deadline'
 type SortDir = 'asc' | 'desc'
 
-const STATUS_OPTIONS = ['All', 'Active', 'Lead', 'Overdue'] as const
+const STATUS_OPTIONS = ['All', 'Active', 'Lead', 'Overdue', 'Not Won'] as const
 
 const STRATEGY_META: Record<string, { title: string; singular: string; newLabel: string; emptyText: string; searchPlaceholder: string; dateCol: string; amountCol: string }> = {
   TAX_LIEN: {
@@ -77,10 +77,12 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
       if (q && ![d.apn, d.address ?? '', d.certificateNumber ?? '', d.county].some(s => s.toLowerCase().includes(q))) return false
       // State
       if (stateFilter !== 'All' && d.state !== stateFilter) return false
-      // Status
+      // Status — default All excludes NOT_WON (archive)
+      if (statusFilter === 'All'     && d.status === 'NOT_WON') return false
       if (statusFilter === 'Lead'    && d.status !== 'LEAD') return false
-      if (statusFilter === 'Active'  && (d.status === 'LEAD' || d.overdueCount > 0)) return false
+      if (statusFilter === 'Active'  && (d.status === 'LEAD' || d.status === 'NOT_WON' || d.overdueCount > 0)) return false
       if (statusFilter === 'Overdue' && d.overdueCount === 0) return false
+      if (statusFilter === 'Not Won' && d.status !== 'NOT_WON') return false
       return true
     })
   }, [deals, search, statusFilter, stateFilter])
@@ -117,9 +119,10 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
     return <span className="ml-1 text-blue-500">{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
-  const active  = deals.filter(d => d.status !== 'LEAD').length
-  const leads   = deals.filter(d => d.status === 'LEAD').length
-  const overdue = deals.filter(d => d.overdueCount > 0).length
+  const active   = deals.filter(d => d.status !== 'LEAD' && d.status !== 'NOT_WON').length
+  const leads    = deals.filter(d => d.status === 'LEAD').length
+  const overdue  = deals.filter(d => d.overdueCount > 0).length
+  const notWon   = deals.filter(d => d.status === 'NOT_WON').length
 
   return (
     <div>
@@ -128,7 +131,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">{meta.title}</h1>
           <p className="text-sm text-zinc-500 mt-0.5">
-            {active} active · {leads} leads{overdue > 0 ? ` · ${overdue} overdue` : ''}
+            {active} active · {leads} leads{overdue > 0 ? ` · ${overdue} overdue` : ''}{notWon > 0 ? ` · ${notWon} not won` : ''}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -161,7 +164,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
 
         {/* Status filter */}
         <div className="flex items-center gap-1 bg-zinc-100 rounded-lg p-1">
-          {STATUS_OPTIONS.map(s => (
+          {STATUS_OPTIONS.filter(s => s !== 'Not Won' || notWon > 0).map(s => (
             <button
               key={s}
               onClick={() => setStatus(s)}
@@ -259,6 +262,8 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                     <td className="px-4 py-3">
                       {isLead ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Lead</span>
+                      ) : deal.status === 'NOT_WON' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-500">Not Won</span>
                       ) : deal.overdueCount > 0 ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{deal.overdueCount} overdue</span>
                       ) : (

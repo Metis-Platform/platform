@@ -4,13 +4,15 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import TaskBoard from './TaskBoard'
 
-export default async function TasksPage() {
+export default async function TasksPage({ searchParams }: { searchParams: Promise<{ dealId?: string }> }) {
   const { userId, orgId } = await auth()
   if (!userId || !orgId) redirect('/sign-in')
 
   const synced = await syncUserToDatabase()
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
+
+  const { dealId: prefilledDealId } = await searchParams
 
   const [tasks, users, deals] = await Promise.all([
     db.task.findMany({
@@ -35,6 +37,7 @@ export default async function TasksPage() {
 
   return (
     <TaskBoard
+      prefilledDealId={prefilledDealId}
       tasks={tasks.map(t => ({
         id: t.id,
         dealId: t.dealId,

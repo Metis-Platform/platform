@@ -53,15 +53,15 @@ const NEXT_LABEL:  Record<string, string> = { OPEN: 'Start', IN_PROGRESS: 'Compl
 const emptyForm = { dealId: '', title: '', description: '', taskType: 'CUSTOM', priority: 'MEDIUM', dueDate: '', assignedToId: '' }
 
 export default function TaskBoard({
-  tasks: initial, users, deals,
+  tasks: initial, users, deals, prefilledDealId,
 }: {
-  tasks: Task[]; users: User[]; deals: Deal[]
+  tasks: Task[]; users: User[]; deals: Deal[]; prefilledDealId?: string
 }) {
   const [tasks, setTasks]           = useState(initial)
   const [activeTab, setActiveTab]   = useState('OPEN')
   const [selectedTask, setSelected] = useState<Task | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm]             = useState(emptyForm)
+  const [showCreate, setShowCreate] = useState(!!prefilledDealId)
+  const [form, setForm]             = useState({ ...emptyForm, dealId: prefilledDealId ?? '' })
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError]   = useState('')
   const [editing, setEditing]       = useState(false)
