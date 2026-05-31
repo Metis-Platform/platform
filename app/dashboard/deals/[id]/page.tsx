@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { EventStatus, DealStatus } from '@/app/generated/prisma'
 import { DeleteButton } from './delete-button'
 import DocumentSection, { type DocRow } from './DocumentSection'
+import DealTaskSection, { type DealTask } from './DealTaskSection'
 
 function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string, strategyType: string) {
   const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
@@ -36,7 +37,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
-  const [deal, rawDocs] = await Promise.all([
+  const [deal, rawDocs, rawTasks] = await Promise.all([
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
       include: { property: { include: { jurisdiction: true } }, taxLien: true, taxDeed: true, foreclosure: true, events: { orderBy: { dueDate: 'asc' } } },
@@ -44,6 +45,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     db.document.findMany({
       where: { dealId: id, tenantId: tenant.id },
       orderBy: { uploadedAt: 'desc' },
+    }),
+    db.task.findMany({
+      where: { dealId: id, tenantId: tenant.id, status: { not: 'CANCELLED' } },
+      include: { assignedTo: { select: { id: true, name: true, email: true } } },
+      orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
     }),
   ])
   if (!deal) notFound()
@@ -55,6 +61,15 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     mimeType:   d.mimeType,
     docType:    d.docType,
     uploadedAt: d.uploadedAt.toISOString(),
+  }))
+
+  const dealTasks: DealTask[] = rawTasks.map(t => ({
+    id:         t.id,
+    title:      t.title,
+    status:     t.status,
+    priority:   t.priority,
+    dueDate:    t.dueDate?.toISOString() ?? null,
+    assignedTo: t.assignedTo,
   }))
 
   const { taxLien, taxDeed, foreclosure, property, events } = deal
@@ -214,6 +229,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
       {/* Documents */}
       <DocumentSection dealId={deal.id} initialDocs={docs} />
+
+      {/* Tasks */}
+      <div className="mt-6">
+        <DealTaskSection dealId={deal.id} initialTasks={dealTasks} />
+      </div>
     </div>
   )
 }
