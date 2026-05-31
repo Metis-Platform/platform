@@ -5,6 +5,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { EventStatus, DealStatus } from '@/app/generated/prisma'
 import { DeleteButton } from './delete-button'
+import { NotWonButton, RelistButton } from './not-won-button'
 import DocumentSection, { type DocRow } from './DocumentSection'
 import DealTaskSection, { type DealTask } from './DealTaskSection'
 
@@ -77,7 +78,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const isForeclosure = deal.strategyType === 'FORECLOSURE'
   const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
+  const isNotWon = (deal.status as string) === 'NOT_WON'
   const overdueCount = events.filter(e => e.status === EventStatus.OVERDUE).length
+  const leadAuctionDate = isLead
+    ? (isTaxDeed ? taxDeed?.auctionDate : isForeclosure ? foreclosure?.auctionDate : taxLien?.auctionDate)?.toISOString() ?? null
+    : null
   const researchLinks = buildResearchLinks(property.apn, property.address, jur.stateName, jur.county, jur.state, deal.strategyType)
 
   return (
@@ -89,17 +94,23 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <span>/</span>
           <span className="text-zinc-900 font-medium font-mono">{property.apn}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {isLead && (
-            <Link href={`/dashboard/deals/${deal.id}/convert`}
-              className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
-              Won at Auction
+            <>
+              <Link href={`/dashboard/deals/${deal.id}/convert`}
+                className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
+                Won at Auction
+              </Link>
+              <NotWonButton dealId={deal.id} auctionDate={leadAuctionDate} />
+            </>
+          )}
+          {isNotWon && <RelistButton dealId={deal.id} />}
+          {!isNotWon && (
+            <Link href={`/dashboard/deals/${deal.id}/edit`}
+              className="px-3 py-1.5 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
+              Edit
             </Link>
           )}
-          <Link href={`/dashboard/deals/${deal.id}/edit`}
-            className="px-3 py-1.5 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
-            Edit
-          </Link>
           <DeleteButton dealId={deal.id} />
         </div>
       </div>
@@ -116,6 +127,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           </div>
           {isLead ? (
             <span className="shrink-0 px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">Lead</span>
+          ) : isNotWon ? (
+            <span className="shrink-0 px-3 py-1 rounded-full text-sm font-semibold bg-zinc-100 text-zinc-500">Not Won</span>
           ) : overdueCount > 0 ? (
             <span className="shrink-0 px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">{overdueCount} Overdue</span>
           ) : (
