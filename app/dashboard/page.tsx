@@ -17,11 +17,20 @@ type EventRow = {
   deal: { property: { apn: string; address: string | null } }
 }
 
+const STRATEGY_LABELS: Record<string, string> = {
+  TAX_LIEN: 'Tax Lien',
+  TAX_DEED: 'Tax Deed',
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ strategy?: string }>
+}) {
   const { userId, orgId } = await auth()
   if (!userId || !orgId) redirect('/sign-in')
 
@@ -30,21 +39,30 @@ export default async function DashboardPage() {
 
   const { tenant } = synced
   const tenantId = tenant.id
+
+  const { strategy: strategyParam } = await searchParams
+  const strategy = strategyParam === 'TAX_DEED' ? StrategyType.TAX_DEED : StrategyType.TAX_LIEN
+  const strategyLabel = STRATEGY_LABELS[strategy] ?? 'Tax Lien'
+
   const now = new Date()
   const in7d  = new Date(now.getTime() + 7  * 86_400_000)
   const in30d = new Date(now.getTime() + 30 * 86_400_000)
 
   const include = { deal: { include: { property: true } } } as const
 
-  const [activeCount, valueResult, overdueEvents, urgentEvents, upcomingEvents] = await Promise.all([
-    db.deal.count({ where: { tenantId, strategyType: StrategyType.TAX_LIEN, status: 'ACTIVE' } }),
-    db.dealTaxLien.aggregate({ where: { deal: { tenantId } }, _sum: { faceAmount: true } }),
-    db.event.findMany({ where: { status: EventStatus.OVERDUE,  deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
-    db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { lte: in7d  }, deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
-    db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { gt: in7d, lte: in30d }, deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
+  const [activeCount, overdueEvents, urgentEvents, upcomingEvents] = await Promise.all([
+    db.deal.count({ where: { tenantId, strategyType: strategy, status: 'ACTIVE' } }),
+    db.event.findMany({ where: { status: EventStatus.OVERDUE,  deal: { tenantId, strategyType: strategy } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
+    db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { lte: in7d  }, deal: { tenantId, strategyType: strategy } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
+    db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { gt: in7d, lte: in30d }, deal: { tenantId, strategyType: strategy } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
   ])
 
-  const totalValue = Number(valueResult._sum.faceAmount ?? 0)
+  // Portfolio value — lien face amount or deed winning bid
+  const totalValue = strategy === StrategyType.TAX_LIEN
+    ? Number((await db.dealTaxLien.aggregate({ where: { deal: { tenantId } }, _sum: { faceAmount: true } }))._sum.faceAmount ?? 0)
+    : Number((await db.dealTaxDeed.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
+
+  const newDealHref = `/dashboard/liens/new?strategy=${strategy}`
 
   return (
     <div>
@@ -52,19 +70,19 @@ export default async function DashboardPage() {
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
         <Link
-          href="/dashboard/liens/new"
+          href={newDealHref}
           className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <span>+</span> New Lien
+          <span>+</span> New {strategyLabel}
         </Link>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Active Liens"    value={activeCount} />
-        <StatCard label="Portfolio Value" value={`$${totalValue.toLocaleString()}`} />
-        <StatCard label="Overdue"         value={overdueEvents.length}  accent={overdueEvents.length > 0 ? 'red' : undefined} />
-        <StatCard label="Due in 7 Days"   value={urgentEvents.length}   accent={urgentEvents.length  > 0 ? 'yellow' : undefined} />
+        <StatCard label={`Active ${strategyLabel}s`} value={activeCount} />
+        <StatCard label="Portfolio Value"             value={`$${totalValue.toLocaleString()}`} />
+        <StatCard label="Overdue"                     value={overdueEvents.length}  accent={overdueEvents.length > 0 ? 'red' : undefined} />
+        <StatCard label="Due in 7 Days"               value={urgentEvents.length}   accent={urgentEvents.length  > 0 ? 'yellow' : undefined} />
       </div>
 
       {/* Deadline buckets */}
@@ -77,12 +95,12 @@ export default async function DashboardPage() {
       {/* Empty state */}
       {activeCount === 0 && (
         <div className="mt-12 text-center py-16 bg-white rounded-xl border border-zinc-200">
-          <p className="text-zinc-500 mb-4">No liens yet. Add your first lien to see deadlines here.</p>
+          <p className="text-zinc-500 mb-4">No {strategyLabel.toLowerCase()}s yet. Add your first to see deadlines here.</p>
           <Link
-            href="/dashboard/liens/new"
+            href={newDealHref}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
-            + Add First Lien
+            + Add First {strategyLabel}
           </Link>
         </div>
       )}

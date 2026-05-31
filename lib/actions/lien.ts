@@ -52,6 +52,29 @@ const UpdateLienSchema = z.object({
   notes:             z.string().max(2000).optional(),
 })
 
+// Tax Deed schemas
+const DeedLeadSchema = z.object({
+  status:        z.literal('LEAD'),
+  jurisdictionId: z.string().min(1, 'Jurisdiction is required'),
+  apn:           z.string().min(1, 'APN is required').max(60),
+  address:       z.string().max(200).optional(),
+  auctionDate:   z.string().optional(),
+  maxBid:        z.coerce.number().positive('Must be greater than 0').optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+  notes:         z.string().max(2000).optional(),
+})
+
+const DeedActiveSchema = z.object({
+  status:              z.literal('ACTIVE'),
+  jurisdictionId:      z.string().min(1, 'Jurisdiction is required'),
+  apn:                 z.string().min(1, 'APN is required').max(60),
+  address:             z.string().max(200).optional(),
+  saleDate:            z.string().min(1, 'Sale date is required'),
+  openingBid:          z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0').optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+  winningBid:          z.coerce.number({ error: 'Must be a number' }).positive('Must be greater than 0'),
+  redemptionPeriodDays: z.coerce.number().int().positive('Must be a positive integer').optional().or(z.literal('')).transform(v => v === '' ? undefined : Number(v)),
+  notes:               z.string().max(2000).optional(),
+})
+
 // ---------------------------------------------------------------------------
 // createLien
 // ---------------------------------------------------------------------------
@@ -193,6 +216,82 @@ export async function updateLien(dealId: string, _prev: LienFormState, formData:
   } catch (err) {
     console.error('[updateLien]', err)
     return { message: 'Failed to update. Please try again.' }
+  }
+
+  redirect(`/dashboard/liens/${dealId}`)
+}
+
+// ---------------------------------------------------------------------------
+// createDeed — Tax Deed (lead or active)
+// ---------------------------------------------------------------------------
+
+export async function createDeed(_prev: LienFormState, formData: FormData): Promise<LienFormState> {
+  const { userId, orgId } = await auth()
+  if (!userId || !orgId) return { message: 'Not authenticated.' }
+
+  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
+  if (!tenant) return { message: 'Account not found.' }
+
+  const raw = Object.fromEntries(formData)
+  const schema = raw.status === 'LEAD' ? DeedLeadSchema : DeedActiveSchema
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parsed = (schema as any).safeParse(raw)
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors }
+
+  const data = parsed.data
+  let dealId: string
+
+  try {
+    const property = await db.property.upsert({
+      where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn: data.apn, jurisdictionId: data.jurisdictionId } },
+      update: { ...(data.address ? { address: data.address } : {}) },
+      create: { tenantId: tenant.id, jurisdictionId: data.jurisdictionId, apn: data.apn, ...(data.address ? { address: data.address } : {}) },
+    })
+
+    if (data.status === 'LEAD') {
+      const deal = await db.deal.create({
+        data: {
+          tenantId: tenant.id, propertyId: property.id,
+          strategyType: StrategyType.TAX_DEED, status: DealStatus.LEAD,
+          notes: data.notes || null,
+          taxDeed: {
+            create: {
+              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+              maxBid: data.maxBid ? Number(data.maxBid) : null,
+            },
+          },
+        },
+      })
+      dealId = deal.id
+    } else {
+      const d = data as z.infer<typeof DeedActiveSchema>
+      const saleDateObj = new Date(`${d.saleDate}T12:00:00.000Z`)
+      const redemptionDeadline = d.redemptionPeriodDays
+        ? new Date(saleDateObj.getTime() + d.redemptionPeriodDays * 86_400_000)
+        : null
+
+      const deal = await db.deal.create({
+        data: {
+          tenantId: tenant.id, propertyId: property.id,
+          strategyType: StrategyType.TAX_DEED, status: DealStatus.ACTIVE,
+          notes: d.notes || null,
+          taxDeed: {
+            create: {
+              saleDate: saleDateObj,
+              openingBid: d.openingBid ? Number(d.openingBid) : null,
+              winningBid: d.winningBid,
+              redemptionPeriodDays: d.redemptionPeriodDays ?? null,
+              redemptionDeadline,
+            },
+          },
+        },
+      })
+      await generateEventsForDeal(deal.id, tenant.id)
+      dealId = deal.id
+    }
+  } catch (err) {
+    console.error('[createDeed]', err)
+    return { message: 'Failed to save. Please try again.' }
   }
 
   redirect(`/dashboard/liens/${dealId}`)

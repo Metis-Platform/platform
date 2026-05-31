@@ -30,7 +30,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const [deal, rawDocs] = await Promise.all([
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
-      include: { property: { include: { jurisdiction: true } }, taxLien: true, events: { orderBy: { dueDate: 'asc' } } },
+      include: { property: { include: { jurisdiction: true } }, taxLien: true, taxDeed: true, events: { orderBy: { dueDate: 'asc' } } },
     }),
     db.document.findMany({
       where: { dealId: id, tenantId: tenant.id },
@@ -48,7 +48,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     uploadedAt: d.uploadedAt.toISOString(),
   }))
 
-  const { taxLien, property, events } = deal
+  const { taxLien, taxDeed, property, events } = deal
+  const isTaxDeed = deal.strategyType === 'TAX_DEED'
   const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
   const overdueCount = events.filter(e => e.status === EventStatus.OVERDUE).length
@@ -102,14 +103,31 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         {/* Certificate / Lead details */}
         <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
-            {isLead ? 'Pre-Bid Info' : 'Certificate Details'}
+            {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : 'Certificate Details'}
           </h2>
           <dl className="space-y-3 text-sm">
             {isLead ? (
               <>
                 <Row label="Status" value={<span className="text-blue-700 font-medium">Watchlist / Lead</span>} />
-                <Row label="Auction Date" value={taxLien?.auctionDate ? new Date(taxLien.auctionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'} />
-                <Row label="Max Bid" value={taxLien?.maxBid ? `$${Number(taxLien.maxBid).toLocaleString()}` : '—'} />
+                <Row label="Auction Date" value={
+                  (isTaxDeed ? taxDeed?.auctionDate : taxLien?.auctionDate)
+                    ? new Date((isTaxDeed ? taxDeed!.auctionDate! : taxLien!.auctionDate!)).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                    : '—'
+                } />
+                <Row label="Max Bid" value={
+                  (isTaxDeed ? taxDeed?.maxBid : taxLien?.maxBid)
+                    ? `$${Number(isTaxDeed ? taxDeed!.maxBid : taxLien!.maxBid).toLocaleString()}`
+                    : '—'
+                } />
+              </>
+            ) : isTaxDeed ? (
+              <>
+                <Row label="Sale Date" value={taxDeed?.saleDate ? new Date(taxDeed.saleDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'} />
+                <Row label="Winning Bid" value={taxDeed?.winningBid ? `$${Number(taxDeed.winningBid).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'} />
+                <Row label="Opening Bid" value={taxDeed?.openingBid ? `$${Number(taxDeed.openingBid).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'} />
+                <Row label="Redemption Period" value={taxDeed?.redemptionPeriodDays ? `${taxDeed.redemptionPeriodDays} days` : '—'} />
+                <Row label="Redemption Deadline" value={taxDeed?.redemptionDeadline ? new Date(taxDeed.redemptionDeadline).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'} />
+                <Row label="Redeemed" value={taxDeed?.isRedeemed ? 'Yes' : 'No'} />
               </>
             ) : (
               <>

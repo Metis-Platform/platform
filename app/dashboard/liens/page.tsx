@@ -5,7 +5,11 @@ import { db } from '@/lib/db'
 import { StrategyType, EventStatus } from '@/app/generated/prisma'
 import LienList, { type LienRow } from './LienList'
 
-export default async function LiensPage() {
+export default async function LiensPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ strategy?: string }>
+}) {
   const { userId, orgId } = await auth()
   if (!userId || !orgId) redirect('/sign-in')
 
@@ -13,11 +17,15 @@ export default async function LiensPage() {
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
+  const { strategy: strategyParam } = await searchParams
+  const strategy = strategyParam === 'TAX_DEED' ? StrategyType.TAX_DEED : StrategyType.TAX_LIEN
+
   const deals = await db.deal.findMany({
-    where: { tenantId: tenant.id, strategyType: StrategyType.TAX_LIEN },
+    where: { tenantId: tenant.id, strategyType: strategy },
     include: {
       property: { include: { jurisdiction: true } },
       taxLien: true,
+      taxDeed: true,
       events: { where: { status: EventStatus.PENDING }, orderBy: { dueDate: 'asc' }, take: 1 },
       _count: { select: { events: { where: { status: EventStatus.OVERDUE } } } },
     },
@@ -28,6 +36,11 @@ export default async function LiensPage() {
 
   const rows: LienRow[] = deals.map(d => {
     const next = d.events[0] ?? null
+    // For tax deeds, use winningBid as the "face amount" column
+    const faceAmt = strategy === StrategyType.TAX_LIEN
+      ? (d.taxLien?.faceAmount != null ? Number(d.taxLien.faceAmount) : null)
+      : (d.taxDeed?.winningBid  != null ? Number(d.taxDeed.winningBid)  : null)
+
     return {
       id:                d.id,
       status:            d.status,
@@ -37,13 +50,13 @@ export default async function LiensPage() {
       county:            d.property.jurisdiction.county,
       state:             d.property.jurisdiction.state,
       certificateNumber: d.taxLien?.certificateNumber ?? null,
-      issueDate:         d.taxLien?.issueDate?.toISOString() ?? null,
+      issueDate:         d.taxLien?.issueDate?.toISOString() ?? d.taxDeed?.saleDate?.toISOString() ?? null,
       auctionDate:       d.taxLien?.auctionDate?.toISOString() ?? null,
-      faceAmount:        d.taxLien?.faceAmount != null ? Number(d.taxLien.faceAmount) : null,
+      faceAmount:        faceAmt,
       nextDeadlineLabel: next?.label ?? null,
       nextDeadlineDays:  next ? Math.round((next.dueDate.getTime() - now) / 86_400_000) : null,
     }
   })
 
-  return <LienList deals={rows} />
+  return <LienList deals={rows} strategy={strategy} />
 }

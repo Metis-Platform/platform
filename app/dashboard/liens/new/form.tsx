@@ -2,14 +2,23 @@
 
 import { useState, useMemo, useActionState } from 'react'
 import Link from 'next/link'
-import { createLien } from '@/lib/actions/lien'
+import { createLien, createDeed } from '@/lib/actions/lien'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { Jurisdiction } from '@/app/generated/prisma'
 
 const initialState: LienFormState = {}
 
-export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) {
-  const [state, formAction, pending] = useActionState(createLien, initialState)
+export function NewLienForm({
+  jurisdictions,
+  strategy = 'TAX_LIEN',
+}: {
+  jurisdictions: Jurisdiction[]
+  strategy?: string
+}) {
+  const isTaxDeed = strategy === 'TAX_DEED'
+  const action = isTaxDeed ? createDeed : createLien
+
+  const [state, formAction, pending] = useActionState(action, initialState)
   const [stage, setStage] = useState<'LEAD' | 'ACTIVE'>('LEAD')
   const [selectedState, setSelectedState] = useState('')
 
@@ -23,6 +32,14 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
     () => jurisdictions.filter(j => j.state === selectedState),
     [jurisdictions, selectedState],
   )
+
+  const submitLabel = pending
+    ? 'Saving…'
+    : stage === 'LEAD'
+      ? 'Add to Watchlist'
+      : isTaxDeed
+        ? 'Create Deed & Generate Deadlines'
+        : 'Create Lien & Generate Deadlines'
 
   return (
     <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
@@ -48,7 +65,9 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
         <p className="mt-2 text-xs text-zinc-400">
           {stage === 'LEAD'
             ? 'Track a property before the auction. Convert to Active after winning.'
-            : 'You won this lien. Deadlines will be generated from the issue date.'}
+            : isTaxDeed
+              ? 'You won this deed. Redemption deadlines will be generated from the sale date.'
+              : 'You won this lien. Deadlines will be generated from the issue date.'}
         </p>
       </section>
 
@@ -88,7 +107,7 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
         </div>
       </section>
 
-      {/* Lead-only fields */}
+      {/* Lead-only fields (same for both lien and deed) */}
       {stage === 'LEAD' && (
         <section className="px-6 py-5 space-y-4">
           <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Auction Info (optional)</h2>
@@ -103,8 +122,8 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
         </section>
       )}
 
-      {/* Active-only fields */}
-      {stage === 'ACTIVE' && (
+      {/* Active lien fields */}
+      {stage === 'ACTIVE' && !isTaxDeed && (
         <section className="px-6 py-5 space-y-4">
           <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Certificate Details</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -124,6 +143,27 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
         </section>
       )}
 
+      {/* Active deed fields */}
+      {stage === 'ACTIVE' && isTaxDeed && (
+        <section className="px-6 py-5 space-y-4">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Deed Details</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Sale Date" error={state.errors?.saleDate}>
+              <input type="date" name="saleDate" className="input-base" />
+            </Field>
+            <Field label="Winning Bid ($)" error={state.errors?.winningBid}>
+              <input type="number" name="winningBid" min="0.01" step="0.01" placeholder="15000.00" className="input-base" />
+            </Field>
+            <Field label="Opening Bid ($) (optional)" error={state.errors?.openingBid}>
+              <input type="number" name="openingBid" min="0.01" step="0.01" placeholder="10000.00" className="input-base" />
+            </Field>
+            <Field label="Redemption Period (days)" error={state.errors?.redemptionPeriodDays}>
+              <input type="number" name="redemptionPeriodDays" min="1" step="1" placeholder="e.g. 365 for GA" className="input-base" />
+            </Field>
+          </div>
+        </section>
+      )}
+
       {/* Notes */}
       <section className="px-6 py-5">
         <Field label="Notes (optional)" error={state.errors?.notes}>
@@ -134,7 +174,7 @@ export function NewLienForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }
       <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
         <button type="submit" disabled={pending}
           className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-          {pending ? 'Saving…' : stage === 'LEAD' ? 'Add to Watchlist' : 'Create Lien & Generate Deadlines'}
+          {submitLabel}
         </button>
         <Link href="/dashboard/liens" className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
       </div>
