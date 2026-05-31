@@ -1,7 +1,7 @@
 # Metis Platform — Build Roadmap
 
-> **Last Updated:** 2026-05-30
-> **Status:** Phase 1 ✅ Complete — Phase 2 (AI Layer) or Phase 3 (SaaS) next
+> **Last Updated:** 2026-05-31
+> **Status:** Phase 1 ✅ Complete · Phase 3 ✅ Complete · Phase 4-partial ✅ Complete — Phase 2 (AI Layer) next
 > **Phase Sequence:** 1 → 3 → 4-partial (Deed/Foreclosure) → 2 (AI) → 4-full
 > **Source of Truth:** This file (phase-level) + GitHub Issues (task-level backlog and bugs)
 > **Backlog:** https://github.com/Metis-Platform/platform/issues
@@ -62,7 +62,7 @@ Browser (Next.js App Router)
     │
     ├── App Routes (pages, layouts, UI components)
     │
-    ├── API Routes (tRPC or REST endpoints)
+    ├── API Routes (REST endpoints)
     │        │
     │        ├── Core Services (deal, property, contact, document)
     │        ├── Rules Engine (deadline calculation per jurisdiction)
@@ -94,13 +94,15 @@ Extension table pattern — each strategy adds its own table extending the core 
 | `Property` | Address, APN, attributes |
 | `Contact` | Owner, attorney, agent |
 | `Deal` | Universal container: StrategyType, Status, dates, financials |
-| `Deal_TaxLien` | Extension: cert #, interest rate, redemption expiry |
-| `Deal_FixFlip` | Extension: rehab budget, ARV, contractor |
-| `Deal_Wholesale` | Extension: assignment fee, buyer CRM |
+| `DealTaxLien` | Extension: cert #, interest rate, redemption expiry |
+| `DealTaxDeed` | Extension: sale date, winning bid, redemption deadline |
+| `DealForeclosure` | Extension: foreclosure type, auction date, bids, redemption deadline |
+| `Deal_FixFlip` | Extension: rehab budget, ARV, contractor (Phase 4) |
+| `Deal_Wholesale` | Extension: assignment fee, buyer CRM (Phase 4) |
 | `Event` | Rule-derived milestone (RedemptionEnd, NoticeDue, etc.) |
 | `Task` | Operational action tied to Event or Deal |
 | `FinancialTransaction` | Purchase cost, redemption, legal fees — ROI source |
-| `Document` | File reference (R2), linked to Lien or Event |
+| `Document` | File reference (R2), linked to Deal or Event |
 | `AuditLog` | Every state change, timestamps, user |
 
 ---
@@ -121,131 +123,74 @@ Extension table pattern — each strategy adds its own table extending the core 
 - [x] `proxy.ts` Clerk middleware (Next.js 16 pattern)
 - [x] Tenant + User sync on first dashboard visit
 
-**Key learnings (Prisma 7 + Next.js 16):**
-- Next.js 16 uses `proxy.ts` not `middleware.ts` for Clerk
-- Prisma 7 removed `url` from `schema.prisma` and zero-arg `PrismaClient()` — requires driver adapter at runtime
-- Use `PrismaNeon({ connectionString })` from `@prisma/adapter-neon`
-- Build script must include `prisma generate` since `app/generated/` is gitignored
-- Prisma Studio has stream errors with Neon serverless adapter (cosmetic, data still accessible)
-- Clerk default sign-up collects email only — enable first/last name in Clerk dashboard
-
-**Deliverable:** ✅ Users can sign up, create their org, reach a protected dashboard. Tenant + User rows in Neon confirmed.
-
 ---
 
 ### Phase 1 — Core MVP: Tax Lien Module
-**Status: 1B ✅ Complete | 1C next**
+**Status: ✅ Complete — PRs #8, #11, #14, #49, #51, #52, #54**
 
-#### 1A — Data Model
-**Status: ✅ Complete**
+#### 1A — Data Model ✅
 - [x] Full Prisma schema: all core entities + `DealTaxLien` extension (19 tables)
 - [x] Migration applied to Neon PostgreSQL
 - [x] Seed data: 5 jurisdictions (FL, NJ, IL, AZ, TX) with rules
 
-#### 1B — Rules Engine
-**Status: ✅ Complete**
+#### 1B — Rules Engine ✅
 - [x] Rule evaluation service: `generateEventsForDeal(dealId, tenantId) → Event[]`
 - [x] Business day + holiday calendar arithmetic (US federal holidays 2024–2035)
 - [x] Nightly deadline sweep via `/api/cron/deadline-sweep` (Vercel cron, 06:00 UTC)
 - [x] PENDING → OVERDUE status transitions on sweep
 
-**Key learnings (Phase 1B):**
-- `PrismaNeon` (WebSocket adapter) needs `neonConfig.webSocketConstructor = ws` in Node.js seed/script contexts (not needed in Vercel runtime)
-- `lib/db.ts` must call `dotenv.config()` at module init — ESM hoisting means the singleton is created before script bodies run
-- Cron route API endpoints must be explicitly added to Clerk's public routes in `proxy.ts` — they use their own auth (CRON_SECRET), not Clerk sessions
-- Vercel Deployment Protection blocks external curl tests of live URLs; Vercel's own cron bypasses it automatically
-
-#### 1C — Core UI
-**Status: 1C-A ✅ Complete | 1C-B ✅ Complete | 1C-C next**
-
-**1C-A + 1C-B (Done — PRs #8, #11):**
+#### 1C — Core UI ✅
 - [x] Dashboard: portfolio stats + 3 deadline buckets (Overdue / 7-day / 30-day)
-- [x] Lien list: table with APN, jurisdiction, cert #, face amount, status chip (Lead/Active/Overdue), next deadline
-- [x] Lien detail: certificate info, events timeline with status dots, research links (Google Maps, Bing, NETRonline, Zillow)
-- [x] Create lien form: cascading state → county picker, Lead/Active toggle, Zod validation with inline errors
-- [x] Edit lien form: pre-populated, regenerates events on issue date change
-- [x] Lead/watchlist workflow: pre-bid leads with auction date + max bid; "Won at Auction" converts to active
-- [x] Delete lien with confirmation
+- [x] Deal list: table with APN, jurisdiction, cert #, face amount, status chip, next deadline
+- [x] Deal detail: certificate info, events timeline with status dots, research links
+- [x] Create deal form: cascading state → county picker, Lead/Active toggle, Zod validation
+- [x] Edit deal form: pre-populated, regenerates events on issue date change
+- [x] Lead/watchlist workflow: pre-bid leads with auction date + max bid; "Won" converts to active
+- [x] Delete deal with confirmation
 - [x] 459 jurisdictions seeded: all counties for FL, NJ, IL, AZ, TX
-- [x] InvestmentType: LIEN / DEED / REDEEMABLE_DEED
-- [x] Nav: Dashboard / Liens links in layout
-
-**1C-C (Done — PR #14):**
 - [x] Calendar view: monthly grid, events color-coded by urgency
 - [x] Task board: Open/In Progress/Completed tabs, status toggle, priority badges
-- [x] Calendar + Tasks added to nav
 
-**Known enhancements filed as backlog issues:**
-- #29 Calendar month/year picker with 12-month overview
-- #30 Calendar sync (Google Calendar, Outlook, iCal)
-- #31 Tasks on calendar with distinct color
-- #32 Full task management (create, edit, delete)
-- #33 Edit jurisdiction/APN on existing lien
+#### 1D — Alerts, Import & Documents ✅
+- [x] Deal list filtering and sorting: search, status tabs, state dropdown, sortable headers
+- [x] Document upload: drag-and-drop to Cloudflare R2, presigned URLs, delete
+- [x] CSV import: template download, two-step preview+confirm, per-row validation, bulk event gen
+- [x] Email alerts via Resend: daily digest (07:00 UTC cron) per tenant
 
-**Key learnings (Phase 1C):**
-- Vercel Deployment Protection blocks external curl tests; Vercel's own cron bypasses it automatically
-- `useActionState` (React 19) replaces `useFormState`; import from `react` not `react-dom`
-- Server actions called from client components: use `.bind(null, extraArg)` to pre-fill extra arguments
-- `redirect()` must be outside try/catch in server actions — it throws `NEXT_REDIRECT` internally
-- Making Prisma fields nullable is a non-breaking migration (DROP NOT NULL)
-- Large data generation (3000+ county names) triggers Anthropic content filter — write via file tools, not inline output
-- Content filter applies to sub-agent output too; write data files directly via Write tool instead
-
-#### 1D — Alerts, Import & Documents
-**Status: ✅ Complete — PRs #49, #51, #52, #54**
-- [x] Lien list filtering and sorting: search by APN/cert#/address, status tabs, state dropdown, sortable headers (#22 — PR #49)
-- [x] Document upload: drag-and-drop to Cloudflare R2, per-lien document list, presigned URLs, delete (#21 — PR #51)
-- [x] CSV import: template download, two-step preview+confirm flow, per-row validation, bulk event generation (#20 — PR #52)
-- [x] Email alerts via Resend: daily digest (07:00 UTC cron) with Overdue / 7-day / 30-day buckets per tenant (#19 — PR #54)
-
-**Key learnings (Phase 1D):**
-- Cloudflare R2 is S3-compatible — use `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` with `endpoint: https://<accountId>.r2.cloudflarestorage.com`
-- Presigned PUT uploads go browser → R2 directly (no proxy through Next.js) — use `XMLHttpRequest` for upload progress tracking
-- R2 bucket should be private; use presigned GET URLs for downloads, not public bucket access
-- TypeScript narrows union type inside `if (phase === 'preview')` block — comparisons against other union variants become type errors; use a separate boolean state for submitting
-- CSV RFC 4180 parsing is ~30 lines inline — avoid adding `papaparse` for simple cases
-- `EMAIL_FROM` for Resend must be a verified domain address — the placeholder `noreply@yourdomain.com` will fail silently
-- Write/Edit tools use Windows paths; WSL files must be written via UNC path `\\\\wsl.localhost\\Ubuntu\\...` or `cp` from Windows temp
-
-**Design decisions locked in:**
-- Import accepts an optional `status` column. If omitted, status is inferred from data present (cert fields → ACTIVE, no cert fields → LEAD). If provided, the status drives which fields are required for that row. Manual "New Lien" form → always LEAD (see #61).
-
-**Backlog issues filed from Phase 1D review (2026-05-30):**
-- #60 Bug: New Lien form is broken — investigate and fix
+**Backlog issues (Phase 1D follow-up):**
+- #60 ✅ Bug: New Lien form broken (force-dynamic fix — PR #66)
 - #61 Feature: Lead-first creation — enforce lifecycle, remove Active toggle from new form
-- #62 Feature: NOT_WON status — track auction losses, retain for re-listing next year
-- #63 Feature: Import error download report — downloadable CSV of failed rows with error in notes
+- #62 Feature: NOT_WON status — track auction losses for future revisit
+- #63 Feature: Import error download report — CSV of failed rows
 - #64 Feature: XLS/XLSX import support (SheetJS)
+- #65 Feature: Import accepts optional status column
 
-**Deliverable:** ✅ Fully usable tax lien tracker. You can manage a real portfolio with it.
+**Deliverable:** ✅ Fully usable tax lien tracker. Manage a real portfolio with it.
 
 ---
 
 ### Phase 2 — AI Layer
-**Target: After Phase 3 + early Phase 4 | Status: Deliberately deferred**
+**Target: After Phase 4-partial | Status: Deliberately deferred — now unblocked**
 
 **Why deferred:** AI features require paying users and real portfolio data to deliver value.
-Document extraction saves ~2 min/lien — not a dealbreaker at small scale. Deal Copilot
-is compelling only when an investor has 50+ deals. Claude API costs money per call —
-build this after billing exists to cover it. Revisit after Phase 3 ships and first
-paying cohort is onboarded.
+Billing now exists (Phase 3). Phase 4-partial is complete. This is the next major phase.
 
 **GitHub Issues:** #25 (document extraction), #26 (Deal Copilot)
 
 #### 2A — Document Extraction
 - [ ] Upload certificate → Claude API extracts cert #, parcel, amounts, dates, jurisdiction, owner
-- [ ] Auto-populates DealTaxLien fields with review + confirm step
+- [ ] Auto-populates deal fields with review + confirm step
 - [ ] Extend to: purchase contracts, redemption notices, deeds, title reports, leases
 - [ ] Confidence scoring per field; user can override
 
 #### 2B — Deadline Intelligence
-- [ ] Plain-English summaries of upcoming obligations per lien
-- [ ] "At-risk" lien flagging with natural language reasoning
+- [ ] Plain-English summaries of upcoming obligations per deal
+- [ ] "At-risk" deal flagging with natural language reasoning
 - [ ] Draft generation: AI generates required notice letters pre-populated with deal data
 
 #### 2C — Deal Copilot (In-App Chat)
 - [ ] Chat interface scoped to tenant's live data (RAG over deals + documents)
-- [ ] Answers: "What's my most urgent deadline?", "Draft the foreclosure letter for lien #4521", "What's my portfolio ROI this quarter?"
+- [ ] Answers: "What's my most urgent deadline?", "Draft the foreclosure letter for deal #4521", "What's my portfolio ROI this quarter?"
 - [ ] Claude API + structured deal data context
 
 #### 2D — Automated Reports
@@ -254,20 +199,22 @@ paying cohort is onboarded.
 - [ ] ROI analysis: cost basis vs redemption vs projected
 - [ ] Export-ready for attorneys, partners, lenders
 
-**Deliverable:** Premium upsell to existing paying customers. Upload a certificate,
-have it auto-parsed. Chat with an assistant that knows your portfolio.
+**Deliverable:** Premium upsell to existing paying customers. Upload a certificate, have it auto-parsed. Chat with an assistant that knows your portfolio.
 
 ---
 
 ### Phase 3 — SaaS Infrastructure
-**Target: 4–5 weeks | Status: Not started | Builds before AI layer**
+**Status: ✅ Complete — PRs #57, #58, #59, #70**
 
-#### 3A — Multi-Tenant Hardening
-- [ ] Row-level tenant isolation audit (every Prisma query scoped to `tenantId`)
-- [ ] Tenant onboarding flow: create org → invite teammates → assign roles
-- [ ] Roles: Owner, Analyst, Attorney, Assistant, Read-Only
+#### 3A — Multi-Tenant Hardening ✅ (PR #58)
+- [x] Row-level tenant isolation audit (every Prisma query confirmed scoped to `tenantId`)
+- [x] Roles: Owner, Analyst, Attorney, Assistant, Read-Only
+- [x] Role enforcement: `lib/auth.ts` — `getCurrentUser()`, `hasRole()` hierarchy
+- [x] Invite by email via Clerk org invitations
+- [x] `/dashboard/settings/team`: member list, role selector (owners only), invite form
+- [x] Destructive actions (delete deal) require ANALYST or above
 
-#### 3B — Billing (Stripe)
+#### 3B — Billing (Stripe) ✅ (PR #57, #74)
 | Tier | Price | Limits |
 |------|-------|--------|
 | Starter | $39/mo | 1 user, 10 active deals, AI pay-as-you-go |
@@ -275,54 +222,72 @@ have it auto-parsed. Chat with an assistant that knows your portfolio.
 | Team | $249/mo | 10 users, automations, advanced AI |
 | Enterprise | Custom | White-label, API access, bulk ingestion |
 
-- [ ] Stripe subscriptions + webhook handlers
-- [ ] Usage metering for Claude API tokens above plan limits
-- [ ] 14-day free trial, no card required
-- [ ] Self-serve upgrade / downgrade / cancel
+- [x] Stripe subscriptions + webhook handlers
+- [x] 14-day free trial, no card required
+- [x] Self-serve upgrade / downgrade / cancel via Stripe billing portal
+- [x] `/dashboard/billing`: plan cards + manage subscription link
+- [x] Webhook syncs plan tier back to `Tenant.plan` on subscription events
+- [x] Schema: `stripeCustomerId`, `stripeSubscriptionId`, `stripeSubscriptionStatus`, `trialEndsAt`, `currentPeriodEnd` on Tenant
 
-#### 3C — Operations
-- [ ] Super-admin dashboard (tenant health, MRR, usage)
-- [ ] Feature flags per plan tier
-- [ ] In-app support (Crisp — free tier)
-- [ ] Sentry error monitoring
-- [ ] Uptime monitoring
+#### 3C — Operations ✅ (PR #59, #70)
+- [x] Super-admin dashboard at `/admin`: tenant list, MRR/ARR, plan override
+- [x] `SUPER_ADMIN_EMAILS` env var gates access
+- [x] `GET /api/health`: DB ping for uptime monitors
+- [ ] Feature flags per plan tier (deferred — not yet implemented)
+- [ ] In-app support (Crisp — deferred)
+- [ ] Sentry error monitoring (deferred — initial attempt broke builds; needs proper setup with `withSentryConfig`)
 
-**Deliverable:** Production SaaS. Strangers can discover, sign up, pay, and use independently.
+**Key learnings (Phase 3):**
+- `new Stripe(key)` at module level crashes Vercel build when `STRIPE_SECRET_KEY` is missing — Next.js evaluates module-level code during "Collecting page data" phase even for dynamic routes. Always use a lazy getter: `getStripe()`.
+- `@sentry/nextjs` without `withSentryConfig` in `next.config.ts` breaks Vercel builds. Add it properly or skip it entirely — half-setup is worse than no setup.
+- After adding Stripe to the codebase, `STRIPE_SECRET_KEY` (and price IDs) must be set in Vercel env vars or the build will fail.
+- PR body heredocs don't work in `wsl bash -c` — write to a temp file and pass `--body-file`.
+
+**Deliverable:** ✅ Production SaaS. Users can sign up, pay, and use independently.
 
 ---
 
 ### Phase 4 — Module Expansion
-**Target: Ongoing | Build in priority order below**
-**Phase 4 is split:** Tax Deed + Foreclosure (priorities 1-2) build BEFORE the AI layer.
-Remaining modules (Land through Multifamily) build AFTER the AI layer.
+**Target: Ongoing | Phase 4-partial ✅ Complete**
 
-Prerequisite before any new module: Issue #34 (module-aware dashboard architecture)
+**Phase 4-partial (Tax Deed + Foreclosure) is done. Next: Phase 2 (AI), then Phase 4-full.**
+
+#### Phase 4-partial ✅ Complete
+
+- [x] **#34 Module-aware dashboard** (PR #67) — `StrategyNav` switcher, `?strategy=` URL param, all pages filter by active module
+- [x] **#37 Tax Deed module** (PR #67) — `DealTaxDeed` schema + migration, GA jurisdictions seeded, create/detail UI, `createDeed` server action
+- [x] **#38 Foreclosure Auction module** (PR #68) — `DealForeclosure` schema + migration, `createForeclosure` server action, research links (Auction.com, RealtyTrac, HUD)
+- [x] **#32 Full task management** (PR #69) — create, edit, delete from task board; deal picker; task type selector
+- [x] **URL restructure** (PR #73) — all deal pages moved from `/dashboard/liens/` to `/dashboard/deals/`; strategy-agnostic path
+
+**Module switcher strategies:** Tax Liens | Tax Deeds | Foreclosures
+**Deal routes:** `/dashboard/deals?strategy=TAX_LIEN|TAX_DEED|FORECLOSURE`
+
+#### Phase 4-full (After Phase 2)
 
 | Priority | Module | Issue | Key Differentiator | Effort |
 |----------|--------|-------|-------------------|--------|
-| 1 | **Tax Deed** | #37 | 80% built — same rules engine, same audience as liens | Very Low |
-| 2 | **Foreclosure Auction** | #38 | Calendar + research links already built, overlaps lien audience | Low |
-| 3 | **Land Investing** | #39 | Underserved market, no dedicated tools, research infra ready | Low-Med |
-| 4 | **Wholesale** | #40 | High deal velocity, CRM-like pipeline, large market | Medium |
-| 5 | **Fix & Flip** | #41 | Rehab budget, contractor mgmt, ARV calc, Gantt timeline | High |
-| 6 | **Buy & Hold + Section 8** | #42 | Section 8 HAP/HQS tracking is unique differentiator | High |
-| 7 | **Multifamily** | #43 | T12 importer, DSCR modeling, highest price point | High |
+| 3 | **Land Investing** | #39 | Underserved market, no dedicated tools | Low-Med |
+| 4 | **Wholesale** | #40 | High deal velocity, CRM-like pipeline | Medium |
+| 5 | **Fix & Flip** | #41 | Rehab budget, contractor mgmt, ARV calc | High |
+| 6 | **Buy & Hold + Section 8** | #42 | Section 8 HAP/HQS tracking | High |
+| 7 | **Multifamily** | #43 | T12 importer, DSCR modeling | High |
 
-**Research Links Framework (Issue #44) — build before or alongside module expansion:**
-Each deal type gets tiered research links:
-- Tier 1 Universal: Google Maps, Bing, Zillow, NETRonline (already built)
-- Tier 2 Strategy-specific: auction sites, comps tools, due diligence resources per strategy
-- Tier 3 Jurisdiction-specific: stored in Jurisdiction.links JSON (assessor, GIS, tax collector)
-- Tier 4 User-defined: custom links per deal (attorney portal, Dropbox, etc.)
+**Remaining backlog issues:**
+- #33 Edit jurisdiction/APN on existing deal
+- #29 Calendar month/year picker
+- #30 Calendar sync (Google Calendar, Outlook, iCal)
+- #31 Tasks on calendar with distinct color
+- #44 Research links framework — tiered system
 
 ---
 
 ### Phase 5 — Go-to-Market
-**Starts parallel with Phase 2 — don't wait for Phase 3**
+**Starts parallel with Phase 2 — don't wait**
 
 **Beta Recruitment**
 - Post in BiggerPockets, Tax Lien Lady community, TaxSaleResources forums, Facebook groups
-- Target: 15–25 beta users before Phase 3 is done
+- Target: 15–25 beta users
 - Pitch: "Building an AI platform that auto-tracks lien deadlines and reads your certificates. Want free early access?"
 
 **Build in Public**
@@ -334,7 +299,7 @@ Each deal type gets tiered research links:
 - SEO targets: tax lien tracking software, lien deadline management
 
 **Launch**
-- Product Hunt at v1.0 (after Phase 3)
+- Product Hunt at v1.0 (after Phase 3 — now ready)
 - Direct outreach to tax lien attorneys (they have portfolio clients)
 - Integration partnerships: GovEase, Bid4Assets
 
@@ -351,18 +316,18 @@ Each deal type gets tiered research links:
 ## Operating Model
 
 ### Roles
-- **You (Product Owner):** Define what the system should do. Prioritize features. Validate workflows. Own the vision. Review and approve all changes.
-- **FleetView (Claude):** Strategic orchestration, architectural decisions, cross-file analysis, roadmap updates, WSL commands, web research.
+- **You (Product Owner):** Define what the system should do. Prioritize features. Validate workflows. Own the vision.
+- **FleetView (Claude):** Strategic orchestration, architectural decisions, cross-file analysis, roadmap updates, WSL commands.
 - **Claude Code for VS Code:** In-context coding, terminal commands, editing while actively developing.
-- **GitHub Issues:** Every feature, bug, and task tracked as an issue. This is the system of record.
+- **GitHub Issues:** Every feature, bug, and task tracked as an issue. System of record.
 
 ### Workflow
 1. Break phases into GitHub Issues (one feature per issue, clear acceptance criteria)
-2. FleetView or Claude Code for VS Code implements per issue
-3. You review, test, and merge
+2. FleetView or Claude Code implements per issue
+3. Review, test, merge
 4. Close the issue, open the next one
 
-### Principles (from Karpathy guidelines)
+### Principles
 1. **Think before coding** — surface assumptions and tradeoffs before implementing
 2. **Simplicity first** — minimum code that solves the problem, nothing speculative
 3. **Surgical changes** — touch only what the issue requires
@@ -380,3 +345,5 @@ Each deal type gets tiered research links:
 | 004 | Next.js + Prisma + Neon + Clerk (not .NET/Azure) | WSL-native, Claude Code optimized, faster to ship |
 | 005 | Extension table pattern for strategy modules | Clean domain model, no bloat, easy to add modules |
 | 006 | Claude API for all AI features | Best-in-class extraction + reasoning, pay-per-use cost model |
+| 007 | `/dashboard/deals` as strategy-agnostic deal route | Tax Liens, Deeds, and Foreclosures are all "deals" — path reflects this |
+| 008 | Stripe client lazy-initialized via `getStripe()` | Module-level `new Stripe()` crashes Vercel build when env var is absent |
