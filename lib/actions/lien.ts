@@ -395,6 +395,63 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
 }
 
 // ---------------------------------------------------------------------------
+// markNotWon — LEAD → NOT_WON
+// ---------------------------------------------------------------------------
+
+export async function markNotWon(dealId: string, note: string | null): Promise<{ error?: string }> {
+  const result = await getCurrentUser()
+  if (!result) return { error: 'Not authenticated.' }
+  const { tenant } = result
+
+  try {
+    const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
+    if (!deal) return { error: 'Deal not found.' }
+    if (deal.status !== 'LEAD') return { error: 'Only Lead deals can be marked Not Won.' }
+
+    await db.deal.update({
+      where: { id: dealId },
+      data: { status: 'NOT_WON' as DealStatus, notes: note || deal.notes || null },
+    })
+    return {}
+  } catch (err) {
+    console.error('[markNotWon]', err)
+    return { error: 'Failed to update.' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// relistAsLead — NOT_WON → LEAD
+// ---------------------------------------------------------------------------
+
+export async function relistAsLead(dealId: string, auctionDate: string | null): Promise<{ error?: string }> {
+  const result = await getCurrentUser()
+  if (!result) return { error: 'Not authenticated.' }
+  const { tenant } = result
+
+  try {
+    const deal = await db.deal.findUnique({
+      where: { id: dealId, tenantId: tenant.id },
+      include: { taxLien: true, taxDeed: true, foreclosure: true },
+    })
+    if (!deal) return { error: 'Deal not found.' }
+    if ((deal.status as string) !== 'NOT_WON') return { error: 'Only Not Won deals can be re-listed.' }
+
+    await db.deal.update({ where: { id: dealId }, data: { status: DealStatus.LEAD } })
+
+    if (auctionDate) {
+      const dateVal = new Date(`${auctionDate}T12:00:00.000Z`)
+      if (deal.taxLien) await db.dealTaxLien.update({ where: { dealId }, data: { auctionDate: dateVal } })
+      else if (deal.taxDeed) await db.dealTaxDeed.update({ where: { dealId }, data: { auctionDate: dateVal } })
+      else if (deal.foreclosure) await db.dealForeclosure.update({ where: { dealId }, data: { auctionDate: dateVal } })
+    }
+    return {}
+  } catch (err) {
+    console.error('[relistAsLead]', err)
+    return { error: 'Failed to re-list.' }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // deleteLien
 // ---------------------------------------------------------------------------
 

@@ -180,7 +180,7 @@ model Deal {
   contactId     String?
   contact       Contact?     @relation(fields: [contactId], references: [id])
   strategyType  StrategyType
-  status        DealStatus   @default(ACTIVE)
+  status        DealStatus   @default(LEAD)
   purchasePrice Decimal?     @db.Decimal(14, 2)
   purchaseDate  DateTime?
   exitPrice     Decimal?     @db.Decimal(14, 2)
@@ -433,6 +433,7 @@ enum StrategyType {
 enum DealStatus {
   LEAD
   ACTIVE
+  NOT_WON
   REDEEMED
   FORECLOSURE_INITIATED
   DEEDED

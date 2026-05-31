@@ -5,7 +5,9 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { EventStatus, DealStatus } from '@/app/generated/prisma'
 import { DeleteButton } from './delete-button'
+import { NotWonButton, RelistButton } from './not-won-button'
 import DocumentSection, { type DocRow } from './DocumentSection'
+import DealTaskSection, { type DealTask } from './DealTaskSection'
 
 function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string, strategyType: string) {
   const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
@@ -36,7 +38,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
-  const [deal, rawDocs] = await Promise.all([
+  const [deal, rawDocs, rawTasks] = await Promise.all([
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
       include: { property: { include: { jurisdiction: true } }, taxLien: true, taxDeed: true, foreclosure: true, events: { orderBy: { dueDate: 'asc' } } },
@@ -44,6 +46,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     db.document.findMany({
       where: { dealId: id, tenantId: tenant.id },
       orderBy: { uploadedAt: 'desc' },
+    }),
+    db.task.findMany({
+      where: { dealId: id, tenantId: tenant.id, status: { not: 'CANCELLED' } },
+      include: { assignedTo: { select: { id: true, name: true, email: true } } },
+      orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
     }),
   ])
   if (!deal) notFound()
@@ -57,12 +64,25 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     uploadedAt: d.uploadedAt.toISOString(),
   }))
 
+  const dealTasks: DealTask[] = rawTasks.map(t => ({
+    id:         t.id,
+    title:      t.title,
+    status:     t.status,
+    priority:   t.priority,
+    dueDate:    t.dueDate?.toISOString() ?? null,
+    assignedTo: t.assignedTo,
+  }))
+
   const { taxLien, taxDeed, foreclosure, property, events } = deal
   const isTaxDeed = deal.strategyType === 'TAX_DEED'
   const isForeclosure = deal.strategyType === 'FORECLOSURE'
   const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
+  const isNotWon = (deal.status as string) === 'NOT_WON'
   const overdueCount = events.filter(e => e.status === EventStatus.OVERDUE).length
+  const leadAuctionDate = isLead
+    ? (isTaxDeed ? taxDeed?.auctionDate : isForeclosure ? foreclosure?.auctionDate : taxLien?.auctionDate)?.toISOString() ?? null
+    : null
   const researchLinks = buildResearchLinks(property.apn, property.address, jur.stateName, jur.county, jur.state, deal.strategyType)
 
   return (
@@ -74,17 +94,23 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <span>/</span>
           <span className="text-zinc-900 font-medium font-mono">{property.apn}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {isLead && (
-            <Link href={`/dashboard/deals/${deal.id}/convert`}
-              className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
-              Won at Auction
+            <>
+              <Link href={`/dashboard/deals/${deal.id}/convert`}
+                className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
+                Won at Auction
+              </Link>
+              <NotWonButton dealId={deal.id} auctionDate={leadAuctionDate} />
+            </>
+          )}
+          {isNotWon && <RelistButton dealId={deal.id} />}
+          {!isNotWon && (
+            <Link href={`/dashboard/deals/${deal.id}/edit`}
+              className="px-3 py-1.5 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
+              Edit
             </Link>
           )}
-          <Link href={`/dashboard/deals/${deal.id}/edit`}
-            className="px-3 py-1.5 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
-            Edit
-          </Link>
           <DeleteButton dealId={deal.id} />
         </div>
       </div>
@@ -101,6 +127,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           </div>
           {isLead ? (
             <span className="shrink-0 px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">Lead</span>
+          ) : isNotWon ? (
+            <span className="shrink-0 px-3 py-1 rounded-full text-sm font-semibold bg-zinc-100 text-zinc-500">Not Won</span>
           ) : overdueCount > 0 ? (
             <span className="shrink-0 px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">{overdueCount} Overdue</span>
           ) : (
@@ -214,6 +242,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
       {/* Documents */}
       <DocumentSection dealId={deal.id} initialDocs={docs} />
+
+      {/* Tasks */}
+      <div className="mt-6">
+        <DealTaskSection dealId={deal.id} initialTasks={dealTasks} />
+      </div>
     </div>
   )
 }

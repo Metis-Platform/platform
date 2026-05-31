@@ -20,7 +20,6 @@ export function NewLienForm({
   const action = isTaxDeed ? createDeed : isForeclosure ? createForeclosure : createLien
 
   const [state, formAction, pending] = useActionState(action, initialState)
-  const [stage, setStage] = useState<'LEAD' | 'ACTIVE'>('LEAD')
   const [selectedState, setSelectedState] = useState('')
 
   const states = useMemo(() => {
@@ -34,47 +33,13 @@ export function NewLienForm({
     [jurisdictions, selectedState],
   )
 
-  const submitLabel = pending
-    ? 'Saving…'
-    : stage === 'LEAD'
-      ? 'Add to Watchlist'
-      : isTaxDeed
-        ? 'Create Deed & Generate Deadlines'
-        : isForeclosure
-          ? 'Record Win & Generate Deadlines'
-          : 'Create Lien & Generate Deadlines'
-
   return (
     <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
-      <input type="hidden" name="status" value={stage} />
+      <input type="hidden" name="status" value="LEAD" />
 
       {state.message && (
         <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.message}</div>
       )}
-
-      {/* Stage toggle */}
-      <section className="px-6 py-5">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Deal Stage</h2>
-        <div className="inline-flex rounded-lg border border-zinc-200 overflow-hidden text-sm">
-          <button type="button" onClick={() => setStage('LEAD')}
-            className={`px-4 py-2 font-medium transition-colors ${stage === 'LEAD' ? 'bg-blue-600 text-white' : 'bg-white text-zinc-600 hover:bg-zinc-50'}`}>
-            Lead (Pre-Bid)
-          </button>
-          <button type="button" onClick={() => setStage('ACTIVE')}
-            className={`px-4 py-2 font-medium transition-colors border-l border-zinc-200 ${stage === 'ACTIVE' ? 'bg-blue-600 text-white' : 'bg-white text-zinc-600 hover:bg-zinc-50'}`}>
-            Active (Won)
-          </button>
-        </div>
-        <p className="mt-2 text-xs text-zinc-400">
-          {stage === 'LEAD'
-            ? 'Track a pre-foreclosure property. Convert to Active after winning at auction.'
-            : isTaxDeed
-              ? 'You won this deed. Redemption deadlines will be generated from the sale date.'
-              : isForeclosure
-                ? 'You won this auction. Record the details to track post-sale obligations.'
-                : 'You won this lien. Deadlines will be generated from the issue date.'}
-        </p>
-      </section>
 
       {/* Jurisdiction */}
       <section className="px-6 py-5 space-y-4">
@@ -112,8 +77,8 @@ export function NewLienForm({
         </div>
       </section>
 
-      {/* Lead-only fields */}
-      {stage === 'LEAD' && !isForeclosure && (
+      {/* Auction info (Tax Lien / Tax Deed leads) */}
+      {!isForeclosure && (
         <section className="px-6 py-5 space-y-4">
           <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Auction Info (optional)</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -127,8 +92,8 @@ export function NewLienForm({
         </section>
       )}
 
-      {/* Foreclosure lead fields */}
-      {stage === 'LEAD' && isForeclosure && (
+      {/* Foreclosure pre-bid info */}
+      {isForeclosure && (
         <section className="px-6 py-5 space-y-4">
           <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Pre-Foreclosure Info</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -152,73 +117,6 @@ export function NewLienForm({
         </section>
       )}
 
-      {/* Active lien fields */}
-      {stage === 'ACTIVE' && !isTaxDeed && (
-        <section className="px-6 py-5 space-y-4">
-          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Certificate Details</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Certificate Number" error={state.errors?.certificateNumber}>
-              <input type="text" name="certificateNumber" placeholder="e.g. 2024-0001234" className="input-base font-mono" />
-            </Field>
-            <Field label="Issue Date" error={state.errors?.issueDate}>
-              <input type="date" name="issueDate" className="input-base" />
-            </Field>
-            <Field label="Face Amount ($)" error={state.errors?.faceAmount}>
-              <input type="number" name="faceAmount" min="0.01" step="0.01" placeholder="5000.00" className="input-base" />
-            </Field>
-            <Field label="Interest Rate (%)" error={state.errors?.interestRate}>
-              <input type="number" name="interestRate" min="0" max="100" step="0.01" placeholder="18" className="input-base" />
-            </Field>
-          </div>
-        </section>
-      )}
-
-      {/* Active foreclosure fields */}
-      {stage === 'ACTIVE' && isForeclosure && (
-        <section className="px-6 py-5 space-y-4">
-          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Auction Results</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Foreclosure Type" error={state.errors?.foreclosureType}>
-              <select name="foreclosureType" className="input-base">
-                <option value="MORTGAGE">Mortgage</option>
-                <option value="TAX">Tax</option>
-                <option value="HOA">HOA</option>
-              </select>
-            </Field>
-            <Field label="Auction Date" error={state.errors?.auctionDate}>
-              <input type="date" name="auctionDate" className="input-base" />
-            </Field>
-            <Field label="Opening Bid ($) (optional)" error={state.errors?.openingBid}>
-              <input type="number" name="openingBid" min="0.01" step="0.01" placeholder="50000.00" className="input-base" />
-            </Field>
-            <Field label="Winning Bid ($)" error={state.errors?.winningBid}>
-              <input type="number" name="winningBid" min="0.01" step="0.01" placeholder="75000.00" className="input-base" />
-            </Field>
-          </div>
-        </section>
-      )}
-
-      {/* Active deed fields */}
-      {stage === 'ACTIVE' && isTaxDeed && (
-        <section className="px-6 py-5 space-y-4">
-          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Deed Details</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Sale Date" error={state.errors?.saleDate}>
-              <input type="date" name="saleDate" className="input-base" />
-            </Field>
-            <Field label="Winning Bid ($)" error={state.errors?.winningBid}>
-              <input type="number" name="winningBid" min="0.01" step="0.01" placeholder="15000.00" className="input-base" />
-            </Field>
-            <Field label="Opening Bid ($) (optional)" error={state.errors?.openingBid}>
-              <input type="number" name="openingBid" min="0.01" step="0.01" placeholder="10000.00" className="input-base" />
-            </Field>
-            <Field label="Redemption Period (days)" error={state.errors?.redemptionPeriodDays}>
-              <input type="number" name="redemptionPeriodDays" min="1" step="1" placeholder="e.g. 365 for GA" className="input-base" />
-            </Field>
-          </div>
-        </section>
-      )}
-
       {/* Notes */}
       <section className="px-6 py-5">
         <Field label="Notes (optional)" error={state.errors?.notes}>
@@ -229,9 +127,10 @@ export function NewLienForm({
       <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
         <button type="submit" disabled={pending}
           className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
-          {submitLabel}
+          {pending ? 'Saving…' : 'Add to Watchlist'}
         </button>
-        <Link href="/dashboard/deals" className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+        <p className="text-xs text-zinc-400">Converts to Active after winning at auction.</p>
+        <Link href="/dashboard/deals" className="ml-auto px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
       </div>
     </form>
   )
