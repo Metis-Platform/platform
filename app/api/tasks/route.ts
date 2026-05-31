@@ -44,6 +44,7 @@ export async function POST(req: Request) {
       assignedToId: assignedToId ?? null,
       status: 'OPEN',
     },
+    include: { assignedTo: { select: { id: true, name: true, email: true } } },
   })
 
   return NextResponse.json(task, { status: 201 })
