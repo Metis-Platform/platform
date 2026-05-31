@@ -53,11 +53,25 @@ Use `git reset --hard origin/main` (not `git pull`) — local branch tracking ge
 gh pr merge <number> --auto --squash
 ```
 
-**Step 4 — Schema changes require `prisma generate` in the user's WSL terminal.**
-If a PR includes a migration, tell the user to run `npx prisma generate` in their WSL terminal before using the app. Do NOT try to run this yourself and tell them to restart — just tell them the command.
+**Step 4 — After any PR that includes a schema migration, end your response with this exact callout:**
+
+> ⚠️ **WSL required:** After this PR merges, run in your WSL terminal:
+> ```bash
+> npx prisma generate
+> ```
+
+Put it at the END of your response when creating the PR — not buried in a sentence. Do not run it yourself. The GitHub Action handles `migrate deploy` automatically; this only regenerates the local TypeScript client so the dev server picks up new enum values and model types.
 
 **File writing — use UNC path to write directly to WSL:**
 `\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
+
+⚠️ **Exception — migration SQL files must NOT be written via UNC path.**
+UNC-written files get Windows/root ownership in WSL and break `git reset --hard`.
+Always use the temp-copy method for `prisma/migrations/*/migration.sql`:
+```
+Write  → C:\Users\aswit\AppData\Local\Temp\migration.sql
+wsl bash -c "mkdir -p /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name> && cp /mnt/c/Users/aswit/AppData/Local/Temp/migration.sql /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name>/migration.sql"
+```
 
 ---
 
