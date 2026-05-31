@@ -256,9 +256,11 @@ A GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` a
 3. FleetView commits both files in the PR
 4. After the PR merges, tell the user to run in their WSL terminal:
    ```bash
+   sudo chmod -R 755 prisma/migrations/<migration-directory>/
+   git fetch origin && git reset --hard origin/main
    npx prisma generate
    ```
-   (The GitHub Action handles `migrate deploy` automatically — only `generate` is needed locally)
+   The `sudo chmod` is required because files written by FleetView via the UNC path get Windows permissions that WSL cannot unlink without elevated access. The GitHub Action handles `migrate deploy` automatically — only `generate` is needed locally.
 
 **User-initiated migrations (when running in your own WSL terminal):**
 1. Run `npx prisma migrate dev --name <description>` — this creates the migration file with proper checksums
