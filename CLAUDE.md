@@ -162,8 +162,8 @@ These will break Vercel builds silently. Don't repeat them.
 - Import path for the generated client is `@/app/generated/prisma`. Do NOT import from `@prisma/client`.
 - `app/generated/` is gitignored — build script MUST run `prisma generate` before `next build`.
 - CLI configuration lives in `prisma.config.ts`. The `datasource.url` for migrations is set there.
-- `prisma migrate dev` requires an interactive terminal — use `prisma migrate deploy` in scripts or create migration SQL manually then run `migrate deploy`.
-- After any migration PR merges, the user must run `npx prisma generate` in their WSL terminal.
+- `prisma migrate dev` requires an interactive terminal and cannot be run from FleetView. See **Schema Migrations** section below for the correct FleetView workflow.
+- After any migration PR merges, the user must run `npx prisma generate` in their WSL terminal (migration deploy is handled automatically by the GitHub Action).
 
 **Clerk v7 + Next.js 16:**
 - Middleware file is `proxy.ts` at the project root, NOT `middleware.ts`.
@@ -250,9 +250,19 @@ A GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` a
 - It runs **before** Vercel picks up the deploy, so the schema is always updated first
 - **You never need to remember to run migrations manually** — just merge the PR
 
-If you add a new migration locally:
-1. Run `npx prisma migrate dev --name <description>` in WSL to create the migration file
-2. Commit the new file in `prisma/migrations/`
+**FleetView workflow for schema changes (FleetView cannot run interactive commands):**
+1. FleetView updates `prisma/schema.prisma`
+2. FleetView writes the migration SQL manually to `prisma/migrations/<timestamp>_<name>/migration.sql` — this is correct and safe; `prisma migrate deploy` accepts hand-written SQL files
+3. FleetView commits both files in the PR
+4. After the PR merges, tell the user to run in their WSL terminal:
+   ```bash
+   npx prisma generate
+   ```
+   (The GitHub Action handles `migrate deploy` automatically — only `generate` is needed locally)
+
+**User-initiated migrations (when running in your own WSL terminal):**
+1. Run `npx prisma migrate dev --name <description>` — this creates the migration file with proper checksums
+2. Commit the generated file in `prisma/migrations/`
 3. Open and merge a PR — the Action handles the rest
 
 **The `DATABASE_URL` GitHub secret** must be kept in sync with `.env.local` if the Neon connection string ever rotates.
