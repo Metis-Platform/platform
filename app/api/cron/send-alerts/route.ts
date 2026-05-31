@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sendDailyDigest, type AlertEvent } from '@/lib/email'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://metisplatform.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://metisplatforms.com'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
