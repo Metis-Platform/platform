@@ -70,18 +70,18 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       {/* Breadcrumb + actions */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-zinc-500">
-          <Link href="/dashboard/liens" className="hover:text-zinc-900">Liens</Link>
+          <Link href="/dashboard/deals" className="hover:text-zinc-900">Liens</Link>
           <span>/</span>
           <span className="text-zinc-900 font-medium font-mono">{property.apn}</span>
         </div>
         <div className="flex items-center gap-2">
           {isLead && (
-            <Link href={`/dashboard/liens/${deal.id}/convert`}
+            <Link href={`/dashboard/deals/${deal.id}/convert`}
               className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
               Won at Auction
             </Link>
           )}
-          <Link href={`/dashboard/liens/${deal.id}/edit`}
+          <Link href={`/dashboard/deals/${deal.id}/edit`}
             className="px-3 py-1.5 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
             Edit
           </Link>

@@ -5,7 +5,7 @@ export default function ImportPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6 flex items-center gap-2 text-sm text-zinc-500">
-        <Link href="/dashboard/liens" className="hover:text-zinc-900">Liens</Link>
+        <Link href="/dashboard/deals" className="hover:text-zinc-900">Liens</Link>
         <span>/</span>
         <span className="text-zinc-900 font-medium">Import</span>
       </div>
