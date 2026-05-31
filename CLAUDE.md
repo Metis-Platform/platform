@@ -239,6 +239,18 @@ Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\t
 
 Dev accounts do not exist in production and vice versa. To access the production app, sign up fresh at `metisplatforms.com/sign-up`.
 
+**Clerk production requires 5 CNAME records in Cloudflare DNS** (all DNS only, not proxied):
+| Name | Points to |
+|------|-----------|
+| `clerk` | `frontend-api.clerk.services` |
+| `accounts` | `accounts.clerk.services` |
+| `clkmail` | `mail.<instance>.clerk.services` |
+| `clk._domainkey` | `dkim1.<instance>.clerk.services` |
+| `clk2._domainkey` | `dkim2.<instance>.clerk.services` |
+Get exact values from Clerk Dashboard → Production → Configure → Domains → Primary. Without these, the sign-in page is a blank screen.
+
+**Clerk sends its own verification emails** (sign-in codes, magic links) through `clkmail.metisplatforms.com` — this is separate from Resend. New domains may land in spam until sending reputation builds. Resend is only used for the app's own digest emails.
+
 **The `SUPER_ADMIN_EMAILS` Vercel env var** controls access to the super-admin dashboard (`/admin`). Set it to the email address the admin user signs in with (e.g. `you@gmail.com`). It is checked by `lib/admin-auth.ts` — it is an email address, NOT a Clerk user ID. Multiple admins: comma-separated.
 
 ### Dev → Production Workflow
