@@ -10,10 +10,10 @@ Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) wor
 
 **Metis Platform** is an AI-powered, multi-tenant SaaS for real estate investors. It starts as a tax lien lifecycle management tool and expands to cover all major REI strategies (wholesale, fix & flip, buy & hold, land, multifamily).
 
-- **Stack:** Next.js 14+ (TypeScript), Prisma, Neon (PostgreSQL), Clerk (auth), Anthropic Claude API, Cloudflare R2, Resend, Stripe, Vercel
+- **Stack:** Next.js 16 (TypeScript), Prisma 7, Neon (PostgreSQL), Clerk v7 (auth), Anthropic Claude API, Cloudflare R2, Resend, Stripe, Vercel
 - **Repo:** Metis Platform GitHub org → `platform` repository
 - **Roadmap:** See `ROADMAP.md` in this repo root
-- **Current Phase:** See ROADMAP.md Phase status
+- **Current Phase:** Phase 2 (AI Layer) — Phase 3 and Phase 4-partial are complete
 - **System of Record:** GitHub Issues — every task is an Issue with acceptance criteria
 
 ---
@@ -34,25 +34,29 @@ Do NOT attempt to read these as Windows paths. The repo is in WSL, not on the Wi
 - Repo is in WSL at: `/home/xovox/dev/metis-platform/`
 - This is NOT a Windows path — do not look for it under C:\ or OneDrive
 - The ONLY way to reach it from FleetView is via `wsl bash -c "..."`
-- Always source nvm before any Node/npm/npx command:
-  `source /home/xovox/.nvm/nvm.sh && <your command>`
+- FleetView runs in Git Bash (MSYS2) on Windows — NOT in WSL. Every `wsl bash -c` call is a one-shot subprocess; processes started this way die when the call ends. Never try to keep a dev server running from FleetView.
+- Always source nvm before any Node/npm/npx command: `source /home/xovox/.nvm/nvm.sh && <your command>`
 - Write/Edit files via UNC path: `\\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<file>`
 - Windows machine username: `aswit` | WSL username: `xovox`
 - Windows temp path: `C:\Users\aswit\AppData\Local\Temp\`
 - WSL sees Windows C: drive at: `/mnt/c/`
 
-**Step 2 — After reading ROADMAP.md, check open PRs and current branch:**
+**Step 2 — After reading ROADMAP.md, sync to main and check open PRs:**
 ```bash
-wsl bash -c "cd /home/xovox/dev/metis-platform && git checkout main && git pull origin main"
+wsl bash -c "cd /home/xovox/dev/metis-platform && git fetch origin && git reset --hard origin/main"
 wsl bash -c "cd /home/xovox/dev/metis-platform && gh pr list --state open"
 ```
+Use `git reset --hard origin/main` (not `git pull`) — local branch tracking gets corrupted across sessions when feature branches are squash-merged.
 
 **Step 3 — After every `gh pr create`, immediately queue auto-merge:**
 ```bash
 gh pr merge <number> --auto --squash
 ```
 
-**File writing — use UNC path to write directly to WSL (read the section below):**
+**Step 4 — Schema changes require `prisma generate` in the user's WSL terminal.**
+If a PR includes a migration, tell the user to run `npx prisma generate` in their WSL terminal before using the app. Do NOT try to run this yourself and tell them to restart — just tell them the command.
+
+**File writing — use UNC path to write directly to WSL:**
 `\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
 
 ---
@@ -112,8 +116,6 @@ For multi-step tasks, state a brief plan before starting:
 3. [Step] → verify: [check]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
-
 ---
 
 ## Project-Specific Rules
@@ -126,10 +128,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Clerk session/org context is the source of `tenantId` — always resolve it from the auth context, never from user input.
 
 ### Architecture
-- Follow the **extension table pattern**: core `Deal` table + `Deal_TaxLien`, `Deal_FixFlip`, etc. for strategy-specific fields. Never add strategy-specific columns to the core `Deal` table.
+- Follow the **extension table pattern**: core `Deal` table + `DealTaxLien`, `DealTaxDeed`, `DealForeclosure`, etc. Never add strategy-specific columns to the core `Deal` table.
 - Background jobs run via **pg-boss** inside the existing Neon PostgreSQL instance. No Redis, no separate job service.
 - AI features use the **Anthropic Claude API** only. No OpenAI, no other LLM providers.
 - File uploads go to **Cloudflare R2**. Never store binary files in the database.
+- Strategy switching is done via `?strategy=TAX_LIEN|TAX_DEED|FORECLOSURE` URL param. The `StrategyNav` client component handles this. All deal pages live at `/dashboard/deals/`.
 
 ### Code Conventions
 - TypeScript strict mode. No `any` types without a comment explaining why.
@@ -138,70 +141,70 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Use Next.js App Router patterns (Server Components by default, `"use client"` only when necessary).
 - Tailwind for all styling. No CSS modules, no styled-components.
 - Error messages must be user-readable. No raw stack traces exposed to the browser.
+- **Never initialize third-party SDK clients at module level** when they require env vars — use a lazy getter. See `lib/stripe.ts` for the pattern.
+
+### Vercel Build Rules — CRITICAL
+
+These will break Vercel builds silently. Don't repeat them.
+
+- **Never instantiate SDK clients at module level** when they require env vars (e.g. `new Stripe(process.env.KEY!)`). Next.js evaluates module-level code during the "Collecting page data" phase of `next build`, even for dynamic API routes. If the env var is missing on Vercel, the build crashes with a cryptic error. Use lazy getters: `getStripe()`, `getResend()`, etc.
+- **Never add `@sentry/nextjs` without full setup.** The package requires `withSentryConfig` in `next.config.ts`, a `SENTRY_AUTH_TOKEN`, and an `instrumentation.ts`. Half-setup breaks Vercel builds. Either do it completely or skip it.
+- **All new env vars used at runtime must be added to Vercel** (Dashboard → Project → Settings → Environment Variables). The `.env.local` file is not deployed.
+- **Test builds without env vars** when adding new SDK dependencies: `DATABASE_URL='' CLERK_SECRET_KEY='' npm run build` — if it fails, fix before merging.
 
 ### Prisma 7 + Next.js 16 Breaking Changes (Lessons Learned)
 
-These breaking changes bit us during Phase 0/1A. Don't repeat them.
-
 **Prisma 7:**
-- `schema.prisma` datasource block has NO `url` property — it was removed. The datasource block is just `provider = "postgresql"` with no url line. The connection string is passed via the driver adapter at runtime.
-- Generator must use `provider = "prisma-client-js"` (not `"prisma-client"` — that provider requires zero-arg constructor which Prisma 7 disallows).
-- `new PrismaClient()` with zero args throws at runtime. Always pass `{ adapter }`.
+- `schema.prisma` datasource block has NO `url` property. The connection string is passed via driver adapter at runtime.
+- Generator must use `provider = "prisma-client-js"`.
+- `new PrismaClient()` with zero args throws. Always pass `{ adapter }`.
 - Driver adapter: `import { PrismaNeon } from '@prisma/adapter-neon'` then `new PrismaNeon({ connectionString: process.env.DATABASE_URL! })`.
-- Import path for the generated client is `@/app/generated/prisma` (output configured in schema generator). Do NOT import from `@prisma/client`.
-- `app/generated/` is gitignored — build script MUST run `prisma generate` before `next build`. In `package.json`: `"build": "prisma generate && next build"`.
-- Prisma Studio exits with `ERR_STREAM_PREMATURE_CLOSE` when using the Neon serverless adapter. This is cosmetic — Studio still works and data is accessible. Not a blocker.
-- CLI configuration lives in `prisma.config.ts` (not in `schema.prisma`). The `datasource.url` for migrations is set there via `dotenv` + `defineConfig`.
+- Import path for the generated client is `@/app/generated/prisma`. Do NOT import from `@prisma/client`.
+- `app/generated/` is gitignored — build script MUST run `prisma generate` before `next build`.
+- CLI configuration lives in `prisma.config.ts`. The `datasource.url` for migrations is set there.
+- `prisma migrate dev` requires an interactive terminal — use `prisma migrate deploy` in scripts or create migration SQL manually then run `migrate deploy`.
+- After any migration PR merges, the user must run `npx prisma generate` in their WSL terminal.
 
 **Clerk v7 + Next.js 16:**
-- Middleware file is `proxy.ts` at the project root, NOT `middleware.ts`. Next.js 16 changed the middleware entrypoint name.
+- Middleware file is `proxy.ts` at the project root, NOT `middleware.ts`.
 - `auth()` is async — always `await auth()`.
 - `clerkClient()` is async — always `const client = await clerkClient()`.
-- `<UserButton>` no longer accepts `afterSignOutUrl` prop — remove it.
-- Default Clerk sign-up collects email only. To collect first/last name: Clerk Dashboard → User & Authentication → Email, Phone, Username → enable First name + Last name as required fields.
+- `<UserButton>` no longer accepts `afterSignOutUrl` prop.
 
+**Turbopack (dev server):**
+- After renaming a directory (e.g. `liens/` → `deals/`), Turbopack's cache holds stale route references. Run `rm -rf .next` before `npm run dev` or the server will FATAL crash referencing the old path.
+- The dev server must be run by the user in their own WSL terminal — not started from FleetView. Any process FleetView starts dies when the command ends.
 
 ### File Writing in WSL — CRITICAL
 
-The `Write` and `Edit` tools are Windows-native. They **cannot** use Linux paths like `/home/xovox/...` directly.
+The `Write` and `Edit` tools are Windows-native. They **cannot** use Linux paths.
 
-**The correct pattern — use the UNC path to reach WSL directly:**
-
+**The correct pattern:**
 ```
 Write  → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
 Edit   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
 Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
 ```
 
-Example — writing a new server action:
-```
-Write → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\lib\actions\deal.ts
-```
+**Fallback for complex content (heredocs, escaping issues):**
+1. Write a Python script to: `C:\Users\aswit\AppData\Local\Temp\script.py`
+2. Execute: `wsl bash -c "cp '/mnt/c/Users/aswit/AppData/Local/Temp/script.py' /tmp/s.py && python3 /tmp/s.py"`
 
-This writes directly into WSL. No temp files, no copy step needed.
-
-**Never do this** (Linux paths are invisible to the Write/Edit tools):
-- `Write → /home/xovox/dev/metis-platform/app/...`  ❌
-- `Edit → /home/xovox/dev/metis-platform/lib/...`   ❌
-
-**Fallback if UNC write fails** (e.g. complex content with escaping issues):
-1. Write a Python script to Windows temp: `C:\Users\aswit\AppData\Local\Temp\script.py`
-2. Execute in WSL: `wsl bash -c "cp '/mnt/c/Users/aswit/AppData/Local/Temp/script.py' /tmp/s.py && python3 /tmp/s.py"`
-The Python script uses `pathlib.Path('/home/xovox/dev/metis-platform/...').write_text(...)`.
-
-**Signs something went wrong:** New routes missing from build output, `find` shows empty directories.
+**PR bodies with special characters:** Write to a temp `.md` file and pass `--body-file /mnt/c/Users/aswit/AppData/Local/Temp/pr-body.md` to `gh pr create`. Heredocs in `wsl bash -c` are unreliable.
 
 ### Git & GitHub
 - Branch naming: `feature/<issue-number>-short-description`, `fix/<issue-number>-short-description`
 - Every PR references the GitHub Issue it closes (`Closes #<number>` in the PR body).
-- Commits are small and logically grouped. One concern per commit.
 - Never force-push to `main`.
-- Never skip pre-commit hooks.
 - **After every `gh pr create`, immediately queue auto-merge:**
   ```bash
   gh pr merge <number> --auto --squash
   ```
-  The repo has auto-merge enabled and branches auto-delete on merge. This lets PRs land without the user needing to manually click Merge.
+- **If `git pull` fails** with "no such ref was fetched" or "divergent branches": the local branch is tracking a deleted feature branch. Fix with:
+  ```bash
+  git branch --set-upstream-to=origin/main main
+  git fetch origin && git reset --hard origin/main
+  ```
 
 ### Cost Awareness
 - This project runs on free tiers. Before adding any new dependency or service, confirm it has a usable free tier and note it in the PR.
@@ -214,16 +217,17 @@ The Python script uses `pathlib.Path('/home/xovox/dev/metis-platform/...').write
 
 | Term | Definition |
 |------|-----------|
-| Lien | A tax lien certificate — the core investment instrument in Module 1 |
+| Lien | A tax lien certificate — the core investment instrument in Tax Lien module |
 | Parcel / APN | Assessor's Parcel Number — unique property identifier assigned by county |
-| Redemption | When the property owner pays back the lien (investor gets principal + interest) |
-| Redemption Period | The legally mandated window during which the owner can redeem (varies by state) |
+| Redemption | When the property owner pays back the lien/deed (investor gets principal + interest) |
+| Redemption Period | The legally mandated window during which the owner can redeem |
 | Foreclosure | Process investor initiates if the owner doesn't redeem before deadline |
 | Jurisdiction | A specific county + state combination with its own rules |
 | RuleSet | The set of deadline rules for a given Jurisdiction |
 | Event | A system-generated milestone derived from rules (e.g., RedemptionEnd, NoticeDue) |
 | Task | An operational action assigned to a user, tied to an Event or Deal |
 | Deal | Universal container for any investment (StrategyType determines which extension table applies) |
+| Strategy | The investment type: TAX_LIEN, TAX_DEED, FORECLOSURE, FIX_FLIP, WHOLESALE, etc. |
 | Tenant | A customer account — all data is isolated per tenant |
 | Deal Copilot | The in-app AI chat assistant scoped to the tenant's live deal data |
 
