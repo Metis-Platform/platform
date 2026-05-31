@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { stripe, PLAN_PRICES } from '@/lib/stripe'
+import { getStripe, PLAN_PRICES } from '@/lib/stripe'
 import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   // Re-use existing Stripe customer or create one
   let customerId = tenant.stripeCustomerId
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: result.user.email,
       name: tenant.name,
       metadata: { tenantId: tenant.id },
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],

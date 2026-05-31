@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { db } from '@/lib/db'
 
 // Stripe sends raw body — disable Next.js body parsing
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = getStripe().webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
             data: { stripeCustomerId: session.customer as string },
           })
         }
-        const sub = await stripe.subscriptions.retrieve(session.subscription as string)
+        const sub = await getStripe().subscriptions.retrieve(session.subscription as string)
         await upsertSubscription(sub)
       }
       break
