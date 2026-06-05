@@ -104,9 +104,12 @@ export default function CalendarClient({
 }) {
   const router = useRouter()
 
-  const [view, setView]           = useState<'month' | 'week'>('month')
+  const [view, setView]             = useState<'month' | 'week'>('month')
   const [pickerOpen, setPickerOpen] = useState(false)
-  const pickerRef                 = useRef<HTMLDivElement>(null)
+  // pickerWindowStart: index into monthSummaries for the first visible cell (12 shown at a time)
+  // Default: show current month at position 3 (3 months of prior context visible)
+  const [pickerWindowStart, setPickerWindowStart] = useState(0)
+  const pickerRef                   = useRef<HTMLDivElement>(null)
 
   // weekStart: Sunday of the week containing today (if current month) else first Sunday on/before the 1st
   const [weekStart, setWeekStart] = useState<Date>(() => {
@@ -203,19 +206,42 @@ export default function CalendarClient({
   )
 
   // Month picker popover (#29)
+  const pickerWindow   = monthSummaries.slice(pickerWindowStart, pickerWindowStart + 12)
+  const canPickerPrev  = pickerWindowStart > 0
+  const canPickerNext  = pickerWindowStart + 12 < monthSummaries.length
+
   const pickerPopover = pickerOpen && (
     <div
       ref={pickerRef}
       className="absolute top-full mt-1 left-1/2 -translate-x-1/2 z-50 bg-white rounded-xl border border-zinc-200 shadow-lg p-3 w-64"
     >
-      <button
-        onClick={() => { router.push('/dashboard/calendar'); setPickerOpen(false) }}
-        className="w-full mb-2 pb-2 border-b border-zinc-100 text-xs font-medium text-blue-600 hover:text-blue-700 text-center"
-      >
-        Today
-      </button>
+      {/* Picker header: arrows + Today */}
+      <div className="flex items-center justify-between mb-2 pb-2 border-b border-zinc-100">
+        <button
+          onClick={() => setPickerWindowStart(s => Math.max(0, s - 12))}
+          disabled={!canPickerPrev}
+          className="p-1 rounded text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          ←
+        </button>
+        <button
+          onClick={() => { router.push('/dashboard/calendar'); setPickerOpen(false); setPickerWindowStart(0) }}
+          className="text-xs font-medium text-blue-600 hover:text-blue-700"
+        >
+          Today
+        </button>
+        <button
+          onClick={() => setPickerWindowStart(s => Math.min(monthSummaries.length - 12, s + 12))}
+          disabled={!canPickerNext}
+          className="p-1 rounded text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          →
+        </button>
+      </div>
+
+      {/* 3×4 month grid */}
       <div className="grid grid-cols-3 gap-1">
-        {monthSummaries.map((ms, i) => {
+        {pickerWindow.map((ms, i) => {
           const isSelected = ms.year === year && ms.month === month
           const dotClass   = ms.hasOverdue  ? 'bg-red-500'
             : ms.hasDueSoon  ? 'bg-yellow-400'
