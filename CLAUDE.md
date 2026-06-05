@@ -64,14 +64,19 @@ gh pr merge <number> --auto --squash
 
 Put it at the END of your response when creating the PR — not buried in a sentence. Do not run it yourself. The GitHub Action handles `migrate deploy` automatically; this only regenerates the local TypeScript client so the dev server picks up new enum values and model types.
 
-**Step 5 — End of every session: update STATUS.md.**
-Before closing, update the "Last Session" and "Next Up" sections so the next session starts oriented without needing to rediscover context. This is how behavior stays consistent across sessions — the handoff lives in the repo, not in memory.
+**Step 5 — End of every session: update STATUS.md AND the memory file.**
+This is the mechanism for consistent cross-session behavior. Do both:
 
-```
+**A) Update `STATUS.md`** (in repo):
 - Move completed PRs into the Last Session table
-- Update Next Up to reflect what's remaining / what's highest priority
+- Update Next Up to reflect remaining issues in priority order
 - Note any gotchas or decisions made this session
-```
+
+**B) Update the memory file** at:
+`C:\Users\aswit\.claude\projects\C--Users-aswit-OneDrive-Documents-Projects-Metis-Platform\memory\project_metis_platform.md`
+- Update "Last session completed" with PR numbers and descriptions
+- Update "Next up" with the highest-priority remaining issues
+- The memory file loads automatically in every new session — keeping it current means the next session starts oriented from the first message, before any files are read.
 
 **File writing — use UNC path to write directly to WSL:**
 `\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
