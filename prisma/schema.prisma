@@ -69,6 +69,7 @@ model Jurisdiction {
   investmentType InvestmentType
   notes          String?
   links          Json?          // { assessorUrl, taxCollectorUrl, recorderUrl, gisUrl }
+  isAvailable    Boolean        @default(false) // enabled for deal creation; auto-set when a ruleset is activated
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 

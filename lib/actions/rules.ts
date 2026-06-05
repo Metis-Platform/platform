@@ -34,15 +34,21 @@ export async function createRuleSet(
 export async function activateRuleSet(ruleSetId: string, jurisdictionId: string) {
   await assertSuperAdmin()
 
-  // Deactivate all other rulesets for this jurisdiction, activate this one
   await db.$transaction(async (tx) => {
+    // Deactivate all other rulesets for this jurisdiction
     await tx.ruleSet.updateMany({
       where: { jurisdictionId },
       data: { isActive: false },
     })
+    // Activate this one
     await tx.ruleSet.update({
       where: { id: ruleSetId },
       data: { isActive: true },
+    })
+    // Mark jurisdiction as available for deal creation
+    await tx.jurisdiction.update({
+      where: { id: jurisdictionId },
+      data: { isAvailable: true },
     })
   })
 
@@ -53,9 +59,36 @@ export async function activateRuleSet(ruleSetId: string, jurisdictionId: string)
 export async function deactivateRuleSet(ruleSetId: string, jurisdictionId: string) {
   await assertSuperAdmin()
 
-  await db.ruleSet.update({
-    where: { id: ruleSetId },
-    data: { isActive: false },
+  await db.$transaction(async (tx) => {
+    await tx.ruleSet.update({
+      where: { id: ruleSetId },
+      data: { isActive: false },
+    })
+    // If no remaining active rulesets, mark jurisdiction unavailable
+    const remaining = await tx.ruleSet.count({
+      where: { jurisdictionId, isActive: true },
+    })
+    if (remaining === 0) {
+      await tx.jurisdiction.update({
+        where: { id: jurisdictionId },
+        data: { isAvailable: false },
+      })
+    }
+  })
+
+  revalidatePath(`/admin/rules/${jurisdictionId}`)
+  revalidatePath('/admin/rules')
+}
+
+export async function toggleJurisdictionAvailable(
+  jurisdictionId: string,
+  isAvailable: boolean
+) {
+  await assertSuperAdmin()
+
+  await db.jurisdiction.update({
+    where: { id: jurisdictionId },
+    data: { isAvailable },
   })
 
   revalidatePath(`/admin/rules/${jurisdictionId}`)

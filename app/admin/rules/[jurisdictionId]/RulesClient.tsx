@@ -11,6 +11,7 @@ import {
   updateRule,
   deleteRule,
   bulkApplyRuleSet,
+  toggleJurisdictionAvailable,
   type RuleFormData,
 } from '@/lib/actions/rules'
 
@@ -417,11 +418,13 @@ export default function RulesClient({
   jurisdictionId,
   stateName,
   stateMissingCount,
+  isAvailable,
   ruleSets,
 }: {
   jurisdictionId: string
   stateName: string
   stateMissingCount: number
+  isAvailable: boolean
   ruleSets: RuleSet[]
 }) {
   const router = useRouter()
@@ -433,6 +436,13 @@ export default function RulesClient({
     () => new Date().toISOString().slice(0, 10)
   )
   const [bulkResult, setBulkResult]   = useState<number | null>(null)
+
+  function handleToggleAvailable() {
+    startTransition(async () => {
+      await toggleJurisdictionAvailable(jurisdictionId, !isAvailable)
+      router.refresh()
+    })
+  }
 
   function handleCreateRuleSet() {
     if (!newName.trim() || !newDate) return
@@ -485,6 +495,34 @@ export default function RulesClient({
 
   return (
     <div className="space-y-5">
+      {/* Availability toggle */}
+      <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-5 py-3 shadow-sm">
+        <div>
+          <p className="text-sm font-medium text-zinc-900">
+            Available for deal creation
+          </p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {isAvailable
+              ? 'This county appears in the new deal form. Users can track deals here.'
+              : 'This county is hidden from the new deal form. Enable once rules are configured.'}
+          </p>
+        </div>
+        <button
+          onClick={handleToggleAvailable}
+          disabled={isPending}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+            isAvailable ? 'bg-emerald-500' : 'bg-zinc-300'
+          }`}
+          aria-label="Toggle availability"
+        >
+          <span
+            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              isAvailable ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
       {/* Bulk-apply banner — shown when there's an active ruleset and other state counties need rules */}
       {activeRuleSet && stateMissingCount > 0 && bulkResult === null && (
         <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-5 py-3">

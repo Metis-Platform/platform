@@ -112,6 +112,8 @@ async function seedRuleSet(jurisdictionId: string, name: string, rules: RuleInpu
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await prisma.rule.create({ data: { ruleSetId: ruleSet.id, ...(r as any) } })
   }
+  // Mark the jurisdiction as available for deal creation now that it has rules
+  await prisma.jurisdiction.update({ where: { id: jurisdictionId }, data: { isAvailable: true } })
   console.log(`  Created: ${name}`)
 }
 

@@ -91,6 +91,7 @@ export default async function JurisdictionRulesPage({
         jurisdictionId={jurisdictionId}
         stateName={jurisdiction.stateName}
         stateMissingCount={stateMissingCount}
+        isAvailable={jurisdiction.isAvailable}
         ruleSets={ruleSets}
       />
     </div>

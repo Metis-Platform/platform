@@ -9,6 +9,7 @@ type JurisdictionRow = {
   stateName: string
   county: string
   investmentType: string
+  isAvailable: boolean
   activeRuleSet: { id: string; name: string; ruleCount: number } | null
   totalRuleSets: number
 }
@@ -19,7 +20,7 @@ const INVESTMENT_LABELS: Record<string, string> = {
   REDEEMABLE_DEED: 'Red. Deed',
 }
 
-type FilterMode = 'all' | 'active' | 'missing'
+type FilterMode = 'all' | 'active' | 'missing' | 'available' | 'unavailable'
 
 export default function JurisdictionSearch({
   jurisdictions,
@@ -36,11 +37,11 @@ export default function JurisdictionSearch({
         .toLowerCase()
         .includes(query.toLowerCase())
     const matchFilter =
-      filter === 'all'
-        ? true
-        : filter === 'active'
-          ? !!j.activeRuleSet
-          : !j.activeRuleSet
+      filter === 'all'         ? true
+      : filter === 'active'    ? !!j.activeRuleSet
+      : filter === 'missing'   ? !j.activeRuleSet
+      : filter === 'available' ? j.isAvailable
+      : /* unavailable */        !j.isAvailable
     return matchQuery && matchFilter
   })
 
@@ -59,9 +60,10 @@ export default function JurisdictionSearch({
         <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-1 shadow-sm">
           {(
             [
-              ['all', 'All'],
-              ['active', 'Has Rules'],
-              ['missing', 'No Rules'],
+              ['all',         'All'],
+              ['available',   'Available'],
+              ['unavailable', 'Unavailable'],
+              ['missing',     'No Rules'],
             ] as [FilterMode, string][]
           ).map(([mode, label]) => (
             <button
@@ -101,6 +103,9 @@ export default function JurisdictionSearch({
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Rules
               </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Status
+              </th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -138,6 +143,17 @@ export default function JurisdictionSearch({
                     : j.totalRuleSets > 0
                       ? `${j.totalRuleSets} inactive`
                       : '—'}
+                </td>
+                <td className="px-4 py-3">
+                  {j.isAvailable ? (
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                      ✓ Available
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-400">
+                      Unavailable
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link

@@ -12,6 +12,7 @@ export default async function AdminRulesPage() {
       stateName: true,
       county: true,
       investmentType: true,
+      isAvailable: true,
       ruleSets: {
         select: {
           id: true,
@@ -31,6 +32,7 @@ export default async function AdminRulesPage() {
       stateName: j.stateName,
       county: j.county,
       investmentType: j.investmentType as string,
+      isAvailable: j.isAvailable,
       activeRuleSet: active
         ? { id: active.id, name: active.name, ruleCount: active._count.rules }
         : null,

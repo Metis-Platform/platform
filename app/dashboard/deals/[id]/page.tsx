@@ -3,11 +3,12 @@ import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
-import { EventStatus, DealStatus } from '@/app/generated/prisma'
+import { DealStatus } from '@/app/generated/prisma'
 import { DeleteButton } from './delete-button'
 import { NotWonButton, RelistButton } from './not-won-button'
 import DocumentSection, { type DocRow } from './DocumentSection'
 import DealTaskSection, { type DealTask } from './DealTaskSection'
+import DealEventsSection, { type DealEvent } from './DealEventsSection'
 
 function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string, strategyType: string) {
   const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
@@ -41,7 +42,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const [deal, rawDocs, rawTasks] = await Promise.all([
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
-      include: { property: { include: { jurisdiction: true } }, taxLien: true, taxDeed: true, foreclosure: true, events: { orderBy: { dueDate: 'asc' } } },
+      include: {
+        property: { include: { jurisdiction: true } },
+        taxLien: true, taxDeed: true, foreclosure: true,
+        events: { orderBy: { dueDate: 'asc' } },
+      },
     }),
     db.document.findMany({
       where: { dealId: id, tenantId: tenant.id },
@@ -73,20 +78,51 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     assignedTo: t.assignedTo,
   }))
 
+  const dealEvents: DealEvent[] = deal.events.map((e) => ({
+    id:            e.id,
+    label:         e.label,
+    eventType:     e.eventType as string,
+    dueDate:       e.dueDate.toISOString(),
+    completedDate: e.completedDate?.toISOString() ?? null,
+    status:        e.status as string,
+    notes:         e.notes,
+  }))
+
   const { taxLien, taxDeed, foreclosure, property, events } = deal
   const isTaxDeed = deal.strategyType === 'TAX_DEED'
   const isForeclosure = deal.strategyType === 'FORECLOSURE'
   const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
   const isNotWon = (deal.status as string) === 'NOT_WON'
-  const overdueCount = events.filter(e => e.status === EventStatus.OVERDUE).length
+  const overdueCount = events.filter(e => e.status === 'OVERDUE').length
   const leadAuctionDate = isLead
     ? (isTaxDeed ? taxDeed?.auctionDate : isForeclosure ? foreclosure?.auctionDate : taxLien?.auctionDate)?.toISOString() ?? null
     : null
   const researchLinks = buildResearchLinks(property.apn, property.address, jur.stateName, jur.county, jur.state, deal.strategyType)
 
+  // Check if this jurisdiction has an active ruleset (for the warning banner)
+  const hasActiveRuleSet = await db.ruleSet.count({
+    where: { jurisdictionId: jur.id, isActive: true },
+  }) > 0
+
   return (
     <div className="max-w-4xl">
+      {/* No-rules warning banner */}
+      {!isLead && !hasActiveRuleSet && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3">
+          <span className="mt-0.5 text-amber-500">⚠</span>
+          <div className="text-sm">
+            <span className="font-semibold text-amber-900">No deadline rules configured for {jur.county} County.</span>
+            {' '}
+            <span className="text-amber-800">Events won&apos;t be generated for this deal until a ruleset is activated.</span>
+            {' '}
+            <a href="/admin/rules" className="font-medium text-amber-900 underline hover:text-amber-700">
+              Configure rules →
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb + actions */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-zinc-500">
@@ -190,40 +226,22 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           </dl>
         </div>
 
-        {/* Events / placeholder */}
-        <div className="bg-white rounded-xl border border-zinc-200 p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-4">
-            Deadlines <span className="ml-2 text-xs font-normal text-zinc-400">{events.length} events</span>
-          </h2>
-          {isLead ? (
-            <p className="text-sm text-zinc-400">Deadlines are generated automatically after you win at auction and convert this lead to active.</p>
-          ) : events.length === 0 ? (
-            <p className="text-sm text-zinc-400">No events generated yet.</p>
-          ) : (
-            <ol className="space-y-3">
-              {events.map(event => {
-                const days = Math.round((event.dueDate.getTime() - Date.now()) / 86_400_000)
-                const isOver = event.status === EventStatus.OVERDUE
-                const isDone = event.status === 'COMPLETED'
-                const soon = !isOver && !isDone && days <= 30
-                const dot = isDone ? 'bg-green-500' : isOver ? 'bg-red-500' : soon ? 'bg-yellow-400' : 'bg-zinc-300'
-                const col = isDone ? 'text-green-700' : isOver ? 'text-red-600 font-semibold' : soon ? 'text-yellow-700' : 'text-zinc-500'
-                const lbl = isDone ? 'Completed' : isOver ? `${Math.abs(days)}d overdue` : `${days}d remaining`
-                return (
-                  <li key={event.id} className="flex items-start gap-3">
-                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${dot}`} />
-                    <div>
-                      <p className="text-sm text-zinc-800">{event.label}</p>
-                      <p className={`text-xs mt-0.5 ${col}`}>
-                        {new Date(event.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {lbl}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
-          )}
-        </div>
+        {/* Events — clickable, slide-over editor */}
+        {isLead ? (
+          <div className="bg-white rounded-xl border border-zinc-200 p-6">
+            <h2 className="text-sm font-semibold text-zinc-900 mb-4">Deadlines</h2>
+            <p className="text-sm text-zinc-400">
+              Deadlines are generated automatically after you win at auction and convert this lead to active.
+            </p>
+          </div>
+        ) : (
+          <DealEventsSection
+            dealId={deal.id}
+            apn={property.apn}
+            address={property.address}
+            events={dealEvents}
+          />
+        )}
       </div>
 
       {/* Research Links */}
