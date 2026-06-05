@@ -90,12 +90,16 @@ export default async function CalendarPage({
       year={year}
       month={month}
       events={events.map(e => ({
-        id:      e.id,
-        dealId:  e.dealId,
-        label:   e.label,
-        dueDate: e.dueDate.toISOString(),
-        status:  e.status,
-        apn:     e.deal.property.apn,
+        id:            e.id,
+        dealId:        e.dealId,
+        label:         e.label,
+        dueDate:       e.dueDate.toISOString(),
+        completedDate: e.completedDate?.toISOString() ?? null,
+        status:        e.status,
+        apn:           e.deal.property.apn,
+        address:       e.deal.property.address,
+        eventType:     e.eventType,
+        notes:         e.notes,
       }))}
       tasks={tasks.map(t => ({
         id:       t.id,

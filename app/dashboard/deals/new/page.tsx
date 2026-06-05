@@ -30,6 +30,7 @@ export default async function NewLienPage({
   const { title, subtitle } = STRATEGY_TITLES[strategy]
 
   const jurisdictions = await db.jurisdiction.findMany({
+    where: { isAvailable: true },
     orderBy: [{ stateName: 'asc' }, { county: 'asc' }],
   })
 

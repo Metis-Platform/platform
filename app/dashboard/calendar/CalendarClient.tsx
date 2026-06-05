@@ -3,14 +3,19 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import EventSlideOver, { type EventForEdit } from '@/app/dashboard/EventSlideOver'
 
 type CalEvent = {
   id: string
   dealId: string
   label: string
   dueDate: string
+  completedDate: string | null
   status: string
   apn: string
+  address: string | null
+  eventType: string
+  notes: string | null
 }
 
 type CalTask = {
@@ -60,15 +65,15 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 // Item renderers (shared between month and week view)
 // ---------------------------------------------------------------------------
 
-function EventChip({ e }: { e: CalEvent }) {
+function EventChip({ e, onSelect }: { e: CalEvent; onSelect: (e: CalEvent) => void }) {
   return (
-    <Link
-      href={`/dashboard/deals/${e.dealId}`}
-      className={`block truncate text-xs px-1.5 py-0.5 rounded ${EVENT_COLORS[e.status] ?? 'bg-zinc-100 text-zinc-600'} hover:opacity-80`}
+    <button
+      onClick={() => onSelect(e)}
+      className={`block w-full truncate text-left text-xs px-1.5 py-0.5 rounded ${EVENT_COLORS[e.status] ?? 'bg-zinc-100 text-zinc-600'} hover:opacity-80`}
       title={`${e.label} — APN ${e.apn}`}
     >
       {e.label}
-    </Link>
+    </button>
   )
 }
 
@@ -107,9 +112,24 @@ export default function CalendarClient({
   const [view, setView]             = useState<'month' | 'week'>('month')
   const [pickerOpen, setPickerOpen] = useState(false)
   // pickerWindowStart: index into monthSummaries for the first visible cell (12 shown at a time)
-  // Default: show current month at position 3 (3 months of prior context visible)
   const [pickerWindowStart, setPickerWindowStart] = useState(0)
+  const [selectedEvent, setSelectedEvent] = useState<EventForEdit | null>(null)
   const pickerRef                   = useRef<HTMLDivElement>(null)
+
+  function handleEventSelect(e: CalEvent) {
+    setSelectedEvent({
+      id:            e.id,
+      label:         e.label,
+      eventType:     e.eventType,
+      dueDate:       e.dueDate,
+      completedDate: e.completedDate,
+      status:        e.status,
+      notes:         e.notes,
+      apn:           e.apn,
+      address:       e.address,
+      dealId:        e.dealId,
+    })
+  }
 
   // weekStart: Sunday of the week containing today (if current month) else first Sunday on/before the 1st
   const [weekStart, setWeekStart] = useState<Date>(() => {
@@ -371,7 +391,7 @@ export default function CalendarClient({
                         {day}
                       </div>
                       <div className="space-y-0.5">
-                        {dayEvents.slice(0, MAX).map(e => <EventChip key={e.id} e={e} />)}
+                        {dayEvents.slice(0, MAX).map(e => <EventChip key={e.id} e={e} onSelect={handleEventSelect} />)}
                         {dayTasks.slice(0, Math.max(0, MAX - dayEvents.length)).map(t => <TaskChip key={t.id} t={t} />)}
                         {total > MAX && (
                           <div className="text-xs text-zinc-400 px-1.5">+{total - MAX} more</div>
@@ -434,7 +454,7 @@ export default function CalendarClient({
                   </div>
                 ) : empty ? null : (
                   <div className="space-y-0.5">
-                    {dayEvents.map(e => <EventChip key={e.id} e={e} />)}
+                    {dayEvents.map(e => <EventChip key={e.id} e={e} onSelect={handleEventSelect} />)}
                     {dayTasks.map(t  => <TaskChip  key={t.id} t={t} />)}
                   </div>
                 )}
@@ -443,6 +463,12 @@ export default function CalendarClient({
           })}
         </div>
       </div>
+
+      {/* Event detail/edit slide-over */}
+      <EventSlideOver
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
     </div>
   )
 }
