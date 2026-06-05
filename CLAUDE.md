@@ -230,6 +230,10 @@ Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\t
   ```bash
   gh pr merge <number> --auto --squash
   ```
+- **Never reuse a branch after it has been squash-merged.** Squash merge creates a new commit on `main` with a different hash, orphaning the branch's original commits. Any follow-up commit on that branch will conflict. For fixes to a merged PR, always create a fresh branch from `origin/main`:
+  ```bash
+  git checkout -b fix/<description> origin/main
+  ```
 - **If `git pull` fails** with "no such ref was fetched" or "divergent branches": the local branch is tracking a deleted feature branch. Fix with:
   ```bash
   git branch --set-upstream-to=origin/main main
