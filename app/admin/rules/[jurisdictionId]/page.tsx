@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import RulesClient from './RulesClient'
+import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +34,8 @@ export default async function JurisdictionRulesPage({
   if (!jurisdiction) notFound()
 
   // How many other counties in the same state have no active ruleset
+  const stateInfo = getStateInfo(jurisdiction.state)
+
   const stateMissingCount = await db.jurisdiction.count({
     where: {
       state: jurisdiction.state,
@@ -85,6 +88,86 @@ export default async function JurisdictionRulesPage({
           )}
         </p>
       </div>
+
+      {/* State reference panel */}
+      {stateInfo && (
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-zinc-900">
+              {stateInfo.stateName} — State Reference
+            </h2>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${investmentTypeBadgeClass(stateInfo.investmentType)}`}
+            >
+              {stateInfo.investmentLabel}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm mb-4">
+            {stateInfo.interestRate && (
+              <div>
+                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-0.5">Interest / Penalty</p>
+                <p className="text-zinc-900 font-medium">{stateInfo.interestRate}</p>
+              </div>
+            )}
+            {stateInfo.bidMethod && (
+              <div>
+                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-0.5">Bid Method</p>
+                <p className="text-zinc-900">{stateInfo.bidMethod}</p>
+              </div>
+            )}
+            {stateInfo.redemptionPeriod && (
+              <div>
+                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-0.5">Redemption Period</p>
+                <p className="text-zinc-900">{stateInfo.redemptionPeriod}</p>
+              </div>
+            )}
+            {stateInfo.saleDates && (
+              <div>
+                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-0.5">Sale Dates</p>
+                <p className="text-zinc-900">{stateInfo.saleDates}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-0.5">Over-the-Counter</p>
+              <p className={stateInfo.overTheCounter ? 'text-emerald-700 font-medium' : 'text-zinc-500'}>
+                {stateInfo.overTheCounter ? 'Available' : 'Not Available'}
+              </p>
+            </div>
+          </div>
+
+          {stateInfo.summary && (
+            <p className="text-sm text-zinc-600 leading-relaxed border-t border-zinc-100 pt-3">
+              {stateInfo.summary}
+            </p>
+          )}
+
+          {(stateInfo.stateWebsite || stateInfo.stateStatutes) && (
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-zinc-100">
+              {stateInfo.stateWebsite && (
+                <a
+                  href={stateInfo.stateWebsite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  State Website ↗
+                </a>
+              )}
+              {stateInfo.stateStatutes && (
+                <a
+                  href={stateInfo.stateStatutes}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  State Statutes ↗
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Ruleset editor */}
       <RulesClient

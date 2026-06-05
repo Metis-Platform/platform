@@ -94,15 +94,19 @@ function RuleForm({
     onChange({ ...value, [key]: val })
 
   return (
-    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="rounded-xl border border-zinc-300 bg-white shadow-md p-5 space-y-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+        {submitLabel === 'Add Rule' ? 'New Rule' : 'Edit Rule'}
+      </p>
+
+      <div className="grid grid-cols-2 gap-4">
         {/* Event type */}
-        <div>
-          <label className="block text-xs font-medium text-zinc-600 mb-1">Event Type</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-zinc-700">Event Type</label>
           <select
             value={value.eventType}
             onChange={(e) => set('eventType', e.target.value)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           >
             {EVENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -111,12 +115,12 @@ function RuleForm({
         </div>
 
         {/* Anchor */}
-        <div>
-          <label className="block text-xs font-medium text-zinc-600 mb-1">Anchor Field</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-zinc-700">Anchor Field</label>
           <select
             value={value.anchorField}
             onChange={(e) => set('anchorField', e.target.value)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           >
             {ANCHOR_FIELDS.map((a) => (
               <option key={a.value} value={a.value}>{a.label}</option>
@@ -125,70 +129,69 @@ function RuleForm({
         </div>
 
         {/* Label */}
-        <div className="col-span-2">
-          <label className="block text-xs font-medium text-zinc-600 mb-1">Label</label>
+        <div className="col-span-2 flex flex-col gap-1">
+          <label className="text-xs font-semibold text-zinc-700">Label</label>
           <input
             type="text"
             value={value.label}
             onChange={(e) => set('label', e.target.value)}
             placeholder="e.g. Redemption Deadline (2 Years)"
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
 
         {/* Offset days */}
-        <div>
-          <label className="block text-xs font-medium text-zinc-600 mb-1">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-zinc-700">
             Offset Days
-            <span className="ml-1 font-normal text-zinc-400">
-              (from anchor · negative = before)
-            </span>
+            <span className="ml-1 font-normal text-zinc-400">(negative = before anchor)</span>
           </label>
           <input
             type="number"
             value={value.offsetDays}
             onChange={(e) => set('offsetDays', parseInt(e.target.value) || 0)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
 
         {/* Sort order */}
-        <div>
-          <label className="block text-xs font-medium text-zinc-600 mb-1">Sort Order</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-zinc-700">Sort Order</label>
           <input
             type="number"
             value={value.sortOrder}
             onChange={(e) => set('sortOrder', parseInt(e.target.value) || 0)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
 
         {/* Description */}
-        <div className="col-span-2">
-          <label className="block text-xs font-medium text-zinc-600 mb-1">
+        <div className="col-span-2 flex flex-col gap-1">
+          <label className="text-xs font-semibold text-zinc-700">
             Description
-            <span className="ml-1 font-normal text-zinc-400">(optional — statute reference, notes)</span>
+            <span className="ml-1 font-normal text-zinc-400">(optional — statute ref, notes)</span>
           </label>
           <textarea
             value={value.description ?? ''}
             onChange={(e) => set('description', e.target.value)}
             rows={2}
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm resize-none"
+            placeholder="e.g. A.R.S. § 42-18112 — 3-year redemption period from lien issuance"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 resize-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3 pt-1 border-t border-zinc-100">
         <button
           onClick={onSubmit}
           disabled={isPending || !value.label.trim()}
-          className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+          className="rounded-lg bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-40 transition-colors"
         >
           {isPending ? 'Saving…' : submitLabel}
         </button>
         <button
           onClick={onCancel}
-          className="text-sm text-zinc-500 hover:text-zinc-900"
+          className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
         >
           Cancel
         </button>

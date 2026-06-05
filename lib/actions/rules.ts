@@ -202,7 +202,7 @@ export async function bulkApplyRuleSet(
       id: { not: sourceJurisdictionId },
       ruleSets: { none: { isActive: true } },
     },
-    select: { id: true },
+    select: { id: true, county: true, state: true },
   })
 
   if (targets.length === 0) return { applied: 0 }
@@ -216,15 +216,29 @@ export async function bulkApplyRuleSet(
     description: r.description,
   }))
 
+  // Extract the suffix portion of the source name (the part after "—" if present),
+  // e.g. "Maricopa County AZ — Standard Tax Lien Rules" → "Standard Tax Lien Rules"
+  const sourceSuffix = source.name.includes('—')
+    ? source.name.split('—').slice(1).join('—').trim()
+    : source.name
+
   for (const target of targets) {
-    await db.ruleSet.create({
-      data: {
-        jurisdictionId: target.id,
-        name: source.name,
-        effectiveDate: source.effectiveDate,
-        isActive: true,
-        rules: { createMany: { data: ruleData } },
-      },
+    const targetName = `${target.county} County ${target.state} — ${sourceSuffix}`
+    await db.$transaction(async (tx) => {
+      await tx.ruleSet.create({
+        data: {
+          jurisdictionId: target.id,
+          name: targetName,
+          effectiveDate: source.effectiveDate,
+          isActive: true,
+          rules: { createMany: { data: ruleData } },
+        },
+      })
+      // Mark each target jurisdiction as available now that it has an active ruleset
+      await tx.jurisdiction.update({
+        where: { id: target.id },
+        data: { isAvailable: true },
+      })
     })
   }
 
