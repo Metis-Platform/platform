@@ -9,6 +9,7 @@ import { NotWonButton, RelistButton } from './not-won-button'
 import DocumentSection, { type DocRow } from './DocumentSection'
 import DealTaskSection, { type DealTask } from './DealTaskSection'
 import DealEventsSection, { type DealEvent } from './DealEventsSection'
+import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 
 function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string, strategyType: string) {
   const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
@@ -100,6 +101,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     : null
   const researchLinks = buildResearchLinks(property.apn, property.address, jur.stateName, jur.county, jur.state, deal.strategyType)
 
+  const stateInfo = getStateInfo(jur.state)
+
   // Check if this jurisdiction has an active ruleset (for the warning banner)
   const hasActiveRuleSet = await db.ruleSet.count({
     where: { jurisdictionId: jur.id, isActive: true },
@@ -155,9 +158,26 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       <div className="bg-white rounded-xl border border-zinc-200 p-6 mb-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1">
-              {jur.county} County, {jur.stateName} &middot; {jur.investmentType === 'LIEN' ? 'Lien State' : jur.investmentType === 'REDEEMABLE_DEED' ? 'Redeemable Deed State' : 'Deed State'}
-            </p>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                {jur.county} County, {jur.stateName}
+              </p>
+              {stateInfo && (
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${investmentTypeBadgeClass(stateInfo.investmentType)}`}>
+                  {stateInfo.investmentLabel}
+                </span>
+              )}
+              {stateInfo?.interestRate && (
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                  {stateInfo.interestRate}
+                </span>
+              )}
+              {stateInfo?.redemptionPeriod && (
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                  {stateInfo.redemptionPeriod} redemption
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl font-bold text-zinc-900 font-mono">{property.apn}</h1>
             {property.address && <p className="text-sm text-zinc-500 mt-1">{property.address}</p>}
           </div>
