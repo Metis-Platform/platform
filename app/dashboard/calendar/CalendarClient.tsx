@@ -208,6 +208,12 @@ export default function CalendarClient({
       ref={pickerRef}
       className="absolute top-full mt-1 left-1/2 -translate-x-1/2 z-50 bg-white rounded-xl border border-zinc-200 shadow-lg p-3 w-64"
     >
+      <button
+        onClick={() => { router.push('/dashboard/calendar'); setPickerOpen(false) }}
+        className="w-full mb-2 pb-2 border-b border-zinc-100 text-xs font-medium text-blue-600 hover:text-blue-700 text-center"
+      >
+        Today
+      </button>
       <div className="grid grid-cols-3 gap-1">
         {monthSummaries.map((ms, i) => {
           const isSelected = ms.year === year && ms.month === month
@@ -228,8 +234,8 @@ export default function CalendarClient({
                 {MONTHS[ms.month].slice(0, 3)}
               </div>
               <div className="text-xs text-zinc-400">{ms.year}</div>
-              <div className="h-2 mt-0.5 flex justify-center">
-                {dotClass && <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />}
+              <div className="h-2 mt-0.5 flex justify-center items-center">
+                {dotClass && <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotClass}`} />}
               </div>
             </button>
           )
@@ -259,8 +265,16 @@ export default function CalendarClient({
         </div>
       </div>
 
-      {/* Right: prev / month-year picker / next */}
+      {/* Right: today / prev / month-year picker / next */}
       <div className="flex items-center gap-2">
+        {!isCurrentMonth && (
+          <button
+            onClick={() => router.push('/dashboard/calendar')}
+            className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+          >
+            Today
+          </button>
+        )}
         <button
           onClick={() => view === 'week' ? navigateWeek(-1) : navigateMonth(-1)}
           className="px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100 rounded-md transition-colors"
