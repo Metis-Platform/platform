@@ -138,3 +138,65 @@ export async function deleteRule(ruleId: string, jurisdictionId: string) {
 
   revalidatePath(`/admin/rules/${jurisdictionId}`)
 }
+
+// ─── Bulk apply ───────────────────────────────────────────────────────────────
+
+/**
+ * Copies the given ruleset (name + all rules) to every jurisdiction in the
+ * same state that currently has no active ruleset, then activates each copy.
+ * Returns the number of jurisdictions that were updated.
+ */
+export async function bulkApplyRuleSet(
+  sourceRuleSetId: string
+): Promise<{ applied: number }> {
+  await assertSuperAdmin()
+
+  const source = await db.ruleSet.findUnique({
+    where: { id: sourceRuleSetId },
+    include: {
+      rules: true,
+      jurisdiction: { select: { id: true, state: true } },
+    },
+  })
+  if (!source) throw new Error('Source ruleset not found')
+
+  const { state, id: sourceJurisdictionId } = source.jurisdiction
+
+  // Targets: same state, no active ruleset, not the source jurisdiction itself
+  const targets = await db.jurisdiction.findMany({
+    where: {
+      state,
+      id: { not: sourceJurisdictionId },
+      ruleSets: { none: { isActive: true } },
+    },
+    select: { id: true },
+  })
+
+  if (targets.length === 0) return { applied: 0 }
+
+  const ruleData = source.rules.map((r) => ({
+    eventType: r.eventType,
+    label: r.label,
+    anchorField: r.anchorField,
+    offsetDays: r.offsetDays,
+    sortOrder: r.sortOrder,
+    description: r.description,
+  }))
+
+  for (const target of targets) {
+    await db.ruleSet.create({
+      data: {
+        jurisdictionId: target.id,
+        name: source.name,
+        effectiveDate: source.effectiveDate,
+        isActive: true,
+        rules: { createMany: { data: ruleData } },
+      },
+    })
+  }
+
+  revalidatePath('/admin/rules')
+  revalidatePath(`/admin/rules/${sourceJurisdictionId}`)
+
+  return { applied: targets.length }
+}

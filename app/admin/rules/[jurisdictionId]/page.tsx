@@ -32,6 +32,15 @@ export default async function JurisdictionRulesPage({
 
   if (!jurisdiction) notFound()
 
+  // How many other counties in the same state have no active ruleset
+  const stateMissingCount = await db.jurisdiction.count({
+    where: {
+      state: jurisdiction.state,
+      id: { not: jurisdictionId },
+      ruleSets: { none: { isActive: true } },
+    },
+  })
+
   const ruleSets = jurisdiction.ruleSets.map((rs) => ({
     id: rs.id,
     name: rs.name,
@@ -70,13 +79,20 @@ export default async function JurisdictionRulesPage({
           {INVESTMENT_LABELS[jurisdiction.investmentType] ?? jurisdiction.investmentType} ·{' '}
           {jurisdiction.timezone}
           {jurisdiction.notes && (
-            <> · <span className="italic">{jurisdiction.notes}</span></>
+            <>
+              {' '}· <span className="italic">{jurisdiction.notes}</span>
+            </>
           )}
         </p>
       </div>
 
       {/* Ruleset editor */}
-      <RulesClient jurisdictionId={jurisdictionId} ruleSets={ruleSets} />
+      <RulesClient
+        jurisdictionId={jurisdictionId}
+        stateName={jurisdiction.stateName}
+        stateMissingCount={stateMissingCount}
+        ruleSets={ruleSets}
+      />
     </div>
   )
 }

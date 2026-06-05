@@ -10,6 +10,7 @@ import {
   createRule,
   updateRule,
   deleteRule,
+  bulkApplyRuleSet,
   type RuleFormData,
 } from '@/lib/actions/rules'
 
@@ -414,9 +415,13 @@ function RuleSetCard({
 
 export default function RulesClient({
   jurisdictionId,
+  stateName,
+  stateMissingCount,
   ruleSets,
 }: {
   jurisdictionId: string
+  stateName: string
+  stateMissingCount: number
   ruleSets: RuleSet[]
 }) {
   const router = useRouter()
@@ -427,6 +432,7 @@ export default function RulesClient({
   const [newDate, setNewDate]         = useState(
     () => new Date().toISOString().slice(0, 10)
   )
+  const [bulkResult, setBulkResult]   = useState<number | null>(null)
 
   function handleCreateRuleSet() {
     if (!newName.trim() || !newDate) return
@@ -460,8 +466,56 @@ export default function RulesClient({
     })
   }
 
+  function handleBulkApply(sourceRuleSetId: string) {
+    if (
+      !confirm(
+        `Apply these rules to all ${stateMissingCount} other ${stateName} counties with no active rules?\n\n` +
+          'Each county will get its own copy of this ruleset, activated immediately.'
+      )
+    )
+      return
+    startTransition(async () => {
+      const { applied } = await bulkApplyRuleSet(sourceRuleSetId)
+      setBulkResult(applied)
+      router.refresh()
+    })
+  }
+
+  const activeRuleSet = ruleSets.find((rs) => rs.isActive)
+
   return (
     <div className="space-y-5">
+      {/* Bulk-apply banner — shown when there's an active ruleset and other state counties need rules */}
+      {activeRuleSet && stateMissingCount > 0 && bulkResult === null && (
+        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-5 py-3">
+          <p className="text-sm text-amber-900">
+            <span className="font-semibold">{stateMissingCount}</span> other{' '}
+            {stateName} counti{stateMissingCount === 1 ? 'y' : 'es'} have no active
+            rules. Propagate{' '}
+            <span className="font-medium">&ldquo;{activeRuleSet.name}&rdquo;</span> to all of them?
+          </p>
+          <button
+            onClick={() => handleBulkApply(activeRuleSet.id)}
+            disabled={isPending}
+            className="ml-4 shrink-0 rounded-lg bg-amber-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-amber-800 disabled:opacity-40"
+          >
+            {isPending ? 'Applying…' : `Apply to all ${stateName} counties`}
+          </button>
+        </div>
+      )}
+
+      {/* Success banner after bulk apply */}
+      {bulkResult !== null && (
+        <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-5 py-3">
+          <span className="text-green-700">✓</span>
+          <p className="text-sm text-green-900">
+            Applied to{' '}
+            <span className="font-semibold">{bulkResult}</span>{' '}
+            {stateName} counti{bulkResult === 1 ? 'y' : 'es'}.
+          </p>
+        </div>
+      )}
+
       {/* Existing rulesets */}
       {ruleSets.length === 0 && !showNewForm && (
         <div className="rounded-xl border-2 border-dashed border-zinc-200 py-10 text-center text-sm text-zinc-400">
