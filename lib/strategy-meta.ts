@@ -149,7 +149,7 @@ const ALL: StrategyMeta[] = [
     searchPlaceholder: 'Search APN, address…',
     dateCol: 'Purchase Date',
     amountCol: 'NOI',
-    refCol: '—',
+    refCol: 'Units',
     creatable: false,
   },
 ]
