@@ -311,8 +311,14 @@ export default function CalendarClient({
         </div>
       </div>
 
-      {/* Right: today / prev / month-year picker / next */}
+      {/* Right: export / today / prev / month-year picker / next */}
       <div className="flex items-center gap-2">
+        <a
+          href="/api/calendar/export"
+          className="px-3 py-1.5 text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-md transition-colors"
+        >
+          Export ICS
+        </a>
         {!isCurrentMonth && (
           <button
             onClick={() => router.push('/dashboard/calendar')}
