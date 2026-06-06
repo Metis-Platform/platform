@@ -134,7 +134,7 @@ const ALL: StrategyMeta[] = [
     searchPlaceholder: 'Search APN, address…',
     dateCol: 'Option Expiry',
     amountCol: 'Purchase Price',
-    refCol: '—',
+    refCol: 'Acres',
     creatable: false,
   },
   {
