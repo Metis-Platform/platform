@@ -67,6 +67,7 @@ export default function TaskBoard({
   const [editing, setEditing]       = useState(false)
   const [editForm, setEditForm]     = useState<Record<string, string>>({})
   const [isPending, startTransition] = useTransition()
+  const [nowMs] = useState(() => Date.now())
   const router = useRouter()
 
   function applyPatch(id: string, patch: Partial<Task>) {
@@ -189,8 +190,8 @@ export default function TaskBoard({
         ) : (
           <div className="space-y-2">
             {visible.map(task => {
-              const overdue = task.dueDate && task.status !== 'COMPLETED' && new Date(task.dueDate) < new Date()
-              const daysUntil = task.dueDate ? Math.round((new Date(task.dueDate).getTime() - Date.now()) / 86_400_000) : null
+              const overdue = task.dueDate && task.status !== 'COMPLETED' && new Date(task.dueDate).getTime() < nowMs
+              const daysUntil = task.dueDate ? Math.round((new Date(task.dueDate).getTime() - nowMs) / 86_400_000) : null
               return (
                 <div key={task.id}
                   className={`bg-white rounded-xl border transition-colors cursor-pointer ${selectedTask?.id === task.id ? 'border-blue-400 shadow-sm' : 'border-zinc-200 hover:border-zinc-300'}`}
