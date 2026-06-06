@@ -13,14 +13,40 @@ const RENTAL_STRATEGY_LABELS: Record<string, string> = {
   SECTION_8: 'Section 8',
 }
 
-function formatRentalStrategy(strategy: string | null | undefined) {
-  if (!strategy) return null
+const LAND_ACCESS_LABELS: Record<string, string> = {
+  ROAD: 'Road access',
+  EASEMENT: 'Easement',
+  LANDLOCKED: 'Landlocked',
+  NONE: 'No access',
+  UNKNOWN: 'Unknown access',
+}
 
-  return RENTAL_STRATEGY_LABELS[strategy] ?? strategy
+function formatEnumLabel(value: string | null | undefined, labels: Record<string, string>) {
+  if (!value) return null
+
+  return labels[value] ?? value
     .toLowerCase()
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+function formatRentalStrategy(strategy: string | null | undefined) {
+  return formatEnumLabel(strategy, RENTAL_STRATEGY_LABELS)
+}
+
+function formatLandReference(acres: { toString(): string } | number | string | null | undefined, access: string | null | undefined) {
+  const acresNumber = acres != null ? Number(acres) : null
+  const formattedAcres = acresNumber != null && Number.isFinite(acresNumber)
+    ? `${acresNumber.toLocaleString(undefined, { maximumFractionDigits: 4 })} acres`
+    : null
+
+  const parts = [
+    formattedAcres,
+    formatEnumLabel(access, LAND_ACCESS_LABELS),
+  ].filter(Boolean)
+
+  return parts.length > 0 ? parts.join(' · ') : null
 }
 
 export default async function LiensPage({
@@ -84,11 +110,11 @@ export default async function LiensPage({
       : strategy === StrategyType.FORECLOSURE
         ? (d.foreclosure?.foreclosureType ?? null)
         : strategy === StrategyType.FIX_FLIP
-          ? (d.fixFlip?.rehabBudget != null ? Number(d.fixFlip.rehabBudget).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }) : null)
+          ? (d.fixFlip?.rehabBudget != null ? Number(d.fixFlip.rehabBudget).toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : null)
         : strategy === StrategyType.WHOLESALE
-          ? (d.wholesale?.assignmentFee != null ? Number(d.wholesale.assignmentFee).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }) : null)
+          ? (d.wholesale?.assignmentFee != null ? Number(d.wholesale.assignmentFee).toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : null)
           : strategy === StrategyType.LAND
-            ? (d.property.acres != null ? Number(d.property.acres).toLocaleString(undefined, { maximumFractionDigits: 4 }) : null)
+            ? formatLandReference(d.property.acres, d.land?.access)
             : strategy === StrategyType.BUY_HOLD
               ? formatRentalStrategy(d.buyHold?.rentalStrategy)
               : strategy === StrategyType.MULTIFAMILY
