@@ -197,6 +197,7 @@ model Deal {
   fixFlip      DealFixFlip?
   land         DealLand?
   wholesale    DealWholesale?
+  buyHold      DealBuyHold?
   events       Event[]
   tasks        Task[]
   transactions FinancialTransaction[]
@@ -253,7 +254,6 @@ model DealForeclosure {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
-
 
 // Extension table — Fix & Flip strategy
 model DealFixFlip {
@@ -320,6 +320,33 @@ model DealWholesale {
   marketingNotes     String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+}
+
+// Extension table — Buy & Hold / Section 8 strategy
+model DealBuyHold {
+  id                    String    @id @default(cuid())
+  dealId                String    @unique
+  deal                  Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  rentalStrategy        String? // LONG_TERM | SHORT_TERM | MID_TERM | SECTION_8
+  targetMonthlyRent     Decimal?  @db.Decimal(14, 2)
+  actualMonthlyRent     Decimal?  @db.Decimal(14, 2)
+  securityDeposit       Decimal?  @db.Decimal(14, 2)
+  leaseStartDate        DateTime?
+  leaseEndDate          DateTime?
+  tenantName            String?
+  tenantPhone           String?
+  tenantEmail           String?
+  propertyManagerName   String?
+  propertyManagerPhone  String?
+  propertyManagerEmail  String?
+  section8VoucherAmount Decimal?  @db.Decimal(14, 2)
+  housingAuthorityName  String?
+  inspectionStatus      String?
+  operatingExpenses     Json?
+  maintenanceReserve    Decimal?  @db.Decimal(14, 2)
+  notes                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 // Extension table — Tax Lien strategy
