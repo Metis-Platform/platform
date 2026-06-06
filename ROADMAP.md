@@ -185,8 +185,10 @@ Billing now exists (Phase 3). Phase 4-partial is complete. This is the next majo
 
 #### 2B — Due Diligence + Deadline Intelligence
 - [ ] Due Diligence Engine MVP defined in [docs/due-diligence-engine-mvp.md](docs/due-diligence-engine-mvp.md)
+- [ ] Knowledge Library MVP defined in [docs/knowledge-library-mvp.md](docs/knowledge-library-mvp.md)
 - [ ] Strategy-aware checklist templates for tax lien, tax deed, foreclosure, and land deals
 - [ ] Deal-scoped checklist instances with required gaps, concerns, blockers, and task generation
+- [ ] Source-backed guidance surfaced from the knowledge library on deals, jurisdictions, and diligence items
 - [ ] Plain-English summaries of upcoming obligations per deal
 - [ ] "At-risk" deal flagging with natural language reasoning
 - [ ] Draft generation: AI generates required notice letters pre-populated with deal data
