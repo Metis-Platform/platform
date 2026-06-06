@@ -66,9 +66,11 @@ export default async function LiensPage({
       ? (d.taxLien?.certificateNumber ?? null)
       : strategy === StrategyType.FORECLOSURE
         ? (d.foreclosure?.foreclosureType ?? null)
-        : strategy === StrategyType.MULTIFAMILY
-          ? (d.multifamily?.unitCount != null ? String(d.multifamily.unitCount) : null)
-          : null
+        : strategy === StrategyType.LAND
+          ? (d.property.acres != null ? Number(d.property.acres).toLocaleString(undefined, { maximumFractionDigits: 4 }) : null)
+          : strategy === StrategyType.MULTIFAMILY
+            ? (d.multifamily?.unitCount != null ? String(d.multifamily.unitCount) : null)
+            : null
 
     const primaryDate = d.taxLien?.issueDate
       ?? d.taxDeed?.saleDate
