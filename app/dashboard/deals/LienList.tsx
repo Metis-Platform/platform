@@ -114,7 +114,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
     else { setSortKey(key); setSortDir('asc') }
   }
 
-  function SortIcon({ col }: { col: SortKey }) {
+  function renderSortIcon(col: SortKey) {
     if (sortKey !== col) return <span className="ml-1 text-zinc-300">↕</span>
     return <span className="ml-1 text-blue-500">{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
@@ -219,21 +219,21 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
             <thead>
               <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wide">
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('apn')}>
-                  Property / APN <SortIcon col="apn" />
+                  Property / APN {renderSortIcon('apn')}
                 </th>
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('state')}>
-                  Jurisdiction <SortIcon col="state" />
+                  Jurisdiction {renderSortIcon('state')}
                 </th>
                 <th className="px-4 py-3">{isTaxDeed ? 'Deed #' : isForeclosure ? 'Type' : 'Certificate #'}</th>
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('date')}>
-                  {meta.dateCol} <SortIcon col="date" />
+                  {meta.dateCol} {renderSortIcon('date')}
                 </th>
                 <th className="px-4 py-3 text-right cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('amount')}>
-                  {meta.amountCol} <SortIcon col="amount" />
+                  {meta.amountCol} {renderSortIcon('amount')}
                 </th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('deadline')}>
-                  Next Deadline <SortIcon col="deadline" />
+                  Next Deadline {renderSortIcon('deadline')}
                 </th>
               </tr>
             </thead>

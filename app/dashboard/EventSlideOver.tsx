@@ -57,9 +57,10 @@ export default function EventSlideOver({
   const [completedDate, setCompletedDate] = useState('')
   const [notes,         setNotes]         = useState('')
 
-  // Sync local state when event changes
+  // Sync local editable form state when a different event is opened.
   useEffect(() => {
     if (!event) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- event prop seeds local draft fields for the slide-over editor
     setStatus(event.status)
     setDueDate(event.dueDate.slice(0, 10))
     setCompletedDate(event.completedDate?.slice(0, 10) ?? '')
