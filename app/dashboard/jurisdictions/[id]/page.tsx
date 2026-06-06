@@ -69,11 +69,17 @@ export default async function JurisdictionDetailPage({
         orderBy: [{ isActive: 'desc' }, { effectiveDate: 'desc' }],
         include: { rules: { orderBy: [{ sortOrder: 'asc' }, { offsetDays: 'asc' }] } },
       },
-      _count: { select: { properties: true } },
     },
   })
 
   if (!jurisdiction) notFound()
+
+  const trackedPropertyCount = await db.property.count({
+    where: {
+      jurisdictionId: jurisdiction.id,
+      tenantId: synced.tenant.id,
+    },
+  })
 
   const stateInfo = getStateInfo(jurisdiction.state)
   const links = linkEntries(jurisdiction.links)
@@ -190,7 +196,7 @@ export default async function JurisdictionDetailPage({
               </div>
               <div>
                 <dt className="font-medium text-zinc-500">Tracked properties</dt>
-                <dd className="mt-0.5 text-zinc-900">{jurisdiction._count.properties}</dd>
+                <dd className="mt-0.5 text-zinc-900">{trackedPropertyCount}</dd>
               </div>
               <div>
                 <dt className="font-medium text-zinc-500">Over-the-counter</dt>
