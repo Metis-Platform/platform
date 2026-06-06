@@ -89,7 +89,7 @@ const ALL: StrategyMeta[] = [
     searchPlaceholder: 'Search APN, address…',
     dateCol: 'Rehab Start',
     amountCol: 'ARV',
-    refCol: '—',
+    refCol: 'Rehab Budget',
     creatable: false,
   },
   {

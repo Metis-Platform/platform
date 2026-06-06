@@ -83,6 +83,8 @@ export default async function LiensPage({
       ? (d.taxLien?.certificateNumber ?? null)
       : strategy === StrategyType.FORECLOSURE
         ? (d.foreclosure?.foreclosureType ?? null)
+        : strategy === StrategyType.FIX_FLIP
+          ? (d.fixFlip?.rehabBudget != null ? Number(d.fixFlip.rehabBudget).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }) : null)
         : strategy === StrategyType.WHOLESALE
           ? (d.wholesale?.assignmentFee != null ? Number(d.wholesale.assignmentFee).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }) : null)
           : strategy === StrategyType.LAND
