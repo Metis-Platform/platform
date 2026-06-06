@@ -119,7 +119,7 @@ const ALL: StrategyMeta[] = [
     searchPlaceholder: 'Search APN, address…',
     dateCol: 'Lease Start',
     amountCol: 'Monthly Rent',
-    refCol: '—',
+    refCol: 'Rental Strategy',
     creatable: false,
   },
   {
