@@ -198,6 +198,7 @@ model Deal {
   land         DealLand?
   wholesale    DealWholesale?
   buyHold      DealBuyHold?
+  multifamily  DealMultifamily?
   events       Event[]
   tasks        Task[]
   transactions FinancialTransaction[]
@@ -347,6 +348,34 @@ model DealBuyHold {
   notes                 String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+}
+
+// Extension table — Multifamily strategy
+model DealMultifamily {
+  id                   String    @id @default(cuid())
+  dealId               String    @unique
+  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  unitCount            Int?
+  occupiedUnits        Int?
+  averageMonthlyRent   Decimal?  @db.Decimal(14, 2)
+  grossScheduledIncome Decimal?  @db.Decimal(14, 2)
+  vacancyRate          Decimal?  @db.Decimal(5, 2)
+  operatingExpenses    Json?
+  netOperatingIncome   Decimal?  @db.Decimal(14, 2)
+  capRate              Decimal?  @db.Decimal(6, 4)
+  dscr                 Decimal?  @db.Decimal(6, 4)
+  loanAmount           Decimal?  @db.Decimal(14, 2)
+  interestRate         Decimal?  @db.Decimal(6, 4)
+  amortizationYears    Int?
+  annualDebtService    Decimal?  @db.Decimal(14, 2)
+  rentRoll             Json?
+  t12Financials        Json?
+  propertyManagerName  String?
+  propertyManagerPhone String?
+  propertyManagerEmail String?
+  notes                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 // Extension table — Tax Lien strategy
