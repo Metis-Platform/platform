@@ -51,6 +51,7 @@ model User {
   updatedAt   DateTime @updatedAt
 
   assignedTasks Task[]
+  taskComments  TaskComment[]
   auditLogs     AuditLog[]
 
   @@index([tenantId])
@@ -323,9 +324,24 @@ model Task {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  comments     TaskComment[]
+
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([assignedToId, status])
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([taskId, createdAt])
+  @@index([userId])
 }
 
 // ============================================================

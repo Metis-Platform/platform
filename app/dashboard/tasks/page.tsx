@@ -20,6 +20,10 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       include: {
         deal: { include: { property: true } },
         assignedTo: true,
+        comments: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
       },
       orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { createdAt: 'asc' }],
     }),
@@ -53,6 +57,12 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         assignedTo: t.assignedTo
           ? { id: t.assignedTo.id, name: t.assignedTo.name, email: t.assignedTo.email }
           : null,
+        comments: t.comments.map(c => ({
+          id: c.id,
+          body: c.body,
+          createdAt: c.createdAt.toISOString(),
+          user: { id: c.user.id, name: c.user.name, email: c.user.email },
+        })),
       }))}
       users={users}
       deals={deals.map(d => ({ id: d.id, apn: d.property.apn, address: d.property.address }))}

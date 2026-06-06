@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 
 type User = { id: string; name: string | null; email: string }
 type Deal = { id: string; apn: string; address: string | null }
+type TaskComment = { id: string; body: string; createdAt: string; user: User }
 
 type Task = {
   id: string
@@ -20,6 +21,7 @@ type Task = {
   apn: string
   address: string | null
   assignedTo: User | null
+  comments: TaskComment[]
 }
 
 const PRIORITY_BADGE: Record<string, string> = {
@@ -64,6 +66,9 @@ export default function TaskBoard({
   const [form, setForm]             = useState({ ...emptyForm, dealId: prefilledDealId ?? '' })
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError]   = useState('')
+  const [commentText, setCommentText] = useState('')
+  const [commentSaving, setCommentSaving] = useState(false)
+  const [commentError, setCommentError] = useState('')
   const [editing, setEditing]       = useState(false)
   const [editForm, setEditForm]     = useState<Record<string, string>>({})
   const [isPending, startTransition] = useTransition()
@@ -95,6 +100,25 @@ export default function TaskBoard({
         router.refresh()
       } catch { applyPatch(task.id, { assignedTo: task.assignedTo }) }
     })
+  }
+
+  async function handleAddComment(e: React.FormEvent) {
+    e.preventDefault()
+    if (!selectedTask || !commentText.trim()) return
+    setCommentSaving(true); setCommentError('')
+    try {
+      const res = await fetch(`/api/tasks/${selectedTask.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: commentText }),
+      })
+      if (!res.ok) { setCommentError('Failed to add comment.'); return }
+      const created = await res.json()
+      applyPatch(selectedTask.id, { comments: [...selectedTask.comments, created] })
+      setCommentText('')
+      router.refresh()
+    } catch { setCommentError('Failed to add comment.') }
+    finally { setCommentSaving(false) }
   }
 
   function handleDelete(task: Task) {
@@ -144,7 +168,7 @@ export default function TaskBoard({
       const assignedTo = created.assignedTo ?? (form.assignedToId ? users.find(u => u.id === form.assignedToId) ?? null : null)
       setTasks(prev => [{ id: created.id, dealId: created.dealId, title: created.title, description: created.description,
         taskType: created.taskType, status: created.status, priority: created.priority,
-        dueDate: created.dueDate, completedAt: null, apn: deal?.apn ?? '', address: deal?.address ?? null, assignedTo }, ...prev])
+        dueDate: created.dueDate, completedAt: null, apn: deal?.apn ?? '', address: deal?.address ?? null, assignedTo, comments: [] }, ...prev])
       setShowCreate(false); setForm(emptyForm)
       router.refresh()
     } catch { setFormError('Failed to create task.') }
@@ -206,6 +230,7 @@ export default function TaskBoard({
                         <Link href={`/dashboard/deals/${task.dealId}`} onClick={e => e.stopPropagation()} className="font-mono hover:text-blue-600 transition-colors">{task.apn}</Link>
                         {task.dueDate && <span className={overdue ? 'text-red-500 font-medium' : ''}>{overdue ? `${Math.abs(daysUntil!)}d overdue` : daysUntil === 0 ? 'Due today' : `${daysUntil}d`}</span>}
                         {task.assignedTo && <span>{task.assignedTo.name ?? task.assignedTo.email}</span>}
+                        {task.comments.length > 0 && <span>{task.comments.length} comment{task.comments.length === 1 ? '' : 's'}</span>}
                       </div>
                     </div>
                     <button onClick={e => { e.stopPropagation(); handleStatusToggle(task) }} disabled={isPending}
@@ -386,6 +411,34 @@ export default function TaskBoard({
                 </div>
               )}
             </dl>
+
+
+            <div className="mt-5 border-t border-zinc-100 pt-4">
+              <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">Comments</h3>
+              <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1">
+                {selectedTask.comments.length === 0 ? (
+                  <p className="text-xs text-zinc-400">No comments yet.</p>
+                ) : selectedTask.comments.map(comment => (
+                  <div key={comment.id} className="rounded-lg bg-zinc-50 px-3 py-2">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs font-medium text-zinc-700 truncate">{comment.user.name ?? comment.user.email}</span>
+                      <span className="text-[11px] text-zinc-400 flex-shrink-0">{new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                    <p className="text-xs text-zinc-600 whitespace-pre-wrap break-words">{comment.body}</p>
+                  </div>
+                ))}
+              </div>
+              <form onSubmit={handleAddComment} className="space-y-2">
+                {commentError && <p className="text-xs text-red-600">{commentError}</p>}
+                <textarea value={commentText} onChange={e => setCommentText(e.target.value)}
+                  rows={3} maxLength={2000} placeholder="Add a comment…"
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-2 py-1.5 text-zinc-700 resize-none"/>
+                <button type="submit" disabled={commentSaving || !commentText.trim()}
+                  className="w-full py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-zinc-800 disabled:opacity-50">
+                  {commentSaving ? 'Adding…' : 'Add Comment'}
+                </button>
+              </form>
+            </div>
 
             <div className="mt-5 flex gap-2">
               {editing ? (
