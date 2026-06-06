@@ -35,7 +35,7 @@ export default async function LiensPage({
     orderBy: { createdAt: 'desc' },
   })
 
-  const now = Date.now()
+  const now = new Date()
 
   const rows: LienRow[] = deals.map(d => {
     const next = d.events[0] ?? null
@@ -64,7 +64,7 @@ export default async function LiensPage({
                           ?? null,
       faceAmount:        faceAmt,
       nextDeadlineLabel: next?.label ?? null,
-      nextDeadlineDays:  next ? Math.round((next.dueDate.getTime() - now) / 86_400_000) : null,
+      nextDeadlineDays:  next ? Math.round((next.dueDate.getTime() - now.getTime()) / 86_400_000) : null,
     }
   })
 

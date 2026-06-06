@@ -40,7 +40,7 @@ export default function DealEventsSection({
 }) {
   const [selected, setSelected] = useState<EventForEdit | null>(null)
 
-  const now = Date.now()
+  const [now] = useState(() => Date.now())
 
   return (
     <>

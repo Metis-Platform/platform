@@ -92,9 +92,9 @@ export default async function DashboardPage({
 
       {/* Deadline buckets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Bucket title="Overdue"        events={overdueEvents  as EventRow[]} color="red" />
-        <Bucket title="Due in 7 Days"  events={urgentEvents   as EventRow[]} color="yellow" />
-        <Bucket title="Due in 30 Days" events={upcomingEvents as EventRow[]} color="blue" />
+        <Bucket title="Overdue"        events={overdueEvents  as EventRow[]} color="red" nowMs={now.getTime()} />
+        <Bucket title="Due in 7 Days"  events={urgentEvents   as EventRow[]} color="yellow" nowMs={now.getTime()} />
+        <Bucket title="Due in 30 Days" events={upcomingEvents as EventRow[]} color="blue" nowMs={now.getTime()} />
       </div>
 
       {/* Empty state */}
@@ -128,7 +128,7 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
   )
 }
 
-function Bucket({ title, events, color }: { title: string; events: EventRow[]; color: 'red' | 'yellow' | 'blue' }) {
+function Bucket({ title, events, color, nowMs }: { title: string; events: EventRow[]; color: 'red' | 'yellow' | 'blue'; nowMs: number }) {
   const styles = {
     red:    { border: 'border-red-200',    header: 'bg-red-50 text-red-800',       badge: 'bg-red-100 text-red-700' },
     yellow: { border: 'border-yellow-200', header: 'bg-yellow-50 text-yellow-800', badge: 'bg-yellow-100 text-yellow-700' },
@@ -146,7 +146,7 @@ function Bucket({ title, events, color }: { title: string; events: EventRow[]; c
           <p className="px-4 py-8 text-sm text-zinc-400 text-center">None</p>
         ) : (
           events.map(ev => {
-            const days = Math.round((ev.dueDate.getTime() - Date.now()) / 86_400_000)
+            const days = Math.round((ev.dueDate.getTime() - nowMs) / 86_400_000)
             const dayLabel = days < 0 ? `${Math.abs(days)}d overdue` : `${days}d remaining`
             const dayColor = days < 0 ? 'text-red-600' : days <= 7 ? 'text-yellow-600' : 'text-blue-600'
             return (
