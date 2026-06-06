@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
 
+class AssigneeNotFoundError extends Error {}
+
 const CreateSchema = z.object({
   dealId:      z.string().min(1),
   title:       z.string().min(1, 'Title is required').max(200),
@@ -12,7 +14,7 @@ const CreateSchema = z.object({
                        'FOLLOW_UP', 'CUSTOM']).default('CUSTOM'),
   priority:    z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
   dueDate:     z.string().optional(),
-  assignedToId: z.string().optional(),
+  assignedToId: z.string().min(1).optional(),
 })
 
 export async function POST(req: Request) {
@@ -32,20 +34,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
   }
 
-  const task = await db.task.create({
-    data: {
-      dealId,
-      tenantId: tenant.id,
-      title,
-      description: description ?? null,
-      taskType,
-      priority,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      assignedToId: assignedToId ?? null,
-      status: 'OPEN',
-    },
-    include: { assignedTo: { select: { id: true, name: true, email: true } } },
-  })
+  let task
+  try {
+    task = await db.$transaction(async (tx) => {
+      if (assignedToId != null) {
+        const assignee = await tx.user.findFirst({
+          where: { id: assignedToId, tenantId: tenant.id },
+          select: { id: true },
+        })
+        if (!assignee) throw new AssigneeNotFoundError()
+      }
+
+      return tx.task.create({
+        data: {
+          dealId,
+          tenantId: tenant.id,
+          title,
+          description: description ?? null,
+          taskType,
+          priority,
+          dueDate: dueDate ? new Date(dueDate) : null,
+          assignedToId: assignedToId ?? null,
+          status: 'OPEN',
+        },
+        include: { assignedTo: { select: { id: true, name: true, email: true } } },
+      })
+    })
+  } catch (error) {
+    if (error instanceof AssigneeNotFoundError) {
+      return NextResponse.json({ error: 'Assignee not found' }, { status: 404 })
+    }
+    throw error
+  }
 
   return NextResponse.json(task, { status: 201 })
 }
