@@ -183,7 +183,10 @@ Billing now exists (Phase 3). Phase 4-partial is complete. This is the next majo
 - [ ] Extend to: purchase contracts, redemption notices, deeds, title reports, leases
 - [ ] Confidence scoring per field; user can override
 
-#### 2B — Deadline Intelligence
+#### 2B — Due Diligence + Deadline Intelligence
+- [ ] Due Diligence Engine MVP defined in [docs/due-diligence-engine-mvp.md](docs/due-diligence-engine-mvp.md)
+- [ ] Strategy-aware checklist templates for tax lien, tax deed, foreclosure, and land deals
+- [ ] Deal-scoped checklist instances with required gaps, concerns, blockers, and task generation
 - [ ] Plain-English summaries of upcoming obligations per deal
 - [ ] "At-risk" deal flagging with natural language reasoning
 - [ ] Draft generation: AI generates required notice letters pre-populated with deal data
