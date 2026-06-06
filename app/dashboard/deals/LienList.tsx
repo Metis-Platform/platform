@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { getStrategyMeta } from '@/lib/strategy-meta'
 
 export type LienRow = {
   id: string
@@ -24,40 +25,8 @@ type SortDir = 'asc' | 'desc'
 
 const STATUS_OPTIONS = ['All', 'Active', 'Lead', 'Overdue', 'Not Won'] as const
 
-const STRATEGY_META: Record<string, { title: string; singular: string; newLabel: string; emptyText: string; searchPlaceholder: string; dateCol: string; amountCol: string }> = {
-  TAX_LIEN: {
-    title:             'Tax Liens',
-    singular:          'Tax Lien',
-    newLabel:          '+ New Lien',
-    emptyText:         'No liens match your filters.',
-    searchPlaceholder: 'Search APN, cert #, address…',
-    dateCol:           'Issue Date',
-    amountCol:         'Face Amount',
-  },
-  TAX_DEED: {
-    title:             'Tax Deeds',
-    singular:          'Tax Deed',
-    newLabel:          '+ New Deed',
-    emptyText:         'No deeds match your filters.',
-    searchPlaceholder: 'Search APN, address…',
-    dateCol:           'Sale Date',
-    amountCol:         'Winning Bid',
-  },
-  FORECLOSURE: {
-    title:             'Foreclosures',
-    singular:          'Foreclosure',
-    newLabel:          '+ New Foreclosure',
-    emptyText:         'No foreclosures match your filters.',
-    searchPlaceholder: 'Search APN, address…',
-    dateCol:           'Auction Date',
-    amountCol:         'Winning Bid',
-  },
-}
-
 export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: LienRow[]; strategy?: string }) {
-  const isTaxDeed = strategy === 'TAX_DEED'
-  const isForeclosure = strategy === 'FORECLOSURE'
-  const meta = STRATEGY_META[strategy] ?? STRATEGY_META['TAX_LIEN']
+  const meta = getStrategyMeta(strategy)
   const [search, setSearch]       = useState('')
   const [statusFilter, setStatus] = useState<string>('All')
   const [stateFilter, setState]   = useState<string>('All')
@@ -129,7 +98,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">{meta.title}</h1>
+          <h1 className="text-2xl font-semibold text-zinc-900">{meta.plural}</h1>
           <p className="text-sm text-zinc-500 mt-0.5">
             {active} active · {leads} leads{overdue > 0 ? ` · ${overdue} overdue` : ''}{notWon > 0 ? ` · ${notWon} not won` : ''}
           </p>
@@ -139,10 +108,16 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
             ↑ Import CSV
           </Link>
-          <Link href={`/dashboard/deals/new?strategy=${strategy}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            {meta.newLabel}
-          </Link>
+          {meta.creatable ? (
+            <Link href={`/dashboard/deals/new?strategy=${strategy}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+              {meta.newLabel}
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-100 text-zinc-400 text-sm font-medium rounded-lg cursor-not-allowed">
+              Coming Soon
+            </span>
+          )}
         </div>
       </div>
 
@@ -224,7 +199,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('state')}>
                   Jurisdiction {renderSortIcon('state')}
                 </th>
-                <th className="px-4 py-3">{isTaxDeed ? 'Deed #' : isForeclosure ? 'Type' : 'Certificate #'}</th>
+                <th className="px-4 py-3">{meta.refCol}</th>
                 <th className="px-4 py-3 cursor-pointer hover:text-zinc-800 select-none" onClick={() => handleSort('date')}>
                   {meta.dateCol} {renderSortIcon('date')}
                 </th>
@@ -281,7 +256,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                           )}
                         </div>
                       ) : (
-                        <span className="text-zinc-400 text-xs">{isLead ? `Pending ${meta.singular.toLowerCase()}` : '—'}</span>
+                        <span className="text-zinc-400 text-xs">{isLead ? `Pending ${meta.label.toLowerCase()}` : '—'}</span>
                       )}
                     </td>
                   </tr>
