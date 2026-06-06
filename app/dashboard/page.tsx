@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { EventStatus, StrategyType } from '@/app/generated/prisma'
+import { parseStrategyParam, getStrategyMeta } from '@/lib/strategy-meta'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,12 +16,6 @@ type EventRow = {
   label: string
   dueDate: Date
   deal: { property: { apn: string; address: string | null } }
-}
-
-const STRATEGY_LABELS: Record<string, string> = {
-  TAX_LIEN:    'Tax Lien',
-  TAX_DEED:    'Tax Deed',
-  FORECLOSURE: 'Foreclosure',
 }
 
 // ---------------------------------------------------------------------------
@@ -42,10 +37,9 @@ export default async function DashboardPage({
   const tenantId = tenant.id
 
   const { strategy: strategyParam } = await searchParams
-  const strategy = strategyParam === 'TAX_DEED' ? StrategyType.TAX_DEED
-    : strategyParam === 'FORECLOSURE' ? StrategyType.FORECLOSURE
-    : StrategyType.TAX_LIEN
-  const strategyLabel = STRATEGY_LABELS[strategy] ?? 'Tax Lien'
+  const strategyKey = parseStrategyParam(strategyParam)
+  const meta = getStrategyMeta(strategyKey)
+  const strategy = strategyKey as StrategyType
 
   const now = new Date()
   const in7d  = new Date(now.getTime() + 7  * 86_400_000)
@@ -65,7 +59,19 @@ export default async function DashboardPage({
     ? Number((await db.dealTaxLien.aggregate({ where: { deal: { tenantId } }, _sum: { faceAmount: true } }))._sum.faceAmount ?? 0)
     : strategy === StrategyType.TAX_DEED
       ? Number((await db.dealTaxDeed.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
-      : Number((await db.dealForeclosure.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
+      : strategy === StrategyType.FORECLOSURE
+        ? Number((await db.dealForeclosure.aggregate({ where: { deal: { tenantId } }, _sum: { winningBid: true } }))._sum.winningBid ?? 0)
+        : strategy === StrategyType.FIX_FLIP
+          ? Number((await db.dealFixFlip.aggregate({ where: { deal: { tenantId } }, _sum: { arv: true } }))._sum.arv ?? 0)
+          : strategy === StrategyType.WHOLESALE
+            ? Number((await db.dealWholesale.aggregate({ where: { deal: { tenantId } }, _sum: { contractPrice: true } }))._sum.contractPrice ?? 0)
+            : strategy === StrategyType.BUY_HOLD
+              ? Number((await db.dealBuyHold.aggregate({ where: { deal: { tenantId } }, _sum: { actualMonthlyRent: true } }))._sum.actualMonthlyRent ?? 0)
+              : strategy === StrategyType.LAND
+                ? Number((await db.deal.aggregate({ where: { tenantId, strategyType: strategy }, _sum: { purchasePrice: true } }))._sum.purchasePrice ?? 0)
+                : strategy === StrategyType.MULTIFAMILY
+                  ? Number((await db.dealMultifamily.aggregate({ where: { deal: { tenantId } }, _sum: { netOperatingIncome: true } }))._sum.netOperatingIncome ?? 0)
+                  : 0
 
   const newDealHref = `/dashboard/deals/new?strategy=${strategy}`
 
@@ -74,17 +80,23 @@ export default async function DashboardPage({
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
-        <Link
-          href={newDealHref}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <span>+</span> New {strategyLabel}
-        </Link>
+        {meta.creatable ? (
+          <Link
+            href={newDealHref}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <span>+</span> New {meta.label}
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-100 text-zinc-400 text-sm font-medium rounded-lg cursor-not-allowed">
+            Coming Soon
+          </span>
+        )}
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label={`Active ${strategyLabel}s`} value={activeCount} />
+        <StatCard label={`Active ${meta.plural}`}    value={activeCount} />
         <StatCard label="Portfolio Value"             value={`$${totalValue.toLocaleString()}`} />
         <StatCard label="Overdue"                     value={overdueEvents.length}  accent={overdueEvents.length > 0 ? 'red' : undefined} />
         <StatCard label="Due in 7 Days"               value={urgentEvents.length}   accent={urgentEvents.length  > 0 ? 'yellow' : undefined} />
@@ -100,13 +112,15 @@ export default async function DashboardPage({
       {/* Empty state */}
       {activeCount === 0 && (
         <div className="mt-12 text-center py-16 bg-white rounded-xl border border-zinc-200">
-          <p className="text-zinc-500 mb-4">No {strategyLabel.toLowerCase()}s yet. Add your first to see deadlines here.</p>
-          <Link
-            href={newDealHref}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            + Add First {strategyLabel}
-          </Link>
+          <p className="text-zinc-500 mb-4">No {meta.plural.toLowerCase()} yet. Add your first to see deadlines here.</p>
+          {meta.creatable && (
+            <Link
+              href={newDealHref}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              + Add First {meta.label}
+            </Link>
+          )}
         </div>
       )}
     </div>
