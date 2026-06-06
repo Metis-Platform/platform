@@ -5,9 +5,12 @@ import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 
+class AssigneeNotFoundError extends Error {}
+class TaskNotFoundError extends Error {}
+
 const PatchSchema = z.object({
   status:       z.enum(['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
-  assignedToId: z.string().nullable().optional(),
+  assignedToId: z.string().min(1).nullable().optional(),
   priority:     z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   title:        z.string().min(1).max(200).optional(),
   description:  z.string().max(2000).nullable().optional(),
@@ -33,11 +36,6 @@ export async function PATCH(
   const parsed = PatchSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const existing = await db.task.findUnique({ where: { id } })
-  if (!existing || existing.tenantId !== tenant.id) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-
   const data: Record<string, unknown> = { ...parsed.data }
   if (parsed.data.status === 'COMPLETED') data.completedAt = new Date()
   else if (parsed.data.status) data.completedAt = null
@@ -45,7 +43,34 @@ export async function PATCH(
     data.dueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null
   }
 
-  const updated = await db.task.update({ where: { id }, data })
+  let updated
+  try {
+    updated = await db.$transaction(async (tx) => {
+      const task = await tx.task.findFirst({
+        where: { id, tenantId: tenant.id },
+        select: { id: true },
+      })
+      if (!task) throw new TaskNotFoundError()
+
+      if (parsed.data.assignedToId != null) {
+        const assignee = await tx.user.findFirst({
+          where: { id: parsed.data.assignedToId, tenantId: tenant.id },
+          select: { id: true },
+        })
+        if (!assignee) throw new AssigneeNotFoundError()
+      }
+
+      return tx.task.update({ where: { id: task.id }, data })
+    })
+  } catch (error) {
+    if (error instanceof TaskNotFoundError) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    if (error instanceof AssigneeNotFoundError) {
+      return NextResponse.json({ error: 'Assignee not found' }, { status: 404 })
+    }
+    throw error
+  }
   return NextResponse.json(updated)
 }
 
