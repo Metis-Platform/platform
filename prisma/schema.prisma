@@ -195,6 +195,7 @@ model Deal {
   taxDeed      DealTaxDeed?
   foreclosure  DealForeclosure?
   land         DealLand?
+  wholesale    DealWholesale?
   events       Event[]
   tasks        Task[]
   transactions FinancialTransaction[]
@@ -269,6 +270,27 @@ model DealLand {
   buyerFinanceTerms  Json?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
+}
+
+// Extension table — Wholesale strategy
+model DealWholesale {
+  id                 String    @id @default(cuid())
+  dealId             String    @unique
+  deal               Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  leadSource         String?
+  contractDate       DateTime?
+  contractPrice      Decimal?  @db.Decimal(14, 2)
+  earnestMoney       Decimal?  @db.Decimal(14, 2)
+  inspectionDeadline DateTime?
+  closingDeadline    DateTime?
+  assignmentFee      Decimal?  @db.Decimal(14, 2)
+  buyerName          String?
+  buyerEmail         String?
+  buyerPhone         String?
+  dispositionStatus  String?
+  marketingNotes     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 // Extension table — Tax Lien strategy
