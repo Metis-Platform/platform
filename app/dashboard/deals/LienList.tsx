@@ -106,7 +106,7 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
         <div className="flex items-center gap-2">
           <Link href="/dashboard/deals/import"
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
-            ↑ Import CSV
+            ↑ Import CSV/XLS
           </Link>
           {meta.creatable ? (
             <Link href={`/dashboard/deals/new?strategy=${strategy}`}
