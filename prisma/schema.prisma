@@ -194,6 +194,7 @@ model Deal {
   taxLien      DealTaxLien?
   taxDeed      DealTaxDeed?
   foreclosure  DealForeclosure?
+  fixFlip      DealFixFlip?
   land         DealLand?
   wholesale    DealWholesale?
   events       Event[]
@@ -251,6 +252,34 @@ model DealForeclosure {
   propertyCondition  String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+}
+
+
+// Extension table — Fix & Flip strategy
+model DealFixFlip {
+  id                    String    @id @default(cuid())
+  dealId                String    @unique
+  deal                  Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  arv                   Decimal?  @db.Decimal(14, 2) // after-repair value
+  rehabBudget           Decimal?  @db.Decimal(14, 2)
+  rehabActualCost       Decimal?  @db.Decimal(14, 2)
+  contractorName        String?
+  contractorPhone       String?
+  contractorEmail       String?
+  permitStatus          String?
+  rehabStartDate        DateTime?
+  rehabTargetCompletion DateTime?
+  rehabCompletedDate    DateTime?
+  listingDate           DateTime?
+  listingPrice          Decimal?  @db.Decimal(14, 2)
+  acceptedOfferDate     DateTime?
+  acceptedOfferPrice    Decimal?  @db.Decimal(14, 2)
+  closingDate           DateTime?
+  holdingCostEstimate   Decimal?  @db.Decimal(14, 2)
+  scopeOfWork           Json?
+  notes                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 // Extension table — Land Investing strategy
