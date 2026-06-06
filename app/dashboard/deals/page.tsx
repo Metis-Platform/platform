@@ -6,6 +6,23 @@ import { StrategyType, EventStatus } from '@/app/generated/prisma'
 import { parseStrategyParam } from '@/lib/strategy-meta'
 import LienList, { type LienRow } from './LienList'
 
+const RENTAL_STRATEGY_LABELS: Record<string, string> = {
+  LONG_TERM: 'Long-term',
+  SHORT_TERM: 'Short-term',
+  MID_TERM: 'Mid-term',
+  SECTION_8: 'Section 8',
+}
+
+function formatRentalStrategy(strategy: string | null | undefined) {
+  if (!strategy) return null
+
+  return RENTAL_STRATEGY_LABELS[strategy] ?? strategy
+    .toLowerCase()
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 export default async function LiensPage({
   searchParams,
 }: {
@@ -70,9 +87,11 @@ export default async function LiensPage({
           ? (d.wholesale?.assignmentFee != null ? Number(d.wholesale.assignmentFee).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }) : null)
           : strategy === StrategyType.LAND
             ? (d.property.acres != null ? Number(d.property.acres).toLocaleString(undefined, { maximumFractionDigits: 4 }) : null)
-            : strategy === StrategyType.MULTIFAMILY
-              ? (d.multifamily?.unitCount != null ? String(d.multifamily.unitCount) : null)
-              : null
+            : strategy === StrategyType.BUY_HOLD
+              ? formatRentalStrategy(d.buyHold?.rentalStrategy)
+              : strategy === StrategyType.MULTIFAMILY
+                ? (d.multifamily?.unitCount != null ? String(d.multifamily.unitCount) : null)
+                : null
 
     const primaryDate = d.taxLien?.issueDate
       ?? d.taxDeed?.saleDate
