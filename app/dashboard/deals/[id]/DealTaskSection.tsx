@@ -28,6 +28,7 @@ export default function DealTaskSection({ dealId, initialTasks }: { dealId: stri
   const [tasks, setTasks] = useState(initialTasks)
   const [showCompleted, setShowCompleted] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [nowMs] = useState(() => Date.now())
   const router = useRouter()
 
   const open = tasks.filter(t => t.status !== 'COMPLETED')
@@ -74,7 +75,7 @@ export default function DealTaskSection({ dealId, initialTasks }: { dealId: stri
         </div>
       ) : (
         <div className="space-y-2">
-          {open.map(task => <TaskRow key={task.id} task={task} onAdvance={advanceStatus} isPending={isPending} />)}
+          {open.map(task => <TaskRow key={task.id} task={task} onAdvance={advanceStatus} isPending={isPending} nowMs={nowMs} />)}
 
           {completed.length > 0 && (
             <>
@@ -85,7 +86,7 @@ export default function DealTaskSection({ dealId, initialTasks }: { dealId: stri
                 {showCompleted ? `Hide ${completed.length} completed` : `Show ${completed.length} completed`}
               </button>
               {showCompleted && completed.map(task => (
-                <TaskRow key={task.id} task={task} onAdvance={advanceStatus} isPending={isPending} />
+                <TaskRow key={task.id} task={task} onAdvance={advanceStatus} isPending={isPending} nowMs={nowMs} />
               ))}
             </>
           )}
@@ -95,9 +96,9 @@ export default function DealTaskSection({ dealId, initialTasks }: { dealId: stri
   )
 }
 
-function TaskRow({ task, onAdvance, isPending }: { task: DealTask; onAdvance: (t: DealTask) => void; isPending: boolean }) {
-  const overdue = task.dueDate && task.status !== 'COMPLETED' && new Date(task.dueDate) < new Date()
-  const daysUntil = task.dueDate ? Math.round((new Date(task.dueDate).getTime() - Date.now()) / 86_400_000) : null
+function TaskRow({ task, onAdvance, isPending, nowMs }: { task: DealTask; onAdvance: (t: DealTask) => void; isPending: boolean; nowMs: number }) {
+  const overdue = task.dueDate && task.status !== 'COMPLETED' && new Date(task.dueDate).getTime() < nowMs
+  const daysUntil = task.dueDate ? Math.round((new Date(task.dueDate).getTime() - nowMs) / 86_400_000) : null
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-100 bg-zinc-50">
