@@ -25,7 +25,7 @@ model Tenant {
   plan                     PlanTier  @default(STARTER)
   stripeCustomerId         String?   @unique
   stripeSubscriptionId     String?   @unique
-  stripeSubscriptionStatus String?   // active, trialing, past_due, canceled, etc.
+  stripeSubscriptionStatus String? // active, trialing, past_due, canceled, etc.
   trialEndsAt              DateTime?
   currentPeriodEnd         DateTime?
   createdAt                DateTime  @default(now())
@@ -69,7 +69,7 @@ model Jurisdiction {
   timezone       String         @default("America/New_York")
   investmentType InvestmentType
   notes          String?
-  links          Json?          // { assessorUrl, taxCollectorUrl, recorderUrl, gisUrl }
+  links          Json? // { assessorUrl, taxCollectorUrl, recorderUrl, gisUrl }
   isAvailable    Boolean        @default(false) // enabled for deal creation; auto-set when a ruleset is activated
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -194,6 +194,7 @@ model Deal {
   taxLien      DealTaxLien?
   taxDeed      DealTaxDeed?
   foreclosure  DealForeclosure?
+  land         DealLand?
   events       Event[]
   tasks        Task[]
   transactions FinancialTransaction[]
@@ -207,48 +208,67 @@ model Deal {
 
 // Extension table — Tax Deed strategy
 model DealTaxDeed {
-  id                  String    @id @default(cuid())
-  dealId              String    @unique
-  deal                Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  id                   String    @id @default(cuid())
+  dealId               String    @unique
+  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
   // Auction details
-  saleDate            DateTime?
-  openingBid          Decimal?  @db.Decimal(14, 2)
-  winningBid          Decimal?  @db.Decimal(14, 2)
-  auctionDate         DateTime? // for leads — scheduled auction date
-  maxBid              Decimal?  @db.Decimal(14, 2)
+  saleDate             DateTime?
+  openingBid           Decimal?  @db.Decimal(14, 2)
+  winningBid           Decimal?  @db.Decimal(14, 2)
+  auctionDate          DateTime? // for leads — scheduled auction date
+  maxBid               Decimal?  @db.Decimal(14, 2)
   // Redemption tracking
   redemptionPeriodDays Int?
-  redemptionDeadline  DateTime?
-  isRedeemed          Boolean   @default(false)
-  redemptionAmount    Decimal?  @db.Decimal(14, 2)
-  redemptionDate      DateTime?
+  redemptionDeadline   DateTime?
+  isRedeemed           Boolean   @default(false)
+  redemptionAmount     Decimal?  @db.Decimal(14, 2)
+  redemptionDate       DateTime?
   // Deed recorded
-  deedRecordedDate    DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  deedRecordedDate     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 // Extension table — Foreclosure Auction strategy
 model DealForeclosure {
-  id                   String    @id @default(cuid())
-  dealId               String    @unique
-  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  foreclosureType      String    @default("MORTGAGE") // MORTGAGE | TAX | HOA
+  id                 String    @id @default(cuid())
+  dealId             String    @unique
+  deal               Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  foreclosureType    String    @default("MORTGAGE") // MORTGAGE | TAX | HOA
   // Pre-foreclosure / lead tracking
-  nodFiledDate         DateTime? // Notice of Default filed date
-  lisFiledDate         DateTime? // Lis pendens filed date
-  estimatedLiens       Decimal?  @db.Decimal(14, 2)
-  auctionDate          DateTime?
-  maxBid               Decimal?  @db.Decimal(14, 2)
+  nodFiledDate       DateTime? // Notice of Default filed date
+  lisFiledDate       DateTime? // Lis pendens filed date
+  estimatedLiens     Decimal?  @db.Decimal(14, 2)
+  auctionDate        DateTime?
+  maxBid             Decimal?  @db.Decimal(14, 2)
   // Post-auction
-  openingBid           Decimal?  @db.Decimal(14, 2)
-  winningBid           Decimal?  @db.Decimal(14, 2)
-  redemptionDeadline   DateTime?
+  openingBid         Decimal?  @db.Decimal(14, 2)
+  winningBid         Decimal?  @db.Decimal(14, 2)
+  redemptionDeadline DateTime?
   // Title / condition
-  titleIssues          Json?
-  propertyCondition    String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  titleIssues        Json?
+  propertyCondition  String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// Extension table — Land Investing strategy
+model DealLand {
+  id                 String      @id @default(cuid())
+  dealId             String      @unique
+  deal               Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  zoning             String?
+  access             LandAccess?
+  utilities          Json? // { water, sewer, electric, gas, notes }
+  floodZone          String?
+  wetlandsPercent    Decimal?    @db.Decimal(5, 2)
+  hoaName            String?
+  hoaFees            Decimal?    @db.Decimal(14, 2)
+  optionExpiry       DateTime?
+  sellerFinanceTerms Json?
+  buyerFinanceTerms  Json?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 }
 
 // Extension table — Tax Lien strategy
@@ -265,7 +285,7 @@ model DealTaxLien {
   saleDate                DateTime?
   // Lead / pre-bid tracking
   auctionDate             DateTime? // scheduled auction date
-  maxBid                  Decimal?  @db.Decimal(14, 2)  // max bid amount
+  maxBid                  Decimal?  @db.Decimal(14, 2) // max bid amount
   // Post-purchase tracking
   redemptionDeadline      DateTime?
   foreclosureEligibleDate DateTime?
@@ -324,7 +344,7 @@ model Task {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  comments     TaskComment[]
+  comments TaskComment[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -457,6 +477,15 @@ enum DealStatus {
   SOLD
   CLOSED
   EXPIRED
+}
+
+/// Parcel access status. NONE means confirmed no legal/physical access; UNKNOWN means not yet researched.
+enum LandAccess {
+  ROAD
+  EASEMENT
+  LANDLOCKED
+  NONE
+  UNKNOWN
 }
 
 enum EventType {
