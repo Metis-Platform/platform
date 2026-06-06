@@ -10,26 +10,7 @@ import DocumentSection, { type DocRow } from './DocumentSection'
 import DealTaskSection, { type DealTask } from './DealTaskSection'
 import DealEventsSection, { type DealEvent } from './DealEventsSection'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
-
-function buildResearchLinks(apn: string, address: string | null, stateName: string, county: string, state: string, strategyType: string) {
-  const mapQuery = encodeURIComponent(address || `${apn} ${county} County ${state}`)
-  const netro = `https://publicrecords.netronline.com/state/${state}/county/${county.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')}`
-  const base = [
-    { label: 'Google Maps',  href: `https://www.google.com/maps/search/${mapQuery}`,          icon: '🗺️' },
-    { label: 'Bing Maps',    href: `https://www.bing.com/maps?q=${mapQuery}`,                  icon: '🗺️' },
-    { label: 'NETRonline',   href: netro,                                                       icon: '🔍' },
-    { label: 'Zillow',       href: `https://www.zillow.com/homes/${mapQuery}_rb/`,              icon: '🏠' },
-  ]
-  if (strategyType === 'FORECLOSURE') {
-    return [
-      ...base,
-      { label: 'Auction.com',     href: `https://www.auction.com/search#q=${mapQuery}`,             icon: '🏛️' },
-      { label: 'RealtyTrac',      href: `https://www.realtytrac.com/search/foreclosure/?q=${mapQuery}`, icon: '📋' },
-      { label: 'HUD Home Store',  href: 'https://www.hudhomestore.gov/Home/Index.aspx',              icon: '🏠' },
-    ]
-  }
-  return base
-}
+import { buildResearchLinkGroups } from '@/lib/research-links'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -99,7 +80,14 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const leadAuctionDate = isLead
     ? (isTaxDeed ? taxDeed?.auctionDate : isForeclosure ? foreclosure?.auctionDate : taxLien?.auctionDate)?.toISOString() ?? null
     : null
-  const researchLinks = buildResearchLinks(property.apn, property.address, jur.stateName, jur.county, jur.state, deal.strategyType)
+  const researchLinkGroups = buildResearchLinkGroups({
+    apn: property.apn,
+    address: property.address,
+    state: jur.state,
+    county: jur.county,
+    strategyType: deal.strategyType,
+    jurisdictionLinks: jur.links,
+  })
 
   const stateInfo = getStateInfo(jur.state)
 
@@ -119,9 +107,9 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
             {' '}
             <span className="text-amber-800">Events won&apos;t be generated for this deal until a ruleset is activated.</span>
             {' '}
-            <a href="/admin/rules" className="font-medium text-amber-900 underline hover:text-amber-700">
+            <Link href="/admin/rules" className="font-medium text-amber-900 underline hover:text-amber-700">
               Configure rules →
-            </a>
+            </Link>
           </div>
         </div>
       )}
@@ -266,14 +254,30 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
       {/* Research Links */}
       <div className="bg-white rounded-xl border border-zinc-200 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Research Links</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {researchLinks.map(link => (
-            <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
-              className="flex flex-col items-center gap-2 p-3 rounded-lg border border-zinc-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center">
-              <span className="text-xl">{link.icon}</span>
-              <span className="text-xs font-medium text-zinc-700">{link.label}</span>
-            </a>
+        <div className="mb-5">
+          <h2 className="text-sm font-semibold text-zinc-900">Research Links</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Tiered resources for parcel due diligence, strategy-specific research, and county records.
+          </p>
+        </div>
+        <div className="space-y-6">
+          {researchLinkGroups.map((group) => (
+            <section key={group.title}>
+              <div className="mb-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{group.title}</h3>
+                <p className="mt-1 text-xs text-zinc-400">{group.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {group.links.map(link => (
+                  <a key={`${group.title}-${link.label}`} href={link.href} target="_blank" rel="noopener noreferrer"
+                    className="flex min-h-24 flex-col items-center gap-2 rounded-lg border border-zinc-200 p-3 text-center transition-colors hover:border-blue-300 hover:bg-blue-50">
+                    <span className="text-xl">{link.icon}</span>
+                    <span className="text-xs font-medium text-zinc-700">{link.label}</span>
+                    {link.description && <span className="text-[11px] leading-4 text-zinc-400">{link.description}</span>}
+                  </a>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       </div>
