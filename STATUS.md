@@ -2,34 +2,42 @@
 
 > **This is the lean session reference.** Full roadmap, vision, and phase history: see `ROADMAP.md`.
 > Execution plan for beta: see `BETA-PLAN.md`.
-> Last updated: 2026-06-11
+> Last updated: 2026-06-12
 
 ---
 
 ## Current Phase
-**Phase 4 module groundwork: complete.** Extension schemas + deal-list columns shipped for all
-6 strategies (PRs #111–#121). Now executing `BETA-PLAN.md` — driving the open backlog to zero
-for beta launch.
+**Beta backlog: nearly clear.** Sprints 1–5 of BETA-PLAN.md are done (most were found
+already implemented; ten stale GitHub issues closed 2026-06-12). Security audit (#24)
+complete and fixed. Remaining: Sprint 6 AI features (#25/#26, ON HOLD per user) and
+post-beta module UIs (#39–43).
 
 ---
 
-## Last Session — What Was Done
+## Last Session — What Was Done (2026-06-12)
 
 | PR | Description | Status |
 |----|-------------|--------|
-| #111–#120 | Module expansion: Buy & Hold, Multifamily, Wholesale, Land, Fix & Flip schemas + deal-list columns + strategy metadata catalog | ✅ merged |
 | #121 | feat: show land access in deal list | ✅ merged |
+| #122 | chore: BETA-PLAN.md + STATUS.md refresh | ✅ merged |
+| #123 | fix: tenant isolation audit findings — per-tenant User rows (`@@unique([clerkUserId, tenantId])`), role from Clerk org role, cron fail-closed, admin pages gated inline | ✅ merged |
+| #124 | fix: package-lock.json sync (xlsx) — migrate Action's npm ci had failed on every run | ✅ merged |
+| #125 | ci: workflow_dispatch trigger for migrate workflow | ✅ merged |
+
+**Infra fixed this session (not in code):**
+- `DATABASE_URL` GitHub Actions secret was NEVER set — created it (from .env.local). The migrate
+  workflow had failed all 12 runs ever; first green run 2026-06-12 applied **8 pending migrations**
+  (task comments, redeemable deed, all 5 strategy extension tables, per-tenant user unique).
+- Issue triage: #84 #85 #86 #64 #65 #31 #29 #17 #18 #10 closed as already-implemented (verified in code).
+- Linear (team METIS) is a mirror of GitHub; GitHub is record of truth (ADR-002). Linear key:
+  `C:\Users\aswit\AppData\Local\hermes\.env`. METIS-11 (Land, In Review) can move to Done (PR #121 merged).
 
 ---
 
 ## Next Up — see BETA-PLAN.md for full detail
 
-1. **Sprint 1 — Task UX:** #84 assignee bug · #85 next-action button · #86 tasks on deal detail
-2. **Sprint 2 — Import:** #64 XLS/XLSX · #65 optional status column
-3. **Sprint 3 — Calendar:** #31 tasks on calendar · #29 month/year picker
-4. **Sprint 4 — Security:** #24 tenant isolation audit (pre-beta gate)
-5. **Sprint 5:** #17 task comments (schema) · #18 jurisdiction detail page (#10 = dup)
-6. **Sprint 6 — AI:** #25 document extraction · #26 Deal Copilot
+1. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
+2. **Post-beta:** module UIs #39–43
 
 ---
 
