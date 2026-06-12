@@ -16,6 +16,19 @@ Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) wor
 - **Current Phase:** Phase 2 (AI Layer) — Phase 3 and Phase 4-partial are complete
 - **System of Record:** GitHub Issues — every task is an Issue with acceptance criteria
 
+### North Star (test every feature decision against this — full goalposts in ROADMAP.md)
+
+**Become THE definitive main hub for real estate investors: replace their spreadsheets,
+drastically simplify their process.** Revenue follows capability — legitimate products
+before premium pricing, always. In practice:
+- A module ships when it can **retire the spreadsheet it replaces** (computed-not-typed
+  economics, ledgers, generated checklists) — not when it adds data entry beside one.
+- **Pricing is earned by shipped capability**, never by market sizing (e.g. MF premium is
+  gated on #43 Phase 4; generalize via #130 tiers).
+- Prefer **platform primitives** (#132 ledger, #133 checklists, Contact CRM, import
+  pipeline) over module one-offs — and retrofit them to live modules.
+- Judge releases by **investor process steps removed**, not features added.
+
 ---
 
 ## New Session Checklist
