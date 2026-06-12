@@ -14,8 +14,9 @@ import { TRANSACTION_DIRECTION } from '@/lib/transactions'
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Create a UTC midnight Date — avoids DST shifts making day-diff counts wrong in CI (UTC). */
 function day(year: number, month: number, date: number): Date {
-  return new Date(year, month - 1, date)
+  return new Date(Date.UTC(year, month - 1, date))
 }
 
 const PURCHASE_ROW: LedgerRow = { type: 'PURCHASE', amount: 5000, date: day(2024, 1, 15) }
@@ -180,7 +181,7 @@ describe('accruedLienInterest', () => {
       faceAmount: 5000,
       annualRate: 0.18,
       issueDate: day(2024, 1, 1),
-      asOf: day(2024, 7, 20), // exactly 200 days later (Jan 1 → Jul 20 in 2024)
+      asOf: day(2024, 7, 19), // exactly 200 days later (Jan 1 → Jul 19 in 2024 UTC)
     })
     expect(result).toBeCloseTo(5000 * 0.18 * (200 / 365), 4)
   })
@@ -285,7 +286,7 @@ describe('unrealizedLienValue', () => {
 
 describe('realistic lien scenario', () => {
   const issueDate = day(2024, 1, 1)
-  const asOf = day(2024, 7, 20) // exactly 200 days after Jan 1, 2024
+  const asOf = day(2024, 7, 19) // exactly 200 days after Jan 1, 2024 (UTC)
   const faceAmount = 5000
   const annualRate = 0.18
 
