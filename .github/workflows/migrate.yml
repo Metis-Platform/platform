@@ -7,6 +7,10 @@ on:
     paths:
       - 'prisma/migrations/**'
       - 'prisma/schema.prisma'
+  # Manual trigger — needed to re-apply migrations when a run fails for a
+  # non-schema reason (e.g. the 2026-06 lockfile desync broke npm ci here
+  # while pushes that fixed it didn't touch prisma/** and so never re-fired).
+  workflow_dispatch:
 
 jobs:
   migrate:
