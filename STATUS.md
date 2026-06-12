@@ -7,7 +7,7 @@
 ---
 
 ## Current Phase
-**Post-beta module UIs in progress.** #132 (financial ledger/economics), #133-P1 (checklist engine), and #39-P1/#39-P2 (Land MVP + seller-finance note) shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #39-P3 Land disposition statuses.
+**Post-beta module UIs in progress.** #132 (financial ledger/economics), #133-P1 (checklist engine), and full #39 Land module (MVP + seller-finance notes + disposition funnel) shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #40-P1 Wholesale MVP.
 
 ---
 
@@ -37,9 +37,8 @@
 ## Next Up — see BETA-PLAN.md for full detail
 
 1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content PR #143 open awaiting user review before merge.
-2. **#39-P3** Land disposition statuses + re-list loop (LISTED / UNDER_CONTRACT / SOLD_CASH / SOLD_TERMS / DEFAULTED_RELISTED)
-3. **#40-P1** Wholesale MVP
-4. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
+2. **#40-P1** Wholesale MVP: progressive create + detail + INSPECTION_END/CLOSING_DUE events
+3. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
 
 ---
 
