@@ -60,6 +60,31 @@ All issues below are implementation-grade 3-phase plans. Build order honors shar
 
 Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near MF Phase 3.
 
+### IMPLEMENTATION TRACKER (auto-mode started 2026-06-12) — tick as PRs merge
+> **Resume protocol:** this list is the single source of truth for implementation progress.
+> Each item = one PR. On session start: read this, check `gh pr list --state open` for an
+> in-flight branch, continue from the first unticked item. Update this section in (or
+> immediately after) every implementation PR. Pattern: implementation agents work in
+> `.claude/worktrees/fix-24` on a fresh branch from origin/main, verify (tsc/lint/build
+> + `npm test` once it exists), push, PR, auto-merge; orchestrator reviews before merge.
+
+- [ ] **#132-P1** ledger: TransactionType additions migration · `/api/deals/[id]/transactions` GET/POST + DELETE · `TransactionSection` on deal page · lien retrofit (redemption/sub-tax write ledger rows) + backfill migration
+- [ ] **#132-P2** economics: `lib/economics.ts` pure functions (accrued interest, ROI, P&L, cost basis) · vitest as first test infra · `npm test` wired
+- [ ] **#132-P3** surfacing: deal P&L card · portfolio hub Returns column + total realized
+- [ ] **#133-P1** checklist engine: template format + idempotent instantiation as Tasks + progress chip
+- [ ] **#133-P2** live-strategy templates (lien/deed/foreclosure) — ⚠️ template CONTENT needs user review before merge
+- [ ] **#39-P1** Land MVP: create flow (creatable:true) + detail section + DD checklist via #133 + OPTION_EXPIRY event
+- [ ] **#39-P2** Land notes: note tracking + payment ledger via #132 + PAYMENT_LATE + economics
+- [ ] **#39-P3** Land disposition statuses + re-list loop
+- [ ] **#40-P1** Wholesale MVP: progressive create + detail + INSPECTION_END/CLOSING_DUE events
+- [ ] **#40-P2** Buyer CRM (Contact activation) + buy-box matching
+- [ ] **#40-P3** MAO calculator + board view
+- [ ] **#41-P1..P3** Fix & Flip standard (after #39/#40)
+- [ ] **#42-P1..P2** Buy & Hold standard (parallel-able with #41)
+- [ ] **#130** entitlements (TenantModule strategy+tier) — after first modules sellable
+- [ ] **#42-P3 / #39-P4 / #40-P4 / #41-P4 / #43** premium tiers + Multifamily — gated per issue
+- [ ] **#131** jurisdiction data program — planning deliverable needs user input on data dictionary + Tier 1 counties
+
 ## Standing rules for every sprint
 
 1. Fresh branch from `origin/main` per PR; never reuse squash-merged branches
