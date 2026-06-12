@@ -73,7 +73,7 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#132-P3** surfacing: deal P&L card · portfolio hub Returns column + total realized (PR #138)
 - [x] **#133-P1** checklist engine: template format + idempotent instantiation as Tasks + progress chip (PR #141)
 - [ ] **#133-P2** live-strategy templates (lien/deed/foreclosure) — ⚠️ template CONTENT needs user review before merge
-- [ ] **#39-P1** Land MVP: create flow (creatable:true) + detail section + DD checklist via #133 + OPTION_EXPIRY event
+- [x] **#39-P1** Land MVP: create flow (creatable:true) + detail section + DD checklist via #133 + OPTION_EXPIRY event (PR #144)
 - [ ] **#39-P2** Land notes: note tracking + payment ledger via #132 + PAYMENT_LATE + economics
 - [ ] **#39-P3** Land disposition statuses + re-list loop
 - [ ] **#40-P1** Wholesale MVP: progressive create + detail + INSPECTION_END/CLOSING_DUE events
