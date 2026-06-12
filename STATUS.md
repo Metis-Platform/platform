@@ -7,10 +7,7 @@
 ---
 
 ## Current Phase
-**Beta backlog: nearly clear.** Sprints 1–5 of BETA-PLAN.md are done (most were found
-already implemented; ten stale GitHub issues closed 2026-06-12). Security audit (#24)
-complete and fixed. Remaining: Sprint 6 AI features (#25/#26, ON HOLD per user) and
-post-beta module UIs (#39–43).
+**Post-beta module UIs in progress.** #132 (financial ledger/economics), #133-P1 (checklist engine), and #39-P1/#39-P2 (Land MVP + seller-finance note) shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #39-P3 Land disposition statuses.
 
 ---
 
@@ -39,10 +36,10 @@ post-beta module UIs (#39–43).
 
 ## Next Up — see BETA-PLAN.md for full detail
 
-1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content requires user review before merge — auto-mode will draft, push-notify, and wait.
-2. **#39-P1** Land MVP (after #133 complete)
-3. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
-4. **Post-beta:** module UIs #40–43
+1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content PR #143 open awaiting user review before merge.
+2. **#39-P3** Land disposition statuses + re-list loop (LISTED / UNDER_CONTRACT / SOLD_CASH / SOLD_TERMS / DEFAULTED_RELISTED)
+3. **#40-P1** Wholesale MVP
+4. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
 
 ---
 
