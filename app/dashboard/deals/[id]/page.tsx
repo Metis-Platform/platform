@@ -14,7 +14,8 @@ import DealPnlCard, { type PnlCardTx, type PnlCardLien } from './DealPnlCard'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
 import { hasTemplate } from '@/lib/checklists/registry'
-import DealLandSection, { type DealLandData } from './DealLandSection'
+import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
+import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,6 +33,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         property: { include: { jurisdiction: true } },
         taxLien: true, taxDeed: true, foreclosure: true, land: true,
         events: { orderBy: { dueDate: 'asc' } },
+        landNotes: { orderBy: { createdAt: 'desc' } },
       },
     }),
     db.document.findMany({
@@ -87,7 +89,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     notes:         e.notes,
   }))
 
-  const { taxLien, taxDeed, foreclosure, land, property, events } = deal
+  const { taxLien, taxDeed, foreclosure, land, property, events, landNotes } = deal
 
   const landData: DealLandData | null = land
     ? {
@@ -101,6 +103,44 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         utilities:       land.utilities,
       }
     : null
+
+  // Land notes
+  const noteRows: NoteData[] = landNotes.map(n => ({
+    id:               n.id,
+    buyerName:        n.buyerName,
+    buyerEmail:       n.buyerEmail,
+    buyerPhone:       n.buyerPhone,
+    principal:        n.principal.toString(),
+    interestRate:     n.interestRate.toString(),
+    termMonths:       n.termMonths,
+    paymentAmount:    n.paymentAmount.toString(),
+    firstPaymentDate: n.firstPaymentDate.toISOString(),
+    balance:          n.balance.toString(),
+    status:           n.status,
+    notes:            n.notes,
+    createdAt:        n.createdAt.toISOString(),
+  }))
+
+  const notePayments: NotePayment[] = rawTxs
+    .filter(t => t.type === 'NOTE_PAYMENT_RECEIVED')
+    .map(t => ({
+      id:          t.id,
+      amount:      t.amount.toString(),
+      date:        t.date.toISOString(),
+      description: t.description,
+    }))
+
+  const activeNote = landNotes.find(n => n.status === 'ACTIVE') ?? landNotes[0] ?? null
+  const totalNoteCollected = notePayments.reduce((sum, p) => sum + Number(p.amount), 0)
+
+  const landEconomics: LandEconomics = {
+    purchasePrice:      deal.purchasePrice != null ? Number(deal.purchasePrice) : null,
+    assessedValue:      property.assessedValue != null ? Number(property.assessedValue) : null,
+    acres:              property.acres != null ? Number(property.acres) : null,
+    noteYield:          activeNote ? Number(activeNote.interestRate) * 100 : null,
+    notePrincipal:      activeNote ? Number(activeNote.principal) : null,
+    totalNoteCollected,
+  }
 
   // PnL card data — reuse already-fetched rawTxs (no extra query)
   const pnlTxs: PnlCardTx[] = rawTxs.map(t => ({
@@ -243,7 +283,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 mt-6">
         {/* Land section — replaces certificate card for LAND deals */}
         {isLand && landData ? (
-          <DealLandSection dealId={deal.id} land={landData} acres={property.acres} />
+          <DealLandSection dealId={deal.id} land={landData} acres={property.acres} economics={landEconomics} />
         ) : null}
 
         {/* Certificate / Lead details — hidden for land */}
@@ -315,6 +355,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           />
         )}
       </div>
+
+      {/* Seller finance note — land only */}
+      {isLand && (
+        <div className="mb-6">
+          <LandNoteSection dealId={deal.id} notes={noteRows} payments={notePayments} />
+        </div>
+      )}
 
       {/* Research Links */}
       <div className="bg-white rounded-xl border border-zinc-200 p-6 mb-6">

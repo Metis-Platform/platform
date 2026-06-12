@@ -27,6 +27,15 @@ export type DealLandData = {
   utilities: unknown
 }
 
+export type LandEconomics = {
+  purchasePrice: number | null
+  assessedValue: number | null
+  acres: number | null
+  noteYield: number | null      // annual rate as percentage, e.g. 8.0
+  notePrincipal: number | null
+  totalNoteCollected: number
+}
+
 function UtilityItem({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="flex items-center gap-2 text-sm">
@@ -42,10 +51,12 @@ export default function DealLandSection({
   dealId,
   land,
   acres,
+  economics,
 }: {
   dealId: string
   land: DealLandData
   acres: { toString(): string } | null
+  economics?: LandEconomics
 }) {
   const utilities = land.utilities as UtilitiesJson
 
@@ -97,6 +108,26 @@ export default function DealLandSection({
               <p className="text-xs text-zinc-500 pt-1">{utilities.notes}</p>
             )}
           </div>
+        </div>
+      )}
+
+      {economics && (economics.purchasePrice != null || economics.noteYield != null) && (
+        <div className="mt-4 pt-4 border-t border-zinc-100">
+          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Economics</p>
+          <dl className="space-y-2 text-sm">
+            {economics.purchasePrice != null && economics.acres != null && economics.acres > 0 && (
+              <Row label="Price / acre" value={`$${(economics.purchasePrice / economics.acres).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+            )}
+            {economics.purchasePrice != null && economics.assessedValue != null && economics.assessedValue > 0 && (
+              <Row label="% of assessed" value={`${((economics.purchasePrice / economics.assessedValue) * 100).toFixed(1)}%`} />
+            )}
+            {economics.noteYield != null && (
+              <Row label="Note yield" value={`${economics.noteYield.toFixed(2)}% / yr`} />
+            )}
+            {economics.notePrincipal != null && economics.totalNoteCollected > 0 && (
+              <Row label="Note collected" value={`$${economics.totalNoteCollected.toLocaleString('en-US', { minimumFractionDigits: 2 })} of $${economics.notePrincipal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
+            )}
+          </dl>
         </div>
       )}
     </div>
