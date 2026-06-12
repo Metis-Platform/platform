@@ -17,6 +17,7 @@ import { hasTemplate } from '@/lib/checklists/registry'
 import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
 import LandDispositionSection from './LandDispositionSection'
+import WholesaleSection, { type WholesaleData } from './WholesaleSection'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,7 +33,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { id, tenantId: tenant.id },
       include: {
         property: { include: { jurisdiction: true } },
-        taxLien: true, taxDeed: true, foreclosure: true, land: true,
+        taxLien: true, taxDeed: true, foreclosure: true, land: true, wholesale: true,
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { orderBy: { createdAt: 'desc' } },
       },
@@ -90,7 +91,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     notes:         e.notes,
   }))
 
-  const { taxLien, taxDeed, foreclosure, land, property, events, landNotes } = deal
+  const { taxLien, taxDeed, foreclosure, land, wholesale, property, events, landNotes } = deal
 
   const landData: DealLandData | null = land
     ? {
@@ -162,9 +163,29 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         }
       : null
 
-  const isTaxDeed = deal.strategyType === 'TAX_DEED'
+  const isTaxDeed    = deal.strategyType === 'TAX_DEED'
   const isForeclosure = deal.strategyType === 'FORECLOSURE'
-  const isLand = deal.strategyType === 'LAND'
+  const isLand       = deal.strategyType === 'LAND'
+  const isWholesale  = deal.strategyType === 'WHOLESALE'
+
+  const wholesaleData: WholesaleData | null = isWholesale
+    ? {
+        dealId:             deal.id,
+        dealStatus:         deal.status,
+        leadSource:         wholesale?.leadSource ?? null,
+        contractDate:       wholesale?.contractDate?.toISOString() ?? null,
+        contractPrice:      wholesale?.contractPrice?.toString() ?? null,
+        earnestMoney:       wholesale?.earnestMoney?.toString() ?? null,
+        inspectionDeadline: wholesale?.inspectionDeadline?.toISOString() ?? null,
+        closingDeadline:    wholesale?.closingDeadline?.toISOString() ?? null,
+        assignmentFee:      wholesale?.assignmentFee?.toString() ?? null,
+        buyerName:          wholesale?.buyerName ?? null,
+        buyerEmail:         wholesale?.buyerEmail ?? null,
+        buyerPhone:         wholesale?.buyerPhone ?? null,
+        dispositionStatus:  wholesale?.dispositionStatus ?? null,
+        marketingNotes:     wholesale?.marketingNotes ?? null,
+      }
+    : null
   const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
   const isNotWon = (deal.status as string) === 'NOT_WON'
@@ -214,7 +235,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <span className="text-zinc-900 font-medium font-mono">{property.apn}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {isLead && (
+          {isLead && !isWholesale && (
             <>
               <Link href={`/dashboard/deals/${deal.id}/convert`}
                 className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
@@ -287,8 +308,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <DealLandSection dealId={deal.id} land={landData} acres={property.acres} economics={landEconomics} />
         ) : null}
 
-        {/* Certificate / Lead details — hidden for land */}
-        {!isLand && <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        {/* Wholesale section — replaces certificate card for WHOLESALE deals */}
+        {isWholesale && wholesaleData ? (
+          <WholesaleSection data={wholesaleData} />
+        ) : null}
+
+        {/* Certificate / Lead details — hidden for land and wholesale */}
+        {!isLand && !isWholesale && <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
             {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : isForeclosure ? 'Auction Details' : 'Certificate Details'}
           </h2>
@@ -340,7 +366,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>}
 
         {/* Events */}
-        {(isLead && !isLand) ? (
+        {(isLead && !isLand && !isWholesale) ? (
           <div className="bg-white rounded-xl border border-zinc-200 p-6">
             <h2 className="text-sm font-semibold text-zinc-900 mb-4">Deadlines</h2>
             <p className="text-sm text-zinc-400">

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
-import { EditLienForm, EditLandForm } from './form'
+import { EditLienForm, EditLandForm, EditWholesaleForm } from './form'
 
 export default async function EditLienPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -21,6 +21,7 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
         property: { include: { jurisdiction: true } },
         taxLien: true,
         land: true,
+        wholesale: true,
       },
     }),
     db.jurisdiction.findMany({ orderBy: [{ stateName: 'asc' }, { county: 'asc' }] }),
@@ -29,6 +30,9 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
   if (!deal) notFound()
 
   const isLand = deal.strategyType === 'LAND'
+  const isWholesale = deal.strategyType === 'WHOLESALE'
+
+  const title = isLand ? 'Edit Land Deal' : isWholesale ? 'Edit Wholesale Deal' : 'Edit Lien'
 
   return (
     <div className="max-w-2xl">
@@ -40,8 +44,8 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
           <span>/</span>
           <span className="text-zinc-900">Edit</span>
         </div>
-        <h1 className="text-2xl font-semibold text-zinc-900">{isLand ? 'Edit Land Deal' : 'Edit Lien'}</h1>
-        {!isLand && (
+        <h1 className="text-2xl font-semibold text-zinc-900">{title}</h1>
+        {!isLand && !isWholesale && (
           <p className="text-sm text-zinc-500 mt-0.5">
             Changing jurisdiction or APN creates a new property record — existing events will be regenerated.
           </p>
@@ -50,6 +54,8 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
 
       {isLand ? (
         <EditLandForm deal={deal} jurisdictions={jurisdictions} />
+      ) : isWholesale ? (
+        <EditWholesaleForm deal={deal} jurisdictions={jurisdictions} />
       ) : (
         <EditLienForm deal={deal} jurisdictions={jurisdictions} />
       )}
