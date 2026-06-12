@@ -8,7 +8,7 @@ import { db } from '@/lib/db'
  * Returns null if the user is not signed in or has no active organization.
  */
 export async function syncUserToDatabase() {
-  const { userId, orgId, orgSlug } = await auth()
+  const { userId, orgId, orgRole } = await auth()
 
   if (!userId || !orgId) return null
 
@@ -35,7 +35,11 @@ export async function syncUserToDatabase() {
   }
 
   // ── User ─────────────────────────────────────────────────────────────────
-  let user = await db.user.findUnique({ where: { clerkUserId: userId } })
+  // Scoped per tenant: a Clerk user in multiple orgs gets one row per tenant,
+  // each with its own role — roles must never carry across tenants (issue #24).
+  let user = await db.user.findUnique({
+    where: { clerkUserId_tenantId: { clerkUserId: userId, tenantId: tenant.id } },
+  })
 
   if (!user) {
     const email =
@@ -47,13 +51,15 @@ export async function syncUserToDatabase() {
       .filter(Boolean)
       .join(' ') || null
 
+    // Org admins (the org creator) become OWNER; invited members start at
+    // READ_ONLY and are promoted by an owner from the team settings page.
     user = await db.user.create({
       data: {
         clerkUserId: userId,
         tenantId: tenant.id,
         email,
         name,
-        role: 'OWNER',
+        role: orgRole === 'org:admin' ? 'OWNER' : 'READ_ONLY',
       },
     })
   }

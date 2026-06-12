@@ -19,8 +19,9 @@ import { sendDailyDigest, type AlertEvent } from '@/lib/email'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://metisplatforms.com'
 
 export async function GET(req: NextRequest) {
+  // Fail closed if the secret is unset — otherwise "Bearer undefined" authenticates.
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -18,8 +18,9 @@ import { refreshEventStatuses } from '@/lib/rules-engine'
 export async function GET(req: NextRequest) {
   // Validate the Vercel cron secret so this endpoint cannot be triggered
   // by arbitrary external requests.
+  // Fail closed if the secret is unset — otherwise "Bearer undefined" authenticates.
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

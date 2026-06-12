@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { isSuperAdmin } from '@/lib/admin-auth'
 import Link from 'next/link'
 import RulesClient from './RulesClient'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
@@ -17,6 +18,9 @@ export default async function JurisdictionRulesPage({
 }: {
   params: Promise<{ jurisdictionId: string }>
 }) {
+  // Gate at the page, not just the layout — layouts render in parallel with pages.
+  if (!(await isSuperAdmin())) redirect('/')
+
   const { jurisdictionId } = await params
 
   const jurisdiction = await db.jurisdiction.findUnique({
