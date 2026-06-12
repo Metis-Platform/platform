@@ -1,9 +1,14 @@
 import { db } from '@/lib/db'
+import { redirect } from 'next/navigation'
+import { isSuperAdmin } from '@/lib/admin-auth'
 import JurisdictionSearch from './JurisdictionSearch'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminRulesPage() {
+  // Gate at the page, not just the layout — layouts render in parallel with pages.
+  if (!(await isSuperAdmin())) redirect('/')
+
   const jurisdictions = await db.jurisdiction.findMany({
     orderBy: [{ state: 'asc' }, { county: 'asc' }],
     select: {

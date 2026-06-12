@@ -18,7 +18,9 @@ export async function getCurrentUser() {
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return null
 
-  const user = await db.user.findUnique({ where: { clerkUserId: userId } })
+  const user = await db.user.findUnique({
+    where: { clerkUserId_tenantId: { clerkUserId: userId, tenantId: tenant.id } },
+  })
   if (!user) return null
 
   return { tenant, user }

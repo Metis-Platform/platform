@@ -1,5 +1,7 @@
 import { db } from '@/lib/db'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { isSuperAdmin } from '@/lib/admin-auth'
 import AdminTenantsClient from './AdminTenantsClient'
 
 const MRR_BY_PLAN: Record<string, number> = {
@@ -10,6 +12,9 @@ const MRR_BY_PLAN: Record<string, number> = {
 }
 
 export default async function AdminPage() {
+  // Gate at the page, not just the layout — layouts render in parallel with pages.
+  if (!(await isSuperAdmin())) redirect('/')
+
   const [tenants, jurisdictionStats] = await Promise.all([
     db.tenant.findMany({
       orderBy: { createdAt: 'desc' },
