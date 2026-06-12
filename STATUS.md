@@ -24,21 +24,25 @@ post-beta module UIs (#39–43).
 | #124 | fix: package-lock.json sync (xlsx) — migrate Action's npm ci had failed on every run | ✅ merged |
 | #125 | ci: workflow_dispatch trigger for migrate workflow | ✅ merged |
 | #128 | feat: portfolio hub dashboard (#127) — cross-strategy default view, Your Strategies table, unified deadlines, module discovery cards, Portfolio nav pill, per-strategy value labels | ✅ merged |
+| #136 | feat(#132-P1): financial ledger — TransactionType additions, GET/POST/DELETE transactions API, TransactionSection UI, lien retrofit + backfill migration | ✅ merged |
+| #137 | feat(#132-P2): economics lib — pure functions (accrued interest, ROI, P&L, cost basis) + vitest + CI workflow | ✅ merged |
+| #138 | feat(#132-P3): surface P&L on deal page and portfolio hub Returns column | ✅ merged |
+| #139 | fix(tests): use UTC dates in economics tests to fix CI failure | ✅ merged |
+| #140 | chore: update BETA-PLAN.md — #132-P3 shipped | ✅ merged |
+| #141 | feat(#133-P1): checklist engine — types, registry, idempotent instantiation, progress chip, Generate Checklist button, `Task.checklistKey` migration | ✅ merged |
 
-**Infra fixed this session (not in code):**
-- `DATABASE_URL` GitHub Actions secret was NEVER set — created it (from .env.local). The migrate
-  workflow had failed all 12 runs ever; first green run 2026-06-12 applied **8 pending migrations**
-  (task comments, redeemable deed, all 5 strategy extension tables, per-tenant user unique).
-- Issue triage: #84 #85 #86 #64 #65 #31 #29 #17 #18 #10 closed as already-implemented (verified in code).
-- Linear (team METIS) is a mirror of GitHub; GitHub is record of truth (ADR-002). Linear key:
-  `C:\Users\aswit\AppData\Local\hermes\.env`. METIS-11 (Land, In Review) can move to Done (PR #121 merged).
+**Infra fixed (not in code):**
+- `DATABASE_URL` GitHub Actions secret was NEVER set — created it 2026-06-12.
+- Issue triage: #84 #85 #86 #64 #65 #31 #29 #17 #18 #10 closed as already-implemented.
 
 ---
 
 ## Next Up — see BETA-PLAN.md for full detail
 
-1. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
-2. **Post-beta:** module UIs #39–43
+1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content requires user review before merge — auto-mode will draft, push-notify, and wait.
+2. **#39-P1** Land MVP (after #133 complete)
+3. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
+4. **Post-beta:** module UIs #40–43
 
 ---
 
