@@ -13,6 +13,7 @@ export type DealTask = {
   priority: string
   dueDate: string | null
   assignedTo: TaskUser | null
+  checklistKey: string | null
 }
 
 const PRIORITY_BADGE: Record<string, string> = {
@@ -24,15 +25,38 @@ const PRIORITY_BADGE: Record<string, string> = {
 
 const NEXT_STATUS: Record<string, string> = { OPEN: 'IN_PROGRESS', IN_PROGRESS: 'COMPLETED', COMPLETED: 'OPEN' }
 
-export default function DealTaskSection({ dealId, initialTasks }: { dealId: string; initialTasks: DealTask[] }) {
+export default function DealTaskSection({
+  dealId,
+  initialTasks,
+  hasChecklist = false,
+}: {
+  dealId: string
+  initialTasks: DealTask[]
+  hasChecklist?: boolean
+}) {
   const [tasks, setTasks] = useState(initialTasks)
   const [showCompleted, setShowCompleted] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [isGenerating, setIsGenerating] = useState(false)
   const [nowMs] = useState(() => Date.now())
   const router = useRouter()
 
   const open = tasks.filter(t => t.status !== 'COMPLETED')
   const completed = tasks.filter(t => t.status === 'COMPLETED')
+  const checklistTasks = tasks.filter(t => t.checklistKey !== null)
+  const checklistCompleted = checklistTasks.filter(t => t.status === 'COMPLETED').length
+
+  function generateChecklist() {
+    setIsGenerating(true)
+    startTransition(async () => {
+      try {
+        await fetch(`/api/deals/${dealId}/checklist`, { method: 'POST' })
+        router.refresh()
+      } finally {
+        setIsGenerating(false)
+      }
+    })
+  }
 
   function advanceStatus(task: DealTask) {
     const next = NEXT_STATUS[task.status]
@@ -54,16 +78,34 @@ export default function DealTaskSection({ dealId, initialTasks }: { dealId: stri
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-zinc-900">
-          Tasks
-          {open.length > 0 && <span className="ml-2 text-xs font-normal text-zinc-400">{open.length} open</span>}
-        </h2>
-        <Link
-          href={`/dashboard/tasks?dealId=${dealId}`}
-          className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-        >
-          + Add Task
-        </Link>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Tasks
+            {open.length > 0 && <span className="ml-2 text-xs font-normal text-zinc-400">{open.length} open</span>}
+          </h2>
+          {checklistTasks.length > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
+              DD: {checklistCompleted}/{checklistTasks.length}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {hasChecklist && (
+            <button
+              onClick={generateChecklist}
+              disabled={isGenerating || isPending}
+              className="px-3 py-1.5 text-xs font-medium text-violet-600 border border-violet-200 rounded-lg hover:bg-violet-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? 'Generating…' : 'Generate Checklist'}
+            </button>
+          )}
+          <Link
+            href={`/dashboard/tasks?dealId=${dealId}`}
+            className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+          >
+            + Add Task
+          </Link>
+        </div>
       </div>
 
       {tasks.length === 0 ? (
