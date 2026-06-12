@@ -462,6 +462,50 @@ export async function relistAsLead(dealId: string, auctionDate: string | null): 
 }
 
 // ---------------------------------------------------------------------------
+// recordRedemption — writes redemptionAmount/Date to DealTaxLien AND creates
+// a REDEMPTION_RECEIVED FinancialTransaction so the ledger stays in sync.
+// ---------------------------------------------------------------------------
+
+export async function recordRedemption(
+  dealId: string,
+  redemptionAmount: number,
+  redemptionDate: Date | null,
+): Promise<{ error?: string }> {
+  const result = await getCurrentUser()
+  if (!result) return { error: 'Not authenticated.' }
+  const { tenant } = result
+
+  try {
+    const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
+    if (!deal) return { error: 'Deal not found.' }
+
+    const dateVal = redemptionDate ?? new Date()
+
+    await db.$transaction([
+      db.dealTaxLien.update({
+        where: { dealId },
+        data: { redemptionAmount, redemptionDate: dateVal, isRedeemed: true },
+      }),
+      db.financialTransaction.create({
+        data: {
+          dealId,
+          tenantId: tenant.id,
+          type: 'REDEMPTION_RECEIVED',
+          amount: redemptionAmount,
+          date: dateVal,
+          description: 'Redemption received',
+        },
+      }),
+    ])
+
+    return {}
+  } catch (err) {
+    console.error('[recordRedemption]', err)
+    return { error: 'Failed to record redemption.' }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // deleteLien
 // ---------------------------------------------------------------------------
 

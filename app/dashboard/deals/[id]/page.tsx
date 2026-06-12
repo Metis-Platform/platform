@@ -8,6 +8,7 @@ import { DeleteButton } from './delete-button'
 import { NotWonButton, RelistButton } from './not-won-button'
 import DocumentSection, { type DocRow } from './DocumentSection'
 import DealTaskSection, { type DealTask } from './DealTaskSection'
+import TransactionSection, { type TxRow } from './TransactionSection'
 import DealEventsSection, { type DealEvent } from './DealEventsSection'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
@@ -21,7 +22,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
-  const [deal, rawDocs, rawTasks] = await Promise.all([
+  const [deal, rawDocs, rawTasks, rawTxs] = await Promise.all([
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
       include: {
@@ -38,6 +39,10 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { dealId: id, tenantId: tenant.id, status: { not: 'CANCELLED' } },
       include: { assignedTo: { select: { id: true, name: true, email: true } } },
       orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
+    }),
+    db.financialTransaction.findMany({
+      where: { dealId: id, tenantId: tenant.id },
+      orderBy: { date: 'desc' },
     }),
   ])
   if (!deal) notFound()
@@ -58,6 +63,14 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     priority:   t.priority,
     dueDate:    t.dueDate?.toISOString() ?? null,
     assignedTo: t.assignedTo,
+  }))
+
+  const dealTxs: TxRow[] = rawTxs.map(t => ({
+    id:          t.id,
+    type:        t.type,
+    amount:      t.amount.toString(),
+    date:        t.date.toISOString(),
+    description: t.description,
   }))
 
   const dealEvents: DealEvent[] = deal.events.map((e) => ({
@@ -284,6 +297,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
       {/* Documents */}
       <DocumentSection dealId={deal.id} initialDocs={docs} />
+
+      {/* Transactions */}
+      <div className="mt-6">
+        <TransactionSection dealId={deal.id} initialTransactions={dealTxs} />
+      </div>
 
       {/* Tasks */}
       <div className="mt-6">
