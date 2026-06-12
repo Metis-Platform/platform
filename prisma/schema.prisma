@@ -287,21 +287,25 @@ model DealFixFlip {
 
 // Extension table — Land Investing strategy
 model DealLand {
-  id                 String      @id @default(cuid())
-  dealId             String      @unique
-  deal               Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  id                 String                 @id @default(cuid())
+  dealId             String                 @unique
+  deal               Deal                   @relation(fields: [dealId], references: [id], onDelete: Cascade)
   zoning             String?
   access             LandAccess?
   utilities          Json? // { water, sewer, electric, gas, notes }
   floodZone          String?
-  wetlandsPercent    Decimal?    @db.Decimal(5, 2)
+  wetlandsPercent    Decimal?               @db.Decimal(5, 2)
   hoaName            String?
-  hoaFees            Decimal?    @db.Decimal(14, 2)
+  hoaFees            Decimal?               @db.Decimal(14, 2)
   optionExpiry       DateTime?
   sellerFinanceTerms Json?
   buyerFinanceTerms  Json?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  // Disposition funnel
+  dispositionStatus  LandDispositionStatus?
+  listedPrice        Decimal?               @db.Decimal(14, 2)
+  dispositionDate    DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
 }
 
 // Seller-finance note on a Land deal — one active note at a time; archived on default/payoff
@@ -619,6 +623,14 @@ enum LandNoteStatus {
   ACTIVE
   PAID_OFF
   DEFAULTED
+}
+
+enum LandDispositionStatus {
+  LISTED
+  UNDER_CONTRACT
+  SOLD_CASH
+  SOLD_TERMS
+  RELISTED
 }
 
 enum LandAccess {

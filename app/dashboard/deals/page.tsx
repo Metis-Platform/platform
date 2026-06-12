@@ -132,21 +132,22 @@ export default async function LiensPage({
       ?? null
 
     return {
-      id:                d.id,
-      status:            d.status,
-      overdueCount:      d._count.events,
-      apn:               d.property.apn,
-      address:           d.property.address,
-      county:            d.property.jurisdiction.county,
-      state:             d.property.jurisdiction.state,
-      certificateNumber: ref,
-      issueDate:         primaryDate?.toISOString() ?? null,
-      auctionDate:       d.taxLien?.auctionDate?.toISOString()
-                          ?? d.foreclosure?.auctionDate?.toISOString()
-                          ?? null,
-      faceAmount:        faceAmt,
-      nextDeadlineLabel: next?.label ?? null,
-      nextDeadlineDays:  next ? Math.round((next.dueDate.getTime() - now.getTime()) / 86_400_000) : null,
+      id:                      d.id,
+      status:                  d.status,
+      overdueCount:            d._count.events,
+      apn:                     d.property.apn,
+      address:                 d.property.address,
+      county:                  d.property.jurisdiction.county,
+      state:                   d.property.jurisdiction.state,
+      certificateNumber:       ref,
+      issueDate:               primaryDate?.toISOString() ?? null,
+      auctionDate:             d.taxLien?.auctionDate?.toISOString()
+                                ?? d.foreclosure?.auctionDate?.toISOString()
+                                ?? null,
+      faceAmount:              faceAmt,
+      nextDeadlineLabel:       next?.label ?? null,
+      nextDeadlineDays:        next ? Math.round((next.dueDate.getTime() - now.getTime()) / 86_400_000) : null,
+      landDispositionStatus:   d.land?.dispositionStatus ?? null,
     }
   })
 

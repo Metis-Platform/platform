@@ -18,6 +18,7 @@ export type LienRow = {
   faceAmount: number | null
   nextDeadlineLabel: string | null
   nextDeadlineDays: number | null  // days from now (can be negative)
+  landDispositionStatus?: string | null
 }
 
 type SortKey = 'apn' | 'state' | 'amount' | 'date' | 'deadline'
@@ -229,7 +230,24 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                       {deal.address && <div className="text-xs text-zinc-400 truncate max-w-52 mt-0.5">{deal.address}</div>}
                     </td>
                     <td className="px-4 py-3 text-zinc-600">{deal.county}, {deal.state}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-600">{deal.certificateNumber ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs text-zinc-600">{deal.certificateNumber ?? '—'}</span>
+                      {deal.landDispositionStatus && (
+                        <div className={`mt-0.5 text-xs font-medium ${
+                          deal.landDispositionStatus === 'SOLD_CASH' || deal.landDispositionStatus === 'SOLD_TERMS' ? 'text-green-600'
+                          : deal.landDispositionStatus === 'UNDER_CONTRACT' ? 'text-amber-600'
+                          : deal.landDispositionStatus === 'RELISTED' ? 'text-orange-600'
+                          : 'text-blue-600'
+                        }`}>
+                          {deal.landDispositionStatus === 'LISTED' ? 'Listed'
+                            : deal.landDispositionStatus === 'UNDER_CONTRACT' ? 'Under Contract'
+                            : deal.landDispositionStatus === 'SOLD_CASH' ? 'Sold (Cash)'
+                            : deal.landDispositionStatus === 'SOLD_TERMS' ? 'Sold (Terms)'
+                            : deal.landDispositionStatus === 'RELISTED' ? 'Re-listed'
+                            : deal.landDispositionStatus}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-zinc-600 text-xs">{date}</td>
                     <td className="px-4 py-3 text-right font-medium text-zinc-900">
                       {deal.faceAmount != null ? `$${deal.faceAmount.toLocaleString()}` : '—'}
