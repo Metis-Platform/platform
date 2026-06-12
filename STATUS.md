@@ -1,14 +1,15 @@
 # Metis Platform — Session Status
 
 > **This is the lean session reference.** Full roadmap, vision, and phase history: see `ROADMAP.md`.
-> Last updated: 2026-05-31
+> Execution plan for beta: see `BETA-PLAN.md`.
+> Last updated: 2026-06-11
 
 ---
 
 ## Current Phase
-**Phase 1C — Core UI: complete.**
-Phase 1D (Alerts/Import) partially in progress.
-Phase 3 (SaaS/Billing) and Phase 4-partial (Foreclosure, Tax Deed) already shipped.
+**Phase 4 module groundwork: complete.** Extension schemas + deal-list columns shipped for all
+6 strategies (PRs #111–#121). Now executing `BETA-PLAN.md` — driving the open backlog to zero
+for beta launch.
 
 ---
 
@@ -16,43 +17,25 @@ Phase 3 (SaaS/Billing) and Phase 4-partial (Foreclosure, Tax Deed) already shipp
 
 | PR | Description | Status |
 |----|-------------|--------|
-| #79 | fix: task assignee optimistic update + labeled status buttons (#76, #77) | ✅ merged |
-| #80 | feat: deal tasks section on detail page (#78) | ✅ merged |
-| #81 | feat: lead-first creation + NOT_WON status (#61, #62) — schema migration | ✅ merged |
-| #82/#83 | chore: CLAUDE.md migration workflow + file ownership clarifications | ✅ merged |
-| #87 | feat: lien edit — allow changing jurisdiction and APN (#33) | ✅ merged |
+| #111–#120 | Module expansion: Buy & Hold, Multifamily, Wholesale, Land, Fix & Flip schemas + deal-list columns + strategy metadata catalog | ✅ merged |
+| #121 | feat: show land access in deal list | ✅ merged |
 
 ---
 
-## Next Up (open issues, ordered by effort)
+## Next Up — see BETA-PLAN.md for full detail
 
-**Import cluster (do together — same file):**
-- #63 — Import: downloadable CSV error report
-- #65 — Import: optional status column for bulk import
-- #64 — Import: XLS/XLSX support
-
-**Calendar improvements (do together — same component):**
-- #31 — Calendar: show Tasks with distinct color alongside Events
-- #16 — Calendar: week view toggle
-- #29 — Calendar: clickable month/year picker
-
-**Other Phase 1:**
-- #17 — Task board: add comments to tasks (schema change required)
-- #24 — Multi-tenant: row-level isolation audit (security — important before beta)
-- #44 — Research links: tiered framework for all strategies
-- #23 — Expand county seed to all 50 states
-
-**Phase 2 (AI):**
-- #25 — AI document extraction (upload cert → auto-populate fields)
-- #26 — Deal Copilot (in-app chat scoped to portfolio)
-
-**Module expansion (Phase 4):**
-- #39 Land · #40 Wholesale · #41 Fix&Flip · #42 Buy&Hold · #43 Multifamily
+1. **Sprint 1 — Task UX:** #84 assignee bug · #85 next-action button · #86 tasks on deal detail
+2. **Sprint 2 — Import:** #64 XLS/XLSX · #65 optional status column
+3. **Sprint 3 — Calendar:** #31 tasks on calendar · #29 month/year picker
+4. **Sprint 4 — Security:** #24 tenant isolation audit (pre-beta gate)
+5. **Sprint 5:** #17 task comments (schema) · #18 jurisdiction detail page (#10 = dup)
+6. **Sprint 6 — AI:** #25 document extraction · #26 Deal Copilot
 
 ---
 
 ## Active Strategies (UI complete)
 `TAX_LIEN` · `TAX_DEED` · `FORECLOSURE`
+(Land, Wholesale, Fix & Flip, Buy & Hold, Multifamily: schema + list columns only)
 
 ## Deal Status Flow
 ```
@@ -63,7 +46,7 @@ LEAD ──→ [Won at Auction] ──→ ACTIVE ──→ REDEEMED / FORECLOSUR
 ## Data Model (tables)
 `Tenant` `User` `Jurisdiction` `RuleSet` `Rule`
 `Property` `Contact`
-`Deal` + `DealTaxLien` / `DealTaxDeed` / `DealForeclosure`
+`Deal` + `DealTaxLien` / `DealTaxDeed` / `DealForeclosure` / `DealLand` / `DealWholesale` / `DealFixFlip` / `DealBuyHold` / `DealMultifamily`
 `Event` `Task` `FinancialTransaction` `Document` `AuditLog`
 
 ---
