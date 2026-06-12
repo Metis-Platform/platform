@@ -5,6 +5,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { DealStatus, EventStatus, StrategyType } from '@/app/generated/prisma'
 import { parseOptionalStrategyParam, getStrategyMeta, ALL_STRATEGIES, type StrategyKey } from '@/lib/strategy-meta'
+import { TRANSACTION_DIRECTION } from '@/lib/transactions'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,6 +26,7 @@ type StrategyRow = {
   totalDeals: number
   capitalDeployed: number
   overdueCount: number
+  realizedPnl: number
 }
 
 // Display order + short labels for status chips on the portfolio table.
@@ -78,7 +80,7 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
   const include = { deal: { select: { strategyType: true, property: { select: { apn: true, address: true } } } } } as const
 
   const [statusGroups, overdueEvents, urgentEvents, upcomingEvents,
-         lienSum, deedSum, foreclosureSum, purchaseSums] = await Promise.all([
+         lienSum, deedSum, foreclosureSum, purchaseSums, allTxs] = await Promise.all([
     db.deal.groupBy({ by: ['strategyType', 'status'], where: { tenantId }, _count: true }),
     db.event.findMany({ where: { status: EventStatus.OVERDUE,  deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
     db.event.findMany({ where: { status: EventStatus.PENDING,  dueDate: { lte: in7d  }, deal: { tenantId } }, include, orderBy: { dueDate: 'asc' }, take: 15 }),
@@ -93,6 +95,10 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
       where: { tenantId, strategyType: { notIn: [StrategyType.TAX_LIEN, StrategyType.TAX_DEED, StrategyType.FORECLOSURE] } },
       _sum: { purchasePrice: true },
     }),
+    db.financialTransaction.findMany({
+      where: { tenantId },
+      select: { type: true, amount: true, date: true, deal: { select: { strategyType: true } } },
+    }),
   ])
 
   const capitalByStrategy: Partial<Record<StrategyKey, number>> = {
@@ -101,6 +107,17 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
     FORECLOSURE: Number(foreclosureSum._sum.winningBid ?? 0),
   }
   for (const g of purchaseSums) capitalByStrategy[g.strategyType] = Number(g._sum.purchasePrice ?? 0)
+
+  // Compute realized P&L per strategy from the ledger
+  const pnlByStrategy: Partial<Record<StrategyKey, number>> = {}
+  let totalRealizedPnl = 0
+  for (const tx of allTxs) {
+    const key = tx.deal.strategyType as StrategyKey
+    if (!(key in pnlByStrategy)) pnlByStrategy[key] = 0
+    const dir = TRANSACTION_DIRECTION[tx.type]
+    pnlByStrategy[key]! += dir === 'IN' ? Number(tx.amount) : -Number(tx.amount)
+    totalRealizedPnl    += dir === 'IN' ? Number(tx.amount) : -Number(tx.amount)
+  }
 
   // Per-strategy overdue counts for the table rows (events relate to strategy
   // through deal, which groupBy cannot traverse).
@@ -122,6 +139,7 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
         totalDeals: groups.reduce((n, g) => n + g._count, 0),
         capitalDeployed: capitalByStrategy[m.key] ?? 0,
         overdueCount: overdueByStrategy[m.key] ?? 0,
+        realizedPnl: pnlByStrategy[m.key] ?? 0,
       }
     })
 
@@ -140,9 +158,13 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
       {hasDeals ? (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             <StatCard label="Active Deals"     value={totalActive} />
             <StatCard label="Capital Deployed" value={`$${totalCapital.toLocaleString()}`} />
+            <StatCard label="Realized P&L"
+              value={`${totalRealizedPnl >= 0 ? '+' : '-'}$${Math.abs(totalRealizedPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              accent={totalRealizedPnl > 0 ? 'green' : totalRealizedPnl < 0 ? 'red' : undefined}
+            />
             <StatCard label="Overdue"          value={overdueEvents.length} accent={overdueEvents.length > 0 ? 'red' : undefined} />
             <StatCard label="Due in 7 Days"    value={urgentEvents.length}  accent={urgentEvents.length  > 0 ? 'yellow' : undefined} />
           </div>
@@ -171,7 +193,11 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
                     <p className="text-sm font-medium text-zinc-900">${row.capitalDeployed.toLocaleString()}</p>
                     {row.overdueCount > 0
                       ? <p className="text-xs font-medium text-red-600">{row.overdueCount} overdue</p>
-                      : <p className="text-xs text-zinc-400">deployed</p>}
+                      : row.realizedPnl !== 0
+                        ? <p className={`text-xs font-medium ${row.realizedPnl > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                            {row.realizedPnl > 0 ? '+' : '-'}${Math.abs(row.realizedPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} realized
+                          </p>
+                        : <p className="text-xs text-zinc-400">deployed</p>}
                   </div>
                 </Link>
               ))}
@@ -316,9 +342,9 @@ async function StrategyDashboard({ tenantId, strategyKey }: { tenantId: string; 
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: 'red' | 'yellow' }) {
-  const bg   = accent === 'red' ? 'bg-red-50 border-red-200' : accent === 'yellow' ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-zinc-200'
-  const text = accent === 'red' ? 'text-red-700'             : accent === 'yellow' ? 'text-yellow-700'                 : 'text-zinc-900'
+function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: 'red' | 'yellow' | 'green' }) {
+  const bg   = accent === 'red' ? 'bg-red-50 border-red-200' : accent === 'yellow' ? 'bg-yellow-50 border-yellow-200' : accent === 'green' ? 'bg-green-50 border-green-200' : 'bg-white border-zinc-200'
+  const text = accent === 'red' ? 'text-red-700'             : accent === 'yellow' ? 'text-yellow-700'                 : accent === 'green' ? 'text-green-700'               : 'text-zinc-900'
   return (
     <div className={`rounded-xl border p-4 ${bg}`}>
       <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">{label}</p>
