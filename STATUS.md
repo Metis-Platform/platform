@@ -23,6 +23,7 @@ post-beta module UIs (#39–43).
 | #123 | fix: tenant isolation audit findings — per-tenant User rows (`@@unique([clerkUserId, tenantId])`), role from Clerk org role, cron fail-closed, admin pages gated inline | ✅ merged |
 | #124 | fix: package-lock.json sync (xlsx) — migrate Action's npm ci had failed on every run | ✅ merged |
 | #125 | ci: workflow_dispatch trigger for migrate workflow | ✅ merged |
+| #128 | feat: portfolio hub dashboard (#127) — cross-strategy default view, Your Strategies table, unified deadlines, module discovery cards, Portfolio nav pill, per-strategy value labels | ✅ merged |
 
 **Infra fixed this session (not in code):**
 - `DATABASE_URL` GitHub Actions secret was NEVER set — created it (from .env.local). The migrate
