@@ -16,6 +16,7 @@ import { buildResearchLinkGroups } from '@/lib/research-links'
 import { hasTemplate } from '@/lib/checklists/registry'
 import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
+import LandDispositionSection from './LandDispositionSection'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -130,7 +131,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       description: t.description,
     }))
 
-  const activeNote = landNotes.find(n => n.status === 'ACTIVE') ?? landNotes[0] ?? null
+  const activeNote = landNotes.find(n => n.status === 'ACTIVE') ?? null
   const totalNoteCollected = notePayments.reduce((sum, p) => sum + Number(p.amount), 0)
 
   const landEconomics: LandEconomics = {
@@ -355,6 +356,19 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           />
         )}
       </div>
+
+      {/* Disposition funnel — land only, active deals */}
+      {isLand && !isLead && (
+        <div className="mb-6">
+          <LandDispositionSection
+            dealId={deal.id}
+            dispositionStatus={land?.dispositionStatus ?? null}
+            listedPrice={land?.listedPrice != null ? Number(land.listedPrice) : null}
+            hasActiveNote={activeNote !== null}
+            noteId={activeNote?.id ?? null}
+          />
+        </div>
+      )}
 
       {/* Seller finance note — land only */}
       {isLand && (
