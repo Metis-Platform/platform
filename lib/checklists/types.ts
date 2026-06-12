@@ -12,6 +12,7 @@ export type DueAnchor =
   | 'foreclosureEligibleDate'
   | 'saleDate'
   | 'purchaseDate'
+  | 'optionExpiry'
 
 /** One item in a checklist template. */
 export interface ChecklistItem {
