@@ -13,6 +13,7 @@ import DealEventsSection, { type DealEvent } from './DealEventsSection'
 import DealPnlCard, { type PnlCardTx, type PnlCardLien } from './DealPnlCard'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
+import { hasTemplate } from '@/lib/checklists/registry'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -58,12 +59,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   }))
 
   const dealTasks: DealTask[] = rawTasks.map(t => ({
-    id:         t.id,
-    title:      t.title,
-    status:     t.status,
-    priority:   t.priority,
-    dueDate:    t.dueDate?.toISOString() ?? null,
-    assignedTo: t.assignedTo,
+    id:           t.id,
+    title:        t.title,
+    status:       t.status,
+    priority:     t.priority,
+    dueDate:      t.dueDate?.toISOString() ?? null,
+    assignedTo:   t.assignedTo,
+    checklistKey: t.checklistKey ?? null,
   }))
 
   const dealTxs: TxRow[] = rawTxs.map(t => ({
@@ -334,7 +336,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
       {/* Tasks */}
       <div className="mt-6">
-        <DealTaskSection dealId={deal.id} initialTasks={dealTasks} />
+        <DealTaskSection
+          dealId={deal.id}
+          initialTasks={dealTasks}
+          hasChecklist={hasTemplate(deal.strategyType)}
+        />
       </div>
     </div>
   )
