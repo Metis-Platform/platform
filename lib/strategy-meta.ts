@@ -174,6 +174,15 @@ export function parseStrategyParam(param: string | undefined): StrategyKey {
   return 'TAX_LIEN'
 }
 
+/**
+ * Like parseStrategyParam, but absent/unknown values mean "no strategy
+ * selected" (the cross-strategy portfolio view) instead of TAX_LIEN.
+ */
+export function parseOptionalStrategyParam(param: string | undefined): StrategyKey | null {
+  if (param && param in STRATEGY_META) return param as StrategyKey
+  return null
+}
+
 /** Get metadata for a strategy key, falling back to TAX_LIEN. */
 export function getStrategyMeta(key: string): StrategyMeta {
   return STRATEGY_META[key as StrategyKey] ?? STRATEGY_META.TAX_LIEN
