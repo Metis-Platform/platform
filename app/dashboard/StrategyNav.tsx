@@ -9,16 +9,33 @@ export default function StrategyNav() {
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
-  const active = params.get('strategy') ?? 'TAX_LIEN'
+  // The dashboard home has a cross-strategy Portfolio view (no strategy param);
+  // other pages (e.g. Deals) always need a concrete strategy.
+  const hasPortfolio = pathname === '/dashboard'
+  const active = params.get('strategy') ?? (hasPortfolio ? null : 'TAX_LIEN')
 
-  function select(strategy: string) {
+  function select(strategy: string | null) {
     const next = new URLSearchParams(params.toString())
-    next.set('strategy', strategy)
-    router.push(`${pathname}?${next.toString()}`)
+    if (strategy === null) next.delete('strategy')
+    else next.set('strategy', strategy)
+    const qs = next.toString()
+    router.push(qs ? `${pathname}?${qs}` : pathname)
   }
 
   return (
     <div className="inline-flex rounded-lg border border-zinc-200 overflow-x-auto text-xs">
+      {hasPortfolio && (
+        <button
+          onClick={() => select(null)}
+          className={`px-3 py-1.5 font-medium transition-colors whitespace-nowrap ${
+            active === null
+              ? 'bg-zinc-900 text-white'
+              : 'bg-white text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50'
+          }`}
+        >
+          Portfolio
+        </button>
+      )}
       {ALL_STRATEGIES.map(({ key, navLabel }) => (
         <button
           key={key}
