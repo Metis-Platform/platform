@@ -18,8 +18,9 @@ export default async function NewLienPage({
     redirect(`/dashboard/deals?strategy=${strategyKey}`)
   }
 
+  // Land deals can be in any county, not just lien-configured ones
   const jurisdictions = await db.jurisdiction.findMany({
-    where: { isAvailable: true },
+    where: strategyKey === 'LAND' ? {} : { isAvailable: true },
     orderBy: [{ stateName: 'asc' }, { county: 'asc' }],
   })
 

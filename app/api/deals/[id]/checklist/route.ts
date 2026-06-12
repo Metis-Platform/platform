@@ -23,6 +23,7 @@ export async function POST(
       taxLien:     true,
       taxDeed:     true,
       foreclosure: true,
+      land:        true,
     },
   })
   if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
@@ -35,12 +36,13 @@ export async function POST(
   // Build a flat anchor-fields object from the deal + its extension record
   const ext = deal.taxLien ?? deal.taxDeed ?? deal.foreclosure
   const anchorFields = {
-    purchaseDate:          deal.purchaseDate ?? null,
-    auctionDate:           ext && 'auctionDate' in ext ? (ext.auctionDate ?? null) : null,
-    issueDate:             deal.taxLien?.issueDate ?? null,
-    redemptionDeadline:    ext && 'redemptionDeadline' in ext ? ((ext as { redemptionDeadline?: Date | null }).redemptionDeadline ?? null) : null,
+    purchaseDate:            deal.purchaseDate ?? null,
+    auctionDate:             ext && 'auctionDate' in ext ? (ext.auctionDate ?? null) : null,
+    issueDate:               deal.taxLien?.issueDate ?? null,
+    redemptionDeadline:      ext && 'redemptionDeadline' in ext ? ((ext as { redemptionDeadline?: Date | null }).redemptionDeadline ?? null) : null,
     foreclosureEligibleDate: deal.taxLien?.foreclosureEligibleDate ?? null,
-    saleDate:              deal.taxDeed?.saleDate ?? null,
+    saleDate:                deal.taxDeed?.saleDate ?? null,
+    optionExpiry:            deal.land?.optionExpiry ?? null,
   }
 
   // Fetch existing checklist tasks for idempotency check

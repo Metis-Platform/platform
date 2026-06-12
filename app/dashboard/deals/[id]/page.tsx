@@ -14,6 +14,7 @@ import DealPnlCard, { type PnlCardTx, type PnlCardLien } from './DealPnlCard'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
 import { hasTemplate } from '@/lib/checklists/registry'
+import DealLandSection, { type DealLandData } from './DealLandSection'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -29,7 +30,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { id, tenantId: tenant.id },
       include: {
         property: { include: { jurisdiction: true } },
-        taxLien: true, taxDeed: true, foreclosure: true,
+        taxLien: true, taxDeed: true, foreclosure: true, land: true,
         events: { orderBy: { dueDate: 'asc' } },
       },
     }),
@@ -86,7 +87,20 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     notes:         e.notes,
   }))
 
-  const { taxLien, taxDeed, foreclosure, property, events } = deal
+  const { taxLien, taxDeed, foreclosure, land, property, events } = deal
+
+  const landData: DealLandData | null = land
+    ? {
+        zoning:          land.zoning,
+        access:          land.access,
+        floodZone:       land.floodZone,
+        wetlandsPercent: land.wetlandsPercent,
+        hoaName:         land.hoaName,
+        hoaFees:         land.hoaFees,
+        optionExpiry:    land.optionExpiry,
+        utilities:       land.utilities,
+      }
+    : null
 
   // PnL card data — reuse already-fetched rawTxs (no extra query)
   const pnlTxs: PnlCardTx[] = rawTxs.map(t => ({
@@ -109,6 +123,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
   const isTaxDeed = deal.strategyType === 'TAX_DEED'
   const isForeclosure = deal.strategyType === 'FORECLOSURE'
+  const isLand = deal.strategyType === 'LAND'
   const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
   const isNotWon = (deal.status as string) === 'NOT_WON'
@@ -226,8 +241,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 mt-6">
-        {/* Certificate / Lead details */}
-        <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        {/* Land section — replaces certificate card for LAND deals */}
+        {isLand && landData ? (
+          <DealLandSection dealId={deal.id} land={landData} acres={property.acres} />
+        ) : null}
+
+        {/* Certificate / Lead details — hidden for land */}
+        {!isLand && <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
             {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : isForeclosure ? 'Auction Details' : 'Certificate Details'}
           </h2>
@@ -276,10 +296,10 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
             )}
             {deal.notes && <Row label="Notes" value={deal.notes} />}
           </dl>
-        </div>
+        </div>}
 
-        {/* Events — clickable, slide-over editor */}
-        {isLead ? (
+        {/* Events */}
+        {(isLead && !isLand) ? (
           <div className="bg-white rounded-xl border border-zinc-200 p-6">
             <h2 className="text-sm font-semibold text-zinc-900 mb-4">Deadlines</h2>
             <p className="text-sm text-zinc-400">

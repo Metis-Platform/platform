@@ -9,6 +9,7 @@ export interface DealAnchorFields {
   redemptionDeadline?: Date | null
   foreclosureEligibleDate?: Date | null
   saleDate?: Date | null
+  optionExpiry?: Date | null
 }
 
 /** What already exists in the DB for this deal (for idempotency). */
@@ -38,6 +39,7 @@ function resolveAnchor(anchor: DueAnchor, deal: DealAnchorFields): Date | null {
     case 'foreclosureEligibleDate': return deal.foreclosureEligibleDate ?? null
     case 'saleDate':              return deal.saleDate ?? null
     case 'purchaseDate':          return deal.purchaseDate ?? null
+    case 'optionExpiry':          return deal.optionExpiry ?? null
   }
 }
 
