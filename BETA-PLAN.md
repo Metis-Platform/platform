@@ -69,8 +69,8 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 > + `npm test` once it exists), push, PR, auto-merge; orchestrator reviews before merge.
 
 - [x] **#132-P1** ledger: TransactionType additions migration · `/api/deals/[id]/transactions` GET/POST + DELETE · `TransactionSection` on deal page · lien retrofit (redemption/sub-tax write ledger rows) + backfill migration (PR #136)
-- [x] **#132-P2** economics: `lib/economics.ts` pure functions (accrued interest, ROI, P&L, cost basis) · vitest as first test infra · `npm test` wired · CI workflow `.github/workflows/ci.yml` added (PR #TBD)
-- [ ] **#132-P3** surfacing: deal P&L card · portfolio hub Returns column + total realized
+- [x] **#132-P2** economics: `lib/economics.ts` pure functions (accrued interest, ROI, P&L, cost basis) · vitest as first test infra · `npm test` wired · CI workflow `.github/workflows/ci.yml` added (PR #137)
+- [x] **#132-P3** surfacing: deal P&L card · portfolio hub Returns column + total realized (PR #TBD)
 - [ ] **#133-P1** checklist engine: template format + idempotent instantiation as Tasks + progress chip
 - [ ] **#133-P2** live-strategy templates (lien/deed/foreclosure) — ⚠️ template CONTENT needs user review before merge
 - [ ] **#39-P1** Land MVP: create flow (creatable:true) + detail section + DD checklist via #133 + OPTION_EXPIRY event

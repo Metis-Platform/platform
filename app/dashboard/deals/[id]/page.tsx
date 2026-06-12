@@ -10,6 +10,7 @@ import DocumentSection, { type DocRow } from './DocumentSection'
 import DealTaskSection, { type DealTask } from './DealTaskSection'
 import TransactionSection, { type TxRow } from './TransactionSection'
 import DealEventsSection, { type DealEvent } from './DealEventsSection'
+import DealPnlCard, { type PnlCardTx, type PnlCardLien } from './DealPnlCard'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
 
@@ -84,6 +85,26 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   }))
 
   const { taxLien, taxDeed, foreclosure, property, events } = deal
+
+  // PnL card data — reuse already-fetched rawTxs (no extra query)
+  const pnlTxs: PnlCardTx[] = rawTxs.map(t => ({
+    type:   t.type,
+    amount: Number(t.amount),
+    date:   t.date,
+  }))
+  const pnlLien: PnlCardLien | null =
+    deal.strategyType === 'TAX_LIEN' &&
+    taxLien?.faceAmount != null &&
+    taxLien?.interestRate != null &&
+    taxLien?.issueDate != null
+      ? {
+          faceAmount: Number(taxLien.faceAmount),
+          annualRate: Number(taxLien.interestRate), // stored as fraction (0.18 = 18%)
+          issueDate:  taxLien.issueDate,
+          isRedeemed: taxLien.isRedeemed ?? false,
+        }
+      : null
+
   const isTaxDeed = deal.strategyType === 'TAX_DEED'
   const isForeclosure = deal.strategyType === 'FORECLOSURE'
   const jur = property.jurisdiction
@@ -194,7 +215,15 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* P&L card — hidden when no transactions and no lien accrual */}
+      <DealPnlCard
+        transactions={pnlTxs}
+        dealStatus={deal.status}
+        strategyType={deal.strategyType}
+        lien={pnlLien}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 mt-6">
         {/* Certificate / Lead details */}
         <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
