@@ -205,6 +205,7 @@ model Deal {
   transactions FinancialTransaction[]
   documents    Document[]
   auditLogs    AuditLog[]
+  landNotes    LandNote[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -301,6 +302,30 @@ model DealLand {
   buyerFinanceTerms  Json?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
+}
+
+// Seller-finance note on a Land deal — one active note at a time; archived on default/payoff
+model LandNote {
+  id               String         @id @default(cuid())
+  dealId           String
+  deal             Deal           @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  tenantId         String
+  buyerName        String?
+  buyerEmail       String?
+  buyerPhone       String?
+  principal        Decimal        @db.Decimal(14, 2)
+  interestRate     Decimal        @db.Decimal(6, 4) // stored as fraction, e.g. 0.08 = 8%
+  termMonths       Int
+  paymentAmount    Decimal        @db.Decimal(14, 2)
+  firstPaymentDate DateTime
+  balance          Decimal        @db.Decimal(14, 2)
+  status           LandNoteStatus @default(ACTIVE)
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([dealId])
+  @@index([tenantId])
 }
 
 // Extension table — Wholesale strategy
@@ -590,6 +615,12 @@ enum DealStatus {
 }
 
 /// Parcel access status. NONE means confirmed no legal/physical access; UNKNOWN means not yet researched.
+enum LandNoteStatus {
+  ACTIVE
+  PAID_OFF
+  DEFAULTED
+}
+
 enum LandAccess {
   ROAD
   EASEMENT
@@ -607,6 +638,7 @@ enum EventType {
   AUCTION_DATE
   DEED_ISSUED
   OPTION_EXPIRY
+  PAYMENT_LATE
   CUSTOM
 }
 
