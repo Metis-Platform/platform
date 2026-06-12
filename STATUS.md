@@ -7,7 +7,7 @@
 ---
 
 ## Current Phase
-**Post-beta module UIs in progress.** #132 (financial ledger/economics), #133-P1 (checklist engine), and full #39 Land module (MVP + seller-finance notes + disposition funnel) shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #40-P1 Wholesale MVP.
+**Post-beta module UIs in progress.** #132 (financial ledger/economics), #133-P1 (checklist engine), full #39 Land module, and #40-P1 Wholesale MVP shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #40-P2 Buyer CRM — Contact activation + buy-box matching.
 
 ---
 
@@ -27,6 +27,9 @@
 | #139 | fix(tests): use UTC dates in economics tests to fix CI failure | ✅ merged |
 | #140 | chore: update BETA-PLAN.md — #132-P3 shipped | ✅ merged |
 | #141 | feat(#133-P1): checklist engine — types, registry, idempotent instantiation, progress chip, Generate Checklist button, `Task.checklistKey` migration | ✅ merged |
+| #146 | feat(#39-P2): Land seller-finance notes — LandNote model, amortization, PAYMENT_LATE events | ✅ merged |
+| #148 | feat(#39-P3): Land disposition funnel — LandDispositionStatus, re-list loop, defaultLandNote | ✅ merged |
+| #150 | feat(#40-P1): Wholesale MVP — create/edit flow, WholesaleSection pipeline, INSPECTION_END/CLOSING_DUE events | ✅ merged |
 
 **Infra fixed (not in code):**
 - `DATABASE_URL` GitHub Actions secret was NEVER set — created it 2026-06-12.
@@ -37,14 +40,15 @@
 ## Next Up — see BETA-PLAN.md for full detail
 
 1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content PR #143 open awaiting user review before merge.
-2. **#40-P1** Wholesale MVP: progressive create + detail + INSPECTION_END/CLOSING_DUE events
-3. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
+2. **#40-P2** Buyer CRM: Contact activation + buy-box matching
+3. **#40-P3** MAO calculator + board view
+4. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
 
 ---
 
 ## Active Strategies (UI complete)
 `TAX_LIEN` · `TAX_DEED` · `FORECLOSURE`
-(Land, Wholesale, Fix & Flip, Buy & Hold, Multifamily: schema + list columns only)
+(Land, Wholesale: full module UI. Fix & Flip, Buy & Hold, Multifamily: schema + list columns only)
 
 ## Deal Status Flow
 ```
