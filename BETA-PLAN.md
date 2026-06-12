@@ -47,8 +47,18 @@ shipped (PRs #111–121); full module UIs are post-beta.
 - [ ] #25 AI document extraction — upload cert PDF/image → Claude extracts fields → review/confirm UI with per-field confidence
 - [ ] #26 Deal Copilot — chat at `/dashboard/copilot`, Claude API over structured tenant deal data
 
-### Post-beta (not in this plan)
-#39 Land · #40 Wholesale · #41 Fix & Flip · #42 Buy & Hold · #43 Multifamily — full module UIs
+### Post-beta program (spec'd 2026-06-12, ready to implement — goalposts in ROADMAP.md "North Star")
+All issues below are implementation-grade 3-phase plans. Build order honors shared primitives:
+
+1. **#132 Financial core** — unified ledger + computed-economics library + realized/unrealized
+   P&L; retrofit to live lien/deed/foreclosure first (answers "what did I earn?")
+2. **#133 Checklist engine** — DD templates → Tasks; serves live strategies + every module
+3. **#39 Land** → **#40 Wholesale** (activates Contact CRM) → **#41 Fix & Flip** / **#42 Buy & Hold**
+   (parallel-able) → **#43 Multifamily** (premium tier gated: pricing earned by Phase 4, not market sizing)
+4. **#130 Entitlements** — per-strategy purchase + in-module tiers (Stripe products per (strategy, tier))
+5. **#131 Jurisdiction data program** — county-depth moat; feeds #42 FMR, #43 market data, #133 templates
+
+Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near MF Phase 3.
 
 ## Standing rules for every sprint
 

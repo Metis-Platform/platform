@@ -17,6 +17,35 @@ An AI-powered, multi-tenant SaaS platform for real estate investors. A universal
 
 ---
 
+## North Star & Goalposts
+
+**Ultimate goal: become THE definitive main hub for real estate investors — replace their
+spreadsheets entirely and drastically simplify the process they deal with.** The platform
+will be lucrative only on the back of legitimate products; revenue follows capability,
+never precedes it. Every roadmap decision is tested against these goalposts:
+
+1. **Spreadsheet-replacement test.** A module ships when an investor can retire the
+   spreadsheet it replaces — computed-not-typed economics, money ledgers, generated
+   checklists — not when it offers data entry *beside* the spreadsheet. (#132 financial
+   core, #43 Phase 1 calc engine are the pattern.)
+2. **Legitimate product before premium price.** Pricing tiers unlock only when shipped
+   capability earns them — the spec, not market sizing, earns the price point. Concrete
+   instance: MF premium ($500–2000/mo) is gated on #43 Phase 4 legs 1–2 shipping
+   (market data + AI underwriting). Generalize this gate to every module tier (#130).
+3. **Modular buy-in.** Investors adopt strategy by strategy (#130 entitlements); each
+   module must be independently valuable on day one of its purchase.
+4. **Data moat.** Jurisdiction/county depth (#131) and the investor's own portfolio
+   history (ledger, outcomes, realized returns) are the defensible assets no
+   spreadsheet or incumbent replicates.
+5. **Simplification is the metric.** Measure releases by investor process steps removed
+   (deadlines auto-tracked, DD auto-checklisted from #133, documents auto-extracted,
+   reports auto-generated) — not by feature count.
+6. **Platform primitives, not module one-offs.** Ledger (#132), checklist engine (#133),
+   Contact CRM, import pipeline, computed-economics library: build once, every strategy
+   benefits — including retrofits to the live lien/deed/foreclosure modules.
+
+---
+
 ## What Makes This Different
 
 | Feature | PropStream | FastLien | Tax Sale Resources | Metis |
