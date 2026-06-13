@@ -5,7 +5,7 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { ALL_STRATEGIES } from '@/lib/strategy-meta'
 
 /** Module pill switcher — updates the ?strategy= param on the current page. */
-export default function StrategyNav() {
+export default function StrategyNav({ enabledKeys }: { enabledKeys: string[] }) {
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
@@ -13,6 +13,9 @@ export default function StrategyNav() {
   // other pages (e.g. Deals) always need a concrete strategy.
   const hasPortfolio = pathname === '/dashboard'
   const active = params.get('strategy') ?? (hasPortfolio ? null : 'TAX_LIEN')
+
+  const enabledSet = new Set(enabledKeys)
+  const visibleStrategies = ALL_STRATEGIES.filter(s => enabledSet.has(s.key))
 
   function select(strategy: string | null) {
     const next = new URLSearchParams(params.toString())
@@ -36,7 +39,7 @@ export default function StrategyNav() {
           Portfolio
         </button>
       )}
-      {ALL_STRATEGIES.map(({ key, navLabel }) => (
+      {visibleStrategies.map(({ key, navLabel }) => (
         <button
           key={key}
           onClick={() => select(key)}

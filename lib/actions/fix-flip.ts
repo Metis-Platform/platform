@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateFixFlipEvents } from '@/lib/fix-flip-events'
+import { hasStrategy } from '@/lib/entitlements'
 
 export type FixFlipFormState = {
   error?: string
@@ -37,6 +38,7 @@ export async function createFixFlip(
   const synced = await syncUserToDatabase()
   if (!synced) return { error: 'Tenant not found' }
   const { tenant } = synced
+  if (!await hasStrategy(tenant.id, 'FIX_FLIP')) return { error: 'Fix & Flip strategy is not enabled for your account.' }
 
   const apn          = fd(formData, 'apn')
   const address      = fd(formData, 'address')

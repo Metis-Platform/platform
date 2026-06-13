@@ -15,7 +15,7 @@ export default async function AdminPage() {
   // Gate at the page, not just the layout — layouts render in parallel with pages.
   if (!(await isSuperAdmin())) redirect('/')
 
-  const [tenants, jurisdictionStats] = await Promise.all([
+  const [tenants, jurisdictionStats, allModules] = await Promise.all([
     db.tenant.findMany({
       orderBy: { createdAt: 'desc' },
       include: { _count: { select: { deals: true, users: true } } },
@@ -24,6 +24,7 @@ export default async function AdminPage() {
       by: ['isAvailable'],
       _count: true,
     }),
+    db.tenantModule.findMany({ select: { tenantId: true, strategy: true, tier: true } }),
   ])
 
   // Last active: latest deal updated per tenant
@@ -34,6 +35,12 @@ export default async function AdminPage() {
   const lastActiveMap = Object.fromEntries(
     lastDeals.map((r) => [r.tenantId, r._max.updatedAt])
   )
+
+  const modulesByTenant: Record<string, { strategy: string; tier: string }[]> = {}
+  for (const m of allModules) {
+    if (!modulesByTenant[m.tenantId]) modulesByTenant[m.tenantId] = []
+    modulesByTenant[m.tenantId].push({ strategy: m.strategy, tier: m.tier })
+  }
 
   const rows = tenants.map((t) => ({
     id: t.id,
@@ -48,6 +55,7 @@ export default async function AdminPage() {
     mrr: MRR_BY_PLAN[t.plan] ?? 0,
     lastActive: lastActiveMap[t.id] ?? t.createdAt,
     createdAt: t.createdAt,
+    modules: modulesByTenant[t.id] ?? [],
   }))
 
   const totalMrr = rows.reduce((sum, r) => sum + r.mrr, 0)

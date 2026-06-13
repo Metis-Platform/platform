@@ -37,6 +37,19 @@ model Tenant {
   contacts   Contact[]
   documents  Document[]
   auditLogs  AuditLog[]
+  modules    TenantModule[]
+}
+
+model TenantModule {
+  id        String      @id @default(cuid())
+  tenantId  String
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  strategy  StrategyType
+  tier      ModuleTier  @default(STANDARD)
+  createdAt DateTime    @default(now())
+
+  @@unique([tenantId, strategy])
+  @@index([tenantId])
 }
 
 model User {
@@ -603,6 +616,11 @@ enum PlanTier {
   PROFESSIONAL
   TEAM
   ENTERPRISE
+}
+
+enum ModuleTier {
+  STANDARD
+  PREMIUM
 }
 
 enum UserRole {

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
+import { hasStrategy } from '@/lib/entitlements'
 import { generateWholesaleEvents } from '@/lib/wholesale-events'
 
 export type WholesaleFormState = { errors?: Record<string, string[]>; message?: string }
@@ -57,6 +58,7 @@ export async function createWholesale(
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found.' }
+  if (!await hasStrategy(tenant.id, StrategyType.WHOLESALE)) return { message: 'Wholesale strategy is not enabled for your account.' }
 
   const parsed = BaseSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
