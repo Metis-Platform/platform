@@ -65,11 +65,12 @@ export async function updateLandDisposition(
   return {}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function defaultLandNote(
   dealId: string,
   noteId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _prev: DispositionFormState,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _formData: FormData,
 ): Promise<DispositionFormState> {
   const { userId, orgId } = await auth()
