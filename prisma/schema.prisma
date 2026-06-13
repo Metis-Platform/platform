@@ -191,10 +191,11 @@ model Contact {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  properties     Property[]     @relation("PropertyContacts")
-  deals          Deal[]
-  buyerProfile   BuyerProfile?
-  wholesaleDeals DealWholesale[] @relation("WholesaleBuyer")
+  properties      Property[]       @relation("PropertyContacts")
+  deals           Deal[]
+  buyerProfile    BuyerProfile?
+  wholesaleDeals  DealWholesale[]  @relation("WholesaleBuyer")
+  buyerBlastSends BuyerBlastSend[]
 
   @@index([tenantId])
 }
@@ -252,7 +253,8 @@ model Deal {
   transactions FinancialTransaction[]
   documents    Document[]
   auditLogs    AuditLog[]
-  landNotes    LandNote[]
+  landNotes      LandNote[]
+  buyerBlastSends BuyerBlastSend[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -377,6 +379,21 @@ model LandNote {
 
   @@index([dealId])
   @@index([tenantId])
+}
+
+// Buyer-blast send log (per-contact per-deal)
+model BuyerBlastSend {
+  id        String   @id @default(cuid())
+  tenantId  String
+  dealId    String
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sentAt    DateTime @default(now())
+
+  @@unique([dealId, contactId])
+  @@index([tenantId])
+  @@index([dealId])
 }
 
 // Extension table — Wholesale strategy
