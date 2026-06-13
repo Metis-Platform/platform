@@ -6,16 +6,19 @@ import { createLien, createDeed, createForeclosure } from '@/lib/actions/lien'
 import { createLand } from '@/lib/actions/land'
 import { createWholesale } from '@/lib/actions/wholesale'
 import { createFixFlip } from '@/lib/actions/fix-flip'
+import { createBuyHold } from '@/lib/actions/buy-hold'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { LandFormState } from '@/lib/actions/land'
 import type { WholesaleFormState } from '@/lib/actions/wholesale'
 import type { FixFlipFormState } from '@/lib/actions/fix-flip'
+import type { BuyHoldFormState } from '@/lib/actions/buy-hold'
 import type { Jurisdiction } from '@/app/generated/prisma'
 
 const initialState: LienFormState = {}
 const initialLandState: LandFormState = {}
 const initialWholesaleState: WholesaleFormState = {}
 const initialFixFlipState: FixFlipFormState = {}
+const initialBuyHoldState: BuyHoldFormState = {}
 
 /** Dispatcher — renders strategy-specific form without calling lien hooks for other strategies. */
 export function NewLienForm({
@@ -28,6 +31,7 @@ export function NewLienForm({
   if (strategy === 'LAND') return <NewLandForm jurisdictions={jurisdictions} />
   if (strategy === 'WHOLESALE') return <NewWholesaleForm jurisdictions={jurisdictions} />
   if (strategy === 'FIX_FLIP') return <NewFixFlipForm jurisdictions={jurisdictions} />
+  if (strategy === 'BUY_HOLD') return <NewBuyHoldForm jurisdictions={jurisdictions} />
   return <NewLienFormInner jurisdictions={jurisdictions} strategy={strategy} />
 }
 
@@ -509,6 +513,133 @@ function NewFixFlipForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) {
           {pending ? 'Saving…' : 'Add Deal'}
         </button>
         <Link href="/dashboard/deals?strategy=FIX_FLIP" className="ml-auto px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+      </div>
+    </form>
+  )
+}
+
+function NewBuyHoldForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) {
+  const [state, formAction, pending] = useActionState(createBuyHold, initialBuyHoldState)
+  const [selectedState, setSelectedState] = useState('')
+
+  const states = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const j of jurisdictions) seen.set(j.state, j.stateName)
+    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [jurisdictions])
+
+  const counties = useMemo(
+    () => jurisdictions.filter(j => j.state === selectedState),
+    [jurisdictions, selectedState],
+  )
+
+  return (
+    <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
+      {state.error && (
+        <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.error}</div>
+      )}
+
+      {/* Location */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Location</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="State" error={state.fieldErrors?.jurisdictionId ? [state.fieldErrors.jurisdictionId] : undefined}>
+            <select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="input-base">
+              <option value="">Select state…</option>
+              {states.map(([abbr, name]) => <option key={abbr} value={abbr}>{name}</option>)}
+            </select>
+          </Field>
+          <Field label="County" error={state.fieldErrors?.jurisdictionId ? [state.fieldErrors.jurisdictionId] : undefined}>
+            <select name="jurisdictionId" disabled={!selectedState} className="input-base disabled:opacity-50 disabled:cursor-not-allowed">
+              <option value="">{selectedState ? 'Select county…' : '← Select state first'}</option>
+              {counties.map(j => <option key={j.id} value={j.id}>{j.county} County</option>)}
+            </select>
+          </Field>
+          <Field label="APN / Parcel Number" error={state.fieldErrors?.apn ? [state.fieldErrors.apn] : undefined}>
+            <input type="text" name="apn" placeholder="e.g. 12-34-56-7890" className="input-base font-mono" />
+          </Field>
+          <Field label="Address (optional)">
+            <input type="text" name="address" placeholder="123 Main St, Orlando FL 32801" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Acquisition */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Acquisition (optional)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Purchase Price ($)">
+            <input type="number" name="purchasePrice" min="0" step="1" placeholder="175000" className="input-base" />
+          </Field>
+          <Field label="Purchase Date">
+            <input type="date" name="purchaseDate" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Rental */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Rental (optional)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Rental Strategy">
+            <select name="rentalStrategy" className="input-base">
+              <option value="">— select —</option>
+              <option value="LONG_TERM">Long-Term Rental</option>
+              <option value="SHORT_TERM">Short-Term Rental (STR)</option>
+              <option value="MID_TERM">Mid-Term Rental</option>
+              <option value="SECTION_8">Section 8 / HCV</option>
+            </select>
+          </Field>
+          <Field label="Target Monthly Rent ($)">
+            <input type="number" name="targetMonthlyRent" min="0" step="1" placeholder="1800" className="input-base" />
+          </Field>
+          <Field label="Actual Monthly Rent ($)">
+            <input type="number" name="actualMonthlyRent" min="0" step="1" placeholder="1750" className="input-base" />
+          </Field>
+          <Field label="Security Deposit ($)">
+            <input type="number" name="securityDeposit" min="0" step="1" placeholder="1800" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Lease */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Lease &amp; Tenant (optional)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Lease Start">
+            <input type="date" name="leaseStartDate" className="input-base" />
+          </Field>
+          <Field label="Lease End">
+            <input type="date" name="leaseEndDate" className="input-base" />
+          </Field>
+          <Field label="Tenant Name">
+            <input type="text" name="tenantName" placeholder="Jane Smith" className="input-base" />
+          </Field>
+          <Field label="Tenant Phone">
+            <input type="tel" name="tenantPhone" placeholder="(555) 123-4567" className="input-base" />
+          </Field>
+          <Field label="Tenant Email">
+            <input type="email" name="tenantEmail" placeholder="tenant@email.com" className="input-base" />
+          </Field>
+          <Field label="Maint. Reserve / Mo ($)">
+            <input type="number" name="maintenanceReserve" min="0" step="1" placeholder="150" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Notes */}
+      <section className="px-6 py-5">
+        <Field label="Notes (optional)">
+          <textarea name="notes" rows={3} placeholder="Property notes, deal source…" className="input-base resize-none" />
+        </Field>
+      </section>
+
+      <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
+        <button type="submit" disabled={pending}
+          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          {pending ? 'Saving…' : 'Add Property'}
+        </button>
+        <Link href="/dashboard/deals?strategy=BUY_HOLD" className="ml-auto px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
       </div>
     </form>
   )

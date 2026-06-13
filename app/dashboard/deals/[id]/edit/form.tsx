@@ -6,10 +6,12 @@ import { updateLien } from '@/lib/actions/lien'
 import { updateLand } from '@/lib/actions/land'
 import { updateWholesale } from '@/lib/actions/wholesale'
 import { updateFixFlip } from '@/lib/actions/fix-flip'
+import { updateBuyHold } from '@/lib/actions/buy-hold'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { LandFormState } from '@/lib/actions/land'
 import type { WholesaleFormState } from '@/lib/actions/wholesale'
 import type { FixFlipFormState } from '@/lib/actions/fix-flip'
+import type { BuyHoldFormState } from '@/lib/actions/buy-hold'
 import type { Jurisdiction, LandAccess } from '@/app/generated/prisma'
 
 type DealWithLien = {
@@ -581,6 +583,159 @@ export function EditFixFlipForm({ deal }: { deal: DealWithFixFlip }) {
         </div>
       </section>
 
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Notes</h2>
+        <textarea name="notes" rows={3} defaultValue={deal.notes ?? ''} className="input-base w-full resize-none" />
+      </section>
+
+      <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
+        <button type="submit" disabled={pending}
+          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {pending ? 'Saving…' : 'Save Changes'}
+        </button>
+        <Link href={`/dashboard/deals/${deal.id}`} className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+      </div>
+    </form>
+  )
+}
+
+type DealWithBuyHold = {
+  id: string
+  notes: string | null
+  purchasePrice: { toString(): string } | null
+  purchaseDate: Date | null
+  buyHold: {
+    rentalStrategy: string | null
+    targetMonthlyRent: { toString(): string } | null
+    actualMonthlyRent: { toString(): string } | null
+    securityDeposit: { toString(): string } | null
+    leaseStartDate: Date | null
+    leaseEndDate: Date | null
+    tenantName: string | null
+    tenantPhone: string | null
+    tenantEmail: string | null
+    propertyManagerName: string | null
+    propertyManagerPhone: string | null
+    propertyManagerEmail: string | null
+    inspectionStatus: string | null
+    maintenanceReserve: { toString(): string } | null
+  } | null
+}
+
+export function EditBuyHoldForm({ deal }: { deal: DealWithBuyHold }) {
+  const boundAction = updateBuyHold.bind(null, deal.id)
+  const [state, formAction, pending] = useActionState(boundAction, {} as BuyHoldFormState)
+  const bh = deal.buyHold
+
+  function fmtDateInput(d: Date | null | undefined) {
+    if (!d) return ''
+    return new Date(d).toISOString().split('T')[0]
+  }
+
+  return (
+    <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
+      {state.error && <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.error}</div>}
+
+      {/* Acquisition */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Acquisition</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Purchase Price ($)">
+            <input type="number" name="purchasePrice" min="0" step="1"
+              defaultValue={deal.purchasePrice?.toString() ?? ''} className="input-base" />
+          </Field>
+          <Field label="Purchase Date">
+            <input type="date" name="purchaseDate"
+              defaultValue={fmtDateInput(deal.purchaseDate)} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Rental */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Rental</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Rental Strategy">
+            <select name="rentalStrategy" defaultValue={bh?.rentalStrategy ?? ''} className="input-base">
+              <option value="">— select —</option>
+              <option value="LONG_TERM">Long-Term Rental</option>
+              <option value="SHORT_TERM">Short-Term Rental (STR)</option>
+              <option value="MID_TERM">Mid-Term Rental</option>
+              <option value="SECTION_8">Section 8 / HCV</option>
+            </select>
+          </Field>
+          <Field label="Target Monthly Rent ($)">
+            <input type="number" name="targetMonthlyRent" min="0" step="1"
+              defaultValue={bh?.targetMonthlyRent?.toString() ?? ''} className="input-base" />
+          </Field>
+          <Field label="Actual Monthly Rent ($)">
+            <input type="number" name="actualMonthlyRent" min="0" step="1"
+              defaultValue={bh?.actualMonthlyRent?.toString() ?? ''} className="input-base" />
+          </Field>
+          <Field label="Security Deposit ($)">
+            <input type="number" name="securityDeposit" min="0" step="1"
+              defaultValue={bh?.securityDeposit?.toString() ?? ''} className="input-base" />
+          </Field>
+          <Field label="Maint. Reserve / Mo ($)">
+            <input type="number" name="maintenanceReserve" min="0" step="1"
+              defaultValue={bh?.maintenanceReserve?.toString() ?? ''} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Lease & Tenant */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Lease &amp; Tenant</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Lease Start">
+            <input type="date" name="leaseStartDate"
+              defaultValue={fmtDateInput(bh?.leaseStartDate)} className="input-base" />
+          </Field>
+          <Field label="Lease End">
+            <input type="date" name="leaseEndDate"
+              defaultValue={fmtDateInput(bh?.leaseEndDate)} className="input-base" />
+          </Field>
+          <Field label="Tenant Name">
+            <input type="text" name="tenantName" defaultValue={bh?.tenantName ?? ''} className="input-base" />
+          </Field>
+          <Field label="Tenant Phone">
+            <input type="tel" name="tenantPhone" defaultValue={bh?.tenantPhone ?? ''} className="input-base" />
+          </Field>
+          <Field label="Tenant Email">
+            <input type="email" name="tenantEmail" defaultValue={bh?.tenantEmail ?? ''} className="input-base" />
+          </Field>
+          <Field label="Inspection Status">
+            <select name="inspectionStatus" defaultValue={bh?.inspectionStatus ?? ''} className="input-base">
+              <option value="">— not set —</option>
+              <option value="PENDING">Pending</option>
+              <option value="PASSED">Passed</option>
+              <option value="FAILED">Failed</option>
+              <option value="NA">Not required</option>
+            </select>
+          </Field>
+        </div>
+      </section>
+
+      {/* Property Manager */}
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Property Manager</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Manager Name">
+            <input type="text" name="propertyManagerName"
+              defaultValue={bh?.propertyManagerName ?? ''} className="input-base" />
+          </Field>
+          <Field label="Manager Phone">
+            <input type="tel" name="propertyManagerPhone"
+              defaultValue={bh?.propertyManagerPhone ?? ''} className="input-base" />
+          </Field>
+          <Field label="Manager Email">
+            <input type="email" name="propertyManagerEmail"
+              defaultValue={bh?.propertyManagerEmail ?? ''} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Notes */}
       <section className="px-6 py-5 space-y-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Notes</h2>
         <textarea name="notes" rows={3} defaultValue={deal.notes ?? ''} className="input-base w-full resize-none" />
