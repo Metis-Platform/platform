@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { flipPnl, flipRoi, holdDays, annualizedReturn } from '@/lib/economics'
 
 const PERMIT_LABELS: Record<string, string> = {
   NOT_REQUIRED: 'Not required',
@@ -54,6 +55,16 @@ function fmtDate(v: string | null) {
   return new Date(v).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+function fmtPct(v: number) {
+  return `${(v * 100).toFixed(1)}%`
+}
+
+function fmtHold(days: number) {
+  if (days < 30) return `${days}d`
+  const months = Math.floor(days / 30)
+  return months === 1 ? '1 mo' : `${months} mo`
+}
+
 export default function FixFlipSection({ data }: { data: FixFlipData }) {
   const {
     dealId, arv, rehabBudget, rehabActualCost, holdingCostEstimate,
@@ -67,19 +78,50 @@ export default function FixFlipSection({ data }: { data: FixFlipData }) {
   const actualNum     = rehabActualCost ? Number(rehabActualCost) : null
   const holdingNum    = holdingCostEstimate ? Number(holdingCostEstimate) : null
   const purchaseNum   = data.purchasePrice ? Number(data.purchasePrice) : null
+  const offerNum      = acceptedOfferPrice ? Number(acceptedOfferPrice) : null
 
   const budgetVariance = budgetNum != null && actualNum != null ? actualNum - budgetNum : null
   const rehabProgress = budgetNum && actualNum ? Math.min(100, (actualNum / budgetNum) * 100) : null
 
-  // Gross profit = ARV - purchase - actual rehab - holding costs
-  const grossProfit =
-    arvNum != null && purchaseNum != null
-      ? arvNum - purchaseNum - (actualNum ?? budgetNum ?? 0) - (holdingNum ?? 0)
-      : null
-
   const now = new Date()
   const rehabTargetDate = rehabTargetCompletion ? new Date(rehabTargetCompletion) : null
   const isRehabOverdue = rehabTargetDate != null && !rehabCompletedDate && rehabTargetDate < now
+
+  // Economics — realized when offer accepted, projected when only ARV available
+  const isRealized = offerNum != null && purchaseNum != null
+  const isProjected = !isRealized && arvNum != null && purchaseNum != null
+
+  const rehabForCalc = actualNum ?? budgetNum ?? 0
+  const holdingForCalc = holdingNum ?? 0
+
+  const realizedPnlVal = isRealized
+    ? flipPnl({ salePrice: offerNum!, purchasePrice: purchaseNum!, rehabCost: rehabForCalc, holdingCosts: holdingForCalc })
+    : null
+  const projectedPnlVal = isProjected
+    ? flipPnl({ salePrice: arvNum!, purchasePrice: purchaseNum!, rehabCost: rehabForCalc, holdingCosts: holdingForCalc })
+    : null
+
+  const realizedRoi = realizedPnlVal != null && purchaseNum != null
+    ? flipRoi({ pnl: realizedPnlVal, purchasePrice: purchaseNum!, rehabCost: rehabForCalc, holdingCosts: holdingForCalc })
+    : null
+  const projectedRoi = projectedPnlVal != null && purchaseNum != null
+    ? flipRoi({ pnl: projectedPnlVal, purchasePrice: purchaseNum!, rehabCost: rehabForCalc, holdingCosts: holdingForCalc })
+    : null
+
+  const purchaseDate = data.purchaseDate ? new Date(data.purchaseDate) : null
+  const closeDate    = closingDate ? new Date(closingDate) : null
+  const holdDaysVal  = purchaseDate ? holdDays(purchaseDate, closeDate ?? now) : null
+
+  const annualizedRoi = (isRealized ? realizedRoi : projectedRoi) != null && holdDaysVal != null && holdDaysVal > 0
+    ? annualizedReturn({
+        invested: purchaseNum! + rehabForCalc + holdingForCalc,
+        returned: (isRealized ? offerNum : arvNum)!,
+        startDate: purchaseDate!,
+        endDate: closeDate ?? now,
+      })
+    : null
+
+  const showEconomics = isRealized || isProjected
 
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-6">
@@ -127,15 +169,52 @@ export default function FixFlipSection({ data }: { data: FixFlipData }) {
         )}
 
         {holdingCostEstimate && <Row label="Est. Holding Costs" value={fmt$(holdingCostEstimate)} />}
+      </dl>
 
-        {grossProfit != null && (
-          <Row label="Est. Gross Profit" value={
-            <span className={`font-semibold ${grossProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-              {fmt$(String(grossProfit))}
-            </span>
-          } />
-        )}
+      {/* Economics panel */}
+      {showEconomics && (() => {
+        const displayPnl = isRealized ? realizedPnlVal! : projectedPnlVal!
+        const displayRoi = isRealized ? realizedRoi : projectedRoi
+        return (
+          <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+            <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+              {isRealized ? 'Realized Returns' : 'Projected Returns'}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <div className="text-xs text-zinc-500 mb-0.5">{isRealized ? 'P&L' : 'Proj. P&L'}</div>
+                <div className={`text-base font-bold ${displayPnl >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {fmt$(String(displayPnl))}
+                </div>
+              </div>
+              {displayRoi != null && (
+                <div>
+                  <div className="text-xs text-zinc-500 mb-0.5">{isRealized ? 'ROI' : 'Proj. ROI'}</div>
+                  <div className={`text-base font-bold ${displayRoi >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                    {fmtPct(displayRoi)}
+                  </div>
+                </div>
+              )}
+              {annualizedRoi != null && (
+                <div>
+                  <div className="text-xs text-zinc-500 mb-0.5">Ann. ROI</div>
+                  <div className={`text-base font-bold ${annualizedRoi >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                    {fmtPct(annualizedRoi)}
+                  </div>
+                </div>
+              )}
+              {holdDaysVal != null && holdDaysVal >= 0 && (
+                <div>
+                  <div className="text-xs text-zinc-500 mb-0.5">{closeDate ? 'Hold Time' : 'Holding'}</div>
+                  <div className="text-base font-bold text-zinc-800">{fmtHold(holdDaysVal)}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
+      <dl className="space-y-2.5 text-sm mt-4">
         {rehabStartDate && <Row label="Rehab Start" value={fmtDate(rehabStartDate)} />}
 
         {rehabTargetCompletion && (

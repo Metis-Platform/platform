@@ -86,3 +86,39 @@ export function unrealizedLienValue(params: {
 }): number {
   return params.faceAmount + accruedLienInterest(params)
 }
+
+// ---------------------------------------------------------------------------
+// Fix & Flip economics
+// ---------------------------------------------------------------------------
+
+/** Fix & Flip P&L: sale price minus all costs. */
+export function flipPnl(params: {
+  salePrice: number
+  purchasePrice: number
+  rehabCost: number
+  holdingCosts: number
+}): number {
+  const { salePrice, purchasePrice, rehabCost, holdingCosts } = params
+  return salePrice - purchasePrice - rehabCost - holdingCosts
+}
+
+/**
+ * Fix & Flip ROI as a decimal fraction: P&L / total invested.
+ * Returns null when total invested is 0 (undefined division).
+ */
+export function flipRoi(params: {
+  pnl: number
+  purchasePrice: number
+  rehabCost: number
+  holdingCosts: number
+}): number | null {
+  const { pnl, purchasePrice, rehabCost, holdingCosts } = params
+  const totalInvested = purchasePrice + rehabCost + holdingCosts
+  if (totalInvested === 0) return null
+  return pnl / totalInvested
+}
+
+/** Calendar days between two dates. Returns negative if endDate is before startDate. */
+export function holdDays(startDate: Date, endDate: Date): number {
+  return Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+}

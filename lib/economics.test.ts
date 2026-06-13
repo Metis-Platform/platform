@@ -6,6 +6,9 @@ import {
   accruedLienInterest,
   annualizedReturn,
   unrealizedLienValue,
+  flipPnl,
+  flipRoi,
+  holdDays,
   type LedgerRow,
 } from '@/lib/economics'
 import { TRANSACTION_DIRECTION } from '@/lib/transactions'
@@ -330,5 +333,79 @@ describe('realistic lien scenario', () => {
     expect(result).not.toBeNull()
     expect(result!).toBeGreaterThan(0.08)
     expect(result!).toBeLessThan(0.15)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// flipPnl
+// ---------------------------------------------------------------------------
+
+describe('flipPnl', () => {
+  it('computes profit for a winning deal', () => {
+    // sold $300k, bought $200k, $50k rehab, $8k holding → P&L = $42k
+    expect(flipPnl({ salePrice: 300000, purchasePrice: 200000, rehabCost: 50000, holdingCosts: 8000 })).toBe(42000)
+  })
+
+  it('returns negative P&L for a losing deal', () => {
+    expect(flipPnl({ salePrice: 180000, purchasePrice: 200000, rehabCost: 30000, holdingCosts: 5000 })).toBe(-55000)
+  })
+
+  it('returns 0 when exactly break-even', () => {
+    expect(flipPnl({ salePrice: 258000, purchasePrice: 200000, rehabCost: 50000, holdingCosts: 8000 })).toBe(0)
+  })
+
+  it('handles zero holding costs', () => {
+    expect(flipPnl({ salePrice: 250000, purchasePrice: 200000, rehabCost: 40000, holdingCosts: 0 })).toBe(10000)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// flipRoi
+// ---------------------------------------------------------------------------
+
+describe('flipRoi', () => {
+  it('returns null when total invested is 0', () => {
+    expect(flipRoi({ pnl: 10000, purchasePrice: 0, rehabCost: 0, holdingCosts: 0 })).toBeNull()
+  })
+
+  it('computes ROI as P&L / total invested', () => {
+    // P&L $42k, invested $258k → ROI ≈ 16.28%
+    const roi = flipRoi({ pnl: 42000, purchasePrice: 200000, rehabCost: 50000, holdingCosts: 8000 })
+    expect(roi).not.toBeNull()
+    expect(roi!).toBeCloseTo(42000 / 258000, 6)
+  })
+
+  it('returns negative ROI for a loss', () => {
+    const roi = flipRoi({ pnl: -55000, purchasePrice: 200000, rehabCost: 30000, holdingCosts: 5000 })
+    expect(roi).not.toBeNull()
+    expect(roi!).toBeLessThan(0)
+  })
+
+  it('returns 0 ROI at break-even', () => {
+    const roi = flipRoi({ pnl: 0, purchasePrice: 200000, rehabCost: 50000, holdingCosts: 8000 })
+    expect(roi).toBeCloseTo(0, 6)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// holdDays
+// ---------------------------------------------------------------------------
+
+describe('holdDays', () => {
+  it('returns 0 when start and end are the same', () => {
+    const d = day(2024, 6, 1)
+    expect(holdDays(d, d)).toBe(0)
+  })
+
+  it('counts calendar days correctly', () => {
+    expect(holdDays(day(2024, 1, 1), day(2024, 7, 19))).toBe(200)
+  })
+
+  it('returns negative when end is before start', () => {
+    expect(holdDays(day(2024, 6, 1), day(2024, 1, 1))).toBeLessThan(0)
+  })
+
+  it('counts 365 days for a non-leap year', () => {
+    expect(holdDays(day(2023, 1, 1), day(2024, 1, 1))).toBe(365)
   })
 })
