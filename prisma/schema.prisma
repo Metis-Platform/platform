@@ -438,6 +438,7 @@ model DealMultifamily {
   loanMaturityDate     DateTime?
   rentRoll             Json?
   t12Financials        Json?
+  businessPlan         Json?
   propertyManagerName  String?
   propertyManagerPhone String?
   propertyManagerEmail String?
