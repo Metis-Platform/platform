@@ -79,7 +79,9 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#40-P1** Wholesale MVP: progressive create + detail + INSPECTION_END/CLOSING_DUE events (PR #150)
 - [x] **#40-P2** Buyer CRM (Contact activation) + buy-box matching (PR #152)
 - [x] **#40-P3** MAO calculator + board view (PR #154)
-- [ ] **#41-P1..P3** Fix & Flip standard (after #39/#40)
+- [x] **#41-P1** Fix & Flip MVP: create/edit flow + detail section + REHAB_DUE/LISTING_TARGET/CLOSING_DUE events (PR #156)
+- [x] **#41-P2** Rehab line-item budget tracker (ScopeOfWork JSON, saveScopeOfWork action, RehabBudgetSection) (PR #157)
+- [ ] **#41-P3** Fix & Flip economics: ARV-based ROI, flip P&L (offer − purchase − actualRehab − holding), hold time calc
 - [ ] **#42-P1..P2** Buy & Hold standard (parallel-able with #41)
 - [ ] **#130** entitlements (TenantModule strategy+tier) — after first modules sellable
 - [ ] **#42-P3 / #39-P4 / #40-P4 / #41-P4 / #43** premium tiers + Multifamily — gated per issue

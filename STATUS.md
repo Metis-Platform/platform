@@ -7,11 +7,11 @@
 ---
 
 ## Current Phase
-**Post-beta module UIs in progress.** #132, #133-P1, full #39 Land, and full #40 Wholesale (P1–P3) shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #41-P1..P3 Fix & Flip standard.
+**Post-beta module UIs in progress.** #132, #133-P1, full #39 Land, full #40 Wholesale (P1–P3), #41-P1 and #41-P2 shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #41-P3 Fix & Flip economics (ARV ROI, flip P&L, hold time), then #42 Buy & Hold.
 
 ---
 
-## Last Session — What Was Done (2026-06-12)
+## Last Session — What Was Done (2026-06-13)
 
 | PR | Description | Status |
 |----|-------------|--------|
@@ -32,6 +32,8 @@
 | #150 | feat(#40-P1): Wholesale MVP — create/edit flow, WholesaleSection pipeline, INSPECTION_END/CLOSING_DUE events | ✅ merged |
 | #152 | feat(#40-P2): Buyer CRM — BuyerProfile, buyer list/add/edit pages, buy-box matching + link/unlink on WholesaleSection | ✅ merged |
 | #154 | feat(#40-P3): MAO calculator (collapsible, pre-fills from deal) + wholesale pipeline board (5-column Kanban) | ✅ merged |
+| #156 | feat(#41-P1): Fix & Flip MVP — create/edit flow, FixFlipSection detail, REHAB_DUE/LISTING_TARGET/CLOSING_DUE events | ✅ merged |
+| #157 | feat(#41-P2): Rehab line-item budget tracker — ScopeOfWork JSON, saveScopeOfWork action, RehabBudgetSection UI | ✅ merged |
 
 **Infra fixed (not in code):**
 - `DATABASE_URL` GitHub Actions secret was NEVER set — created it 2026-06-12.
@@ -42,14 +44,15 @@
 ## Next Up — see BETA-PLAN.md for full detail
 
 1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content PR #143 open awaiting user review before merge.
-2. **#41-P1..P3** Fix & Flip standard (create flow, detail section, rehab budget tracker)
+2. **#41-P3** Fix & Flip economics: ARV-based ROI, flip P&L (acceptedOfferPrice − purchasePrice − actualRehab − holdingCosts), hold time
+3. **#42-P1..P2** Buy & Hold standard (parallel-able with #41-P3)
 4. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
 
 ---
 
 ## Active Strategies (UI complete)
 `TAX_LIEN` · `TAX_DEED` · `FORECLOSURE`
-(Land, Wholesale: full module UI including board + MAO calculator. Fix & Flip, Buy & Hold, Multifamily: schema + list columns only)
+(Land: full module UI. Wholesale: full module UI including board + MAO calculator + buyer CRM. Fix & Flip: create/edit, detail section, rehab budget tracker — economics P3 pending. Buy & Hold, Multifamily: schema + list columns only)
 
 ## Deal Status Flow
 ```
