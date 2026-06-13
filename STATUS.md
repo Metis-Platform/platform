@@ -7,11 +7,22 @@
 ---
 
 ## Current Phase
-**Entitlements live.** #132, #133 (P1+P2), full #39–#42 modules, and #130 Entitlements all shipped. Next: #42-P3/#39-P4/#40-P4/#41-P4 premium tiers and #43 Multifamily, then #131 jurisdiction data program.
+**Multifamily complete (P1–P3).** #132, #133 (P1+P2), full #39–#43 modules (P1–P3), and #130 Entitlements all shipped. All remaining BETA-PLAN items are gated: premium tier features (#42-P3/#39-P4/#40-P4) need Stripe PREMIUM module purchase flow; #41-P4/#43-P4 need AI (#25/#26 ON HOLD); #131 needs user input.
 
 ---
 
-## Last Session — What Was Done (2026-06-13)
+## Last Session — What Was Done (2026-06-13, continued)
+
+| PR | Description | Status |
+|----|-------------|--------|
+| #167 | feat(#43-P1): Multifamily MVP — mfUnderwriting() pure fn, LOAN_MATURITY events, MultifamilySection, lazy-fix Resend | ✅ merged |
+| #168 | chore: tick #43-P1 in BETA-PLAN | ✅ merged |
+| #169 | feat(#43-P2): rent roll editor, T12 CSV import, UNIT_LEASE_END events (month-grouped) | ✅ merged |
+| #170 | chore: tick #43-P2 in BETA-PLAN | ✅ merged |
+| #171 | feat(#43-P3): value-add plan tracker, stabilized cap rate, investor print view | ✅ merged |
+| #172 | chore: tick #43-P3 in BETA-PLAN | ✅ merged |
+
+## Previous Session (2026-06-13)
 
 | PR | Description | Status |
 |----|-------------|--------|
@@ -48,16 +59,26 @@
 
 ## Next Up — see BETA-PLAN.md for full detail
 
-1. **#42-P3/#39-P4/#40-P4/#41-P4** — premium tier features (Section 8 engine, note servicing, buyer blast, AI comps/draw packages)
-2. **#43** — Multifamily module
-3. **#131** — jurisdiction data program (needs user input on data dictionary + Tier 1 counties)
-4. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
+All remaining items are gated. Decision needed on which path to take:
+
+**Option A — Stripe PREMIUM module purchase flow first** (unblocks #42-P3/#39-P4/#40-P4):
+- One Stripe Product per (strategy, tier) → checkout → webhook upserts TenantModule.tier to PREMIUM
+- Reuses existing `app/api/billing/checkout` and `app/api/webhooks/stripe` plumbing
+
+**Option B — Build PREMIUM features now** (relies on admin toggle from PR #164):
+- Admins can manually grant PREMIUM via `/admin` → users get features immediately
+- Stripe purchase flow can come later
+
+**Blocked regardless:**
+- `#41-P4` — needs #25 AI (ON HOLD)
+- `#43-P4` — needs #25/#26 AI (ON HOLD)
+- `#131` — needs user input on data dictionary + Tier 1 counties
 
 ---
 
 ## Active Strategies (UI complete)
 `TAX_LIEN` · `TAX_DEED` · `FORECLOSURE`
-(Land: full module UI. Wholesale: full module UI including board + MAO calculator + buyer CRM. Fix & Flip: full module UI — create/edit, rehab budget, P&L + ROI. Buy & Hold: full module UI — create/edit, BuyHoldSection, rental expenses, NOI + cap rate. Multifamily: schema + list columns only)
+(Land: full module UI. Wholesale: full module UI including board + MAO calculator + buyer CRM. Fix & Flip: full module UI — create/edit, rehab budget, P&L + ROI. Buy & Hold: full module UI — create/edit, BuyHoldSection, rental expenses, NOI + cap rate. Multifamily: full P1–P3 — underwriting, rent roll editor, T12 CSV import, UNIT_LEASE_END events, value-add plan tracker, investor print view)
 
 ## Deal Status Flow
 ```
