@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
-import { EditLienForm, EditLandForm, EditWholesaleForm } from './form'
+import { EditLienForm, EditLandForm, EditWholesaleForm, EditFixFlipForm } from './form'
 
 export default async function EditLienPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -22,6 +22,7 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
         taxLien: true,
         land: true,
         wholesale: true,
+        fixFlip: true,
       },
     }),
     db.jurisdiction.findMany({ orderBy: [{ stateName: 'asc' }, { county: 'asc' }] }),
@@ -29,10 +30,14 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
 
   if (!deal) notFound()
 
-  const isLand = deal.strategyType === 'LAND'
+  const isLand     = deal.strategyType === 'LAND'
   const isWholesale = deal.strategyType === 'WHOLESALE'
+  const isFixFlip  = deal.strategyType === 'FIX_FLIP'
 
-  const title = isLand ? 'Edit Land Deal' : isWholesale ? 'Edit Wholesale Deal' : 'Edit Lien'
+  const title = isLand ? 'Edit Land Deal'
+    : isWholesale ? 'Edit Wholesale Deal'
+    : isFixFlip ? 'Edit Fix & Flip'
+    : 'Edit Lien'
 
   return (
     <div className="max-w-2xl">
@@ -45,7 +50,7 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
           <span className="text-zinc-900">Edit</span>
         </div>
         <h1 className="text-2xl font-semibold text-zinc-900">{title}</h1>
-        {!isLand && !isWholesale && (
+        {!isLand && !isWholesale && !isFixFlip && (
           <p className="text-sm text-zinc-500 mt-0.5">
             Changing jurisdiction or APN creates a new property record — existing events will be regenerated.
           </p>
@@ -56,6 +61,8 @@ export default async function EditLienPage({ params }: { params: Promise<{ id: s
         <EditLandForm deal={deal} jurisdictions={jurisdictions} />
       ) : isWholesale ? (
         <EditWholesaleForm deal={deal} jurisdictions={jurisdictions} />
+      ) : isFixFlip ? (
+        <EditFixFlipForm deal={deal} />
       ) : (
         <EditLienForm deal={deal} jurisdictions={jurisdictions} />
       )}
