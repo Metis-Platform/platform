@@ -82,7 +82,8 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#41-P1** Fix & Flip MVP: create/edit flow + detail section + REHAB_DUE/LISTING_TARGET/CLOSING_DUE events (PR #156)
 - [x] **#41-P2** Rehab line-item budget tracker (ScopeOfWork JSON, saveScopeOfWork action, RehabBudgetSection) (PR #157)
 - [x] **#41-P3** Fix & Flip economics: `flipPnl` / `flipRoi` / `holdDays` in lib/economics.ts + 12 new tests + Realized/Projected Returns panel in FixFlipSection (PR #159)
-- [ ] **#42-P1..P2** Buy & Hold standard (parallel-able with #41)
+- [x] **#42-P1** Buy & Hold MVP: create/edit flow + BuyHoldSection + LEASE_EXPIRY event (PR #161)
+- [x] **#42-P2** Rental economics: NOI, cap rate, operating expenses editor — 7 fixed categories (PR #162)
 - [ ] **#130** entitlements (TenantModule strategy+tier) — after first modules sellable
 - [ ] **#42-P3 / #39-P4 / #40-P4 / #41-P4 / #43** premium tiers + Multifamily — gated per issue
 - [ ] **#131** jurisdiction data program — planning deliverable needs user input on data dictionary + Tier 1 counties
