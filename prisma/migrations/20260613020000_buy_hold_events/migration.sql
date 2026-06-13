@@ -1,0 +1,2 @@
+-- Add Buy & Hold event type: LEASE_EXPIRY
+ALTER TYPE "EventType" ADD VALUE IF NOT EXISTS 'LEASE_EXPIRY';

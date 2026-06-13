@@ -21,6 +21,7 @@ import WholesaleSection, { type WholesaleData, type MatchedBuyer, type LinkedBuy
 import MaoCalculator from './MaoCalculator'
 import FixFlipSection, { type FixFlipData } from './FixFlipSection'
 import RehabBudgetSection from './RehabBudgetSection'
+import BuyHoldSection, { type BuyHoldData } from './BuyHoldSection'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,7 +38,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { id, tenantId: tenant.id },
       include: {
         property: { include: { jurisdiction: true } },
-        taxLien: true, taxDeed: true, foreclosure: true, land: true, fixFlip: true,
+        taxLien: true, taxDeed: true, foreclosure: true, land: true, fixFlip: true, buyHold: true,
         wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { orderBy: { createdAt: 'desc' } },
@@ -96,7 +97,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     notes:         e.notes,
   }))
 
-  const { taxLien, taxDeed, foreclosure, land, wholesale, fixFlip, property, events, landNotes } = deal
+  const { taxLien, taxDeed, foreclosure, land, wholesale, fixFlip, buyHold, property, events, landNotes } = deal
 
   const landData: DealLandData | null = land
     ? {
@@ -173,6 +174,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const isLand       = deal.strategyType === 'LAND'
   const isWholesale  = deal.strategyType === 'WHOLESALE'
   const isFixFlip    = deal.strategyType === 'FIX_FLIP'
+  const isBuyHold    = deal.strategyType === 'BUY_HOLD'
 
   const fixFlipData: FixFlipData | null = isFixFlip
     ? {
@@ -197,6 +199,30 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         contractorEmail:       fixFlip?.contractorEmail ?? null,
         permitStatus:          fixFlip?.permitStatus ?? null,
         notes:                 deal.notes ?? null,
+      }
+    : null
+
+  const buyHoldData: BuyHoldData | null = isBuyHold
+    ? {
+        dealId:               deal.id,
+        dealStatus:           deal.status,
+        purchasePrice:        deal.purchasePrice?.toString() ?? null,
+        purchaseDate:         deal.purchaseDate?.toISOString() ?? null,
+        rentalStrategy:       buyHold?.rentalStrategy ?? null,
+        targetMonthlyRent:    buyHold?.targetMonthlyRent?.toString() ?? null,
+        actualMonthlyRent:    buyHold?.actualMonthlyRent?.toString() ?? null,
+        securityDeposit:      buyHold?.securityDeposit?.toString() ?? null,
+        leaseStartDate:       buyHold?.leaseStartDate?.toISOString() ?? null,
+        leaseEndDate:         buyHold?.leaseEndDate?.toISOString() ?? null,
+        tenantName:           buyHold?.tenantName ?? null,
+        tenantPhone:          buyHold?.tenantPhone ?? null,
+        tenantEmail:          buyHold?.tenantEmail ?? null,
+        propertyManagerName:  buyHold?.propertyManagerName ?? null,
+        propertyManagerPhone: buyHold?.propertyManagerPhone ?? null,
+        propertyManagerEmail: buyHold?.propertyManagerEmail ?? null,
+        inspectionStatus:     buyHold?.inspectionStatus ?? null,
+        maintenanceReserve:   buyHold?.maintenanceReserve?.toString() ?? null,
+        notes:                deal.notes ?? null,
       }
     : null
 
@@ -314,7 +340,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <span className="text-zinc-900 font-medium font-mono">{property.apn}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {isLead && !isWholesale && !isFixFlip && (
+          {isLead && !isWholesale && !isFixFlip && !isBuyHold && (
             <>
               <Link href={`/dashboard/deals/${deal.id}/convert`}
                 className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
@@ -397,8 +423,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <FixFlipSection data={fixFlipData} />
         ) : null}
 
-        {/* Certificate / Lead details — hidden for land, wholesale, fix & flip */}
-        {!isLand && !isWholesale && !isFixFlip && <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        {/* Buy & Hold section — replaces certificate card for BUY_HOLD deals */}
+        {isBuyHold && buyHoldData ? (
+          <BuyHoldSection data={buyHoldData} />
+        ) : null}
+
+        {/* Certificate / Lead details — hidden for land, wholesale, fix & flip, buy & hold */}
+        {!isLand && !isWholesale && !isFixFlip && !isBuyHold && <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
             {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : isForeclosure ? 'Auction Details' : 'Certificate Details'}
           </h2>
@@ -450,7 +481,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>}
 
         {/* Events */}
-        {(isLead && !isLand && !isWholesale && !isFixFlip) ? (
+        {(isLead && !isLand && !isWholesale && !isFixFlip && !isBuyHold) ? (
           <div className="bg-white rounded-xl border border-zinc-200 p-6">
             <h2 className="text-sm font-semibold text-zinc-900 mb-4">Deadlines</h2>
             <p className="text-sm text-zinc-400">
