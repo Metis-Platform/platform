@@ -90,7 +90,7 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#43-P3** Multifamily value-add plan tracker + debt stack + reporting seed (PR #171)
 - [x] **#42-P3** Buy & Hold Section 8 premium: HAP contract, HQS inspections, FMR tracking, rent-increase windows (gated on #130 PREMIUM tier) (PR #174)
 - [x] **#39-P4** Land premium: note-servicing automation (amortization schedule, late-payment Resend sequence, payoff quotes) + note portfolio analytics (gated on #130 PREMIUM) (PR #175)
-- [ ] **#40-P4** Wholesale premium: buyer-blast campaigns (Resend matched buyers), pipeline analytics, assignment packet export (gated on #130 PREMIUM)
+- [x] **#40-P4** Wholesale premium: buyer-blast campaigns (Resend matched buyers), pipeline analytics, assignment packet export (gated on #130 PREMIUM) (PR #177)
 - [ ] **#41-P4** blocked — needs #25 AI extraction (ON HOLD) + #131 SalesComp
 - [ ] **#43-P4** blocked — needs #25/#26 AI (ON HOLD) + #131 market data
 - [ ] **#131** jurisdiction data program — planning deliverable needs user input on data dictionary + Tier 1 counties
