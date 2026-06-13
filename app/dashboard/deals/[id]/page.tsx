@@ -20,6 +20,8 @@ import LandDispositionSection from './LandDispositionSection'
 import WholesaleSection, { type WholesaleData, type MatchedBuyer, type LinkedBuyerContact } from './WholesaleSection'
 import MaoCalculator from './MaoCalculator'
 import FixFlipSection, { type FixFlipData } from './FixFlipSection'
+import RehabBudgetSection from './RehabBudgetSection'
+import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -471,6 +473,16 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <MaoCalculator
             prefillAssignmentFee={wholesale?.assignmentFee != null ? Number(wholesale.assignmentFee) : null}
             prefillContractPrice={wholesale?.contractPrice != null ? Number(wholesale.contractPrice) : null}
+          />
+        </div>
+      )}
+
+      {/* Rehab Budget — fix & flip only */}
+      {isFixFlip && (
+        <div className="mb-6">
+          <RehabBudgetSection
+            dealId={deal.id}
+            initialScope={(fixFlip?.scopeOfWork ?? null) as ScopeOfWork | null}
           />
         </div>
       )}
