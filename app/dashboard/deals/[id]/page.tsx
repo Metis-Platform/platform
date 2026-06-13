@@ -24,6 +24,9 @@ import RehabBudgetSection from './RehabBudgetSection'
 import BuyHoldSection, { type BuyHoldData } from './BuyHoldSection'
 import RentalExpensesSection from './RentalExpensesSection'
 import MultifamilySection, { type MultifamilyData } from './MultifamilySection'
+import RentRollSection from './RentRollSection'
+import T12Section from './T12Section'
+import { RentRollSchema, T12FinancialsSchema } from '@/lib/multifamily-schemas'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
@@ -232,6 +235,15 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     : null
 
   const mfOpex = multifamily?.operatingExpenses as { total?: number } | null
+
+  const mfRentRoll = multifamily?.rentRoll
+    ? (() => { const r = RentRollSchema.safeParse(multifamily.rentRoll); return r.success ? r.data : null })()
+    : null
+
+  const mfT12 = multifamily?.t12Financials
+    ? (() => { const r = T12FinancialsSchema.safeParse(multifamily.t12Financials); return r.success ? r.data : null })()
+    : null
+
   const multifamilyData: MultifamilyData | null = isMultifamily
     ? {
         dealId:               deal.id,
@@ -563,6 +575,18 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
             monthlyRent={buyHold?.actualMonthlyRent != null ? Number(buyHold.actualMonthlyRent)
               : buyHold?.targetMonthlyRent != null ? Number(buyHold.targetMonthlyRent)
               : null}
+          />
+        </div>
+      )}
+
+      {/* Rent Roll + T12 — multifamily only */}
+      {isMultifamily && (
+        <div className="mb-6">
+          <RentRollSection dealId={deal.id} initialRoll={mfRentRoll} />
+          <T12Section
+            dealId={deal.id}
+            initialT12={mfT12}
+            proFormaNoi={multifamily?.netOperatingIncome != null ? Number(multifamily.netOperatingIncome) : null}
           />
         </div>
       )}
