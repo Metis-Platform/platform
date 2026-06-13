@@ -17,7 +17,7 @@ import { hasTemplate } from '@/lib/checklists/registry'
 import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
 import LandDispositionSection from './LandDispositionSection'
-import WholesaleSection, { type WholesaleData } from './WholesaleSection'
+import WholesaleSection, { type WholesaleData, type MatchedBuyer, type LinkedBuyerContact } from './WholesaleSection'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -33,7 +33,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { id, tenantId: tenant.id },
       include: {
         property: { include: { jurisdiction: true } },
-        taxLien: true, taxDeed: true, foreclosure: true, land: true, wholesale: true,
+        taxLien: true, taxDeed: true, foreclosure: true, land: true,
+        wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { orderBy: { createdAt: 'desc' } },
       },
@@ -168,6 +169,51 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const isLand       = deal.strategyType === 'LAND'
   const isWholesale  = deal.strategyType === 'WHOLESALE'
 
+  // Linked buyer contact (from Contact CRM)
+  const linkedBuyerContact = wholesale?.buyerContact ?? null
+  const linkedBuyer: LinkedBuyerContact | null = linkedBuyerContact
+    ? {
+        id:    linkedBuyerContact.id,
+        name:  [linkedBuyerContact.firstName, linkedBuyerContact.lastName].filter(Boolean).join(' ') || linkedBuyerContact.company || 'Buyer',
+        email: linkedBuyerContact.email,
+        phone: linkedBuyerContact.phone,
+      }
+    : null
+
+  // Matching buyers — computed when in MARKETING stage with no buyer linked
+  let matchingBuyers: MatchedBuyer[] = []
+  if (isWholesale && deal.status === 'ACTIVE' && wholesale?.dispositionStatus === 'MARKETING' && !linkedBuyer) {
+    const rawBuyers = await db.contact.findMany({
+      where: { tenantId: tenant.id, type: 'BUYER', buyerProfile: { isActive: true } },
+      include: { buyerProfile: true },
+      take: 50,
+    })
+    const dealState = property.jurisdiction?.state ?? null
+    const contractPriceNum = wholesale?.contractPrice != null ? Number(wholesale.contractPrice) : null
+    const assignmentFeeNum = wholesale?.assignmentFee != null ? Number(wholesale.assignmentFee) : null
+
+    matchingBuyers = rawBuyers
+      .filter(b => {
+        const p = b.buyerProfile
+        if (!p) return false
+        if (contractPriceNum != null && p.priceMax != null && contractPriceNum > Number(p.priceMax)) return false
+        if (contractPriceNum != null && p.priceMin != null && contractPriceNum < Number(p.priceMin)) return false
+        if (assignmentFeeNum != null && p.assignmentFeeMax != null && assignmentFeeNum > Number(p.assignmentFeeMax)) return false
+        if (p.preferredStates.length > 0 && dealState && !p.preferredStates.includes(dealState)) return false
+        return true
+      })
+      .slice(0, 8)
+      .map(b => ({
+        id:              b.id,
+        name:            [b.firstName, b.lastName].filter(Boolean).join(' ') || b.company || 'Buyer',
+        email:           b.email,
+        phone:           b.phone,
+        priceMax:        b.buyerProfile?.priceMax?.toString() ?? null,
+        assignmentFeeMax: b.buyerProfile?.assignmentFeeMax?.toString() ?? null,
+        preferredStates: b.buyerProfile?.preferredStates ?? [],
+      }))
+  }
+
   const wholesaleData: WholesaleData | null = isWholesale
     ? {
         dealId:             deal.id,
@@ -184,6 +230,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         buyerPhone:         wholesale?.buyerPhone ?? null,
         dispositionStatus:  wholesale?.dispositionStatus ?? null,
         marketingNotes:     wholesale?.marketingNotes ?? null,
+        linkedBuyer,
+        matchingBuyers,
       }
     : null
   const jur = property.jurisdiction

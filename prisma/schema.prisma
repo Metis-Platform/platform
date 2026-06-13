@@ -164,8 +164,28 @@ model Contact {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  properties Property[] @relation("PropertyContacts")
-  deals      Deal[]
+  properties     Property[]     @relation("PropertyContacts")
+  deals          Deal[]
+  buyerProfile   BuyerProfile?
+  wholesaleDeals DealWholesale[] @relation("WholesaleBuyer")
+
+  @@index([tenantId])
+}
+
+model BuyerProfile {
+  id                   String   @id @default(cuid())
+  contactId            String   @unique
+  contact              Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tenantId             String
+  priceMin             Decimal? @db.Decimal(14, 2)
+  priceMax             Decimal? @db.Decimal(14, 2)
+  assignmentFeeMax     Decimal? @db.Decimal(14, 2)
+  preferredStates      String[]
+  preferredPropTypes   String[]
+  isActive             Boolean  @default(true)
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([tenantId])
 }
@@ -347,10 +367,14 @@ model DealWholesale {
   buyerName          String?
   buyerEmail         String?
   buyerPhone         String?
+  buyerContactId     String?
+  buyerContact       Contact?  @relation("WholesaleBuyer", fields: [buyerContactId], references: [id], onDelete: SetNull)
   dispositionStatus  String?
   marketingNotes     String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+
+  @@index([buyerContactId])
 }
 
 // Extension table — Buy & Hold / Section 8 strategy
