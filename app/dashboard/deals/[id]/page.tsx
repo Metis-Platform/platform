@@ -14,6 +14,7 @@ import DealPnlCard, { type PnlCardTx, type PnlCardLien } from './DealPnlCard'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
 import { hasTemplate } from '@/lib/checklists/registry'
+import { hasTier } from '@/lib/entitlements'
 import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
 import LandDispositionSection from './LandDispositionSection'
@@ -24,6 +25,7 @@ import RehabBudgetSection from './RehabBudgetSection'
 import BuyHoldSection, { type BuyHoldData } from './BuyHoldSection'
 import RentalExpensesSection from './RentalExpensesSection'
 import MultifamilySection, { type MultifamilyData } from './MultifamilySection'
+import Section8Section, { type Section8Data } from './Section8Section'
 import RentRollSection from './RentRollSection'
 import T12Section from './T12Section'
 import BusinessPlanSection from './BusinessPlanSection'
@@ -274,6 +276,43 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       }
     : null
 
+  const jur = property.jurisdiction
+
+  // Section 8 premium — FMR lookup + tier check
+  const isSection8 = isBuyHold && buyHold?.rentalStrategy === 'SECTION_8'
+  const hasBuyHoldPremium = isSection8 ? await hasTier(tenant.id, 'BUY_HOLD', 'PREMIUM') : false
+
+  let section8Data: Section8Data | null = null
+  if (isSection8 && buyHold) {
+    let fmrAmount: string | null = null
+    if (buyHold.fmrBedrooms != null) {
+      const fmrRow = await db.fmrRate.findUnique({
+        where: { state_county_year_bedrooms: {
+          state: jur.state,
+          county: jur.county,
+          year: new Date().getFullYear(),
+          bedrooms: buyHold.fmrBedrooms,
+        }},
+        select: { amount: true },
+      })
+      fmrAmount = fmrRow?.amount?.toString() ?? null
+    }
+    section8Data = {
+      dealId:                 deal.id,
+      hapContractNumber:      buyHold.hapContractNumber ?? null,
+      hapMonthlyAmount:       buyHold.hapMonthlyAmount?.toString() ?? null,
+      tenantPortion:          buyHold.tenantPortion?.toString() ?? null,
+      hapAnniversary:         buyHold.hapAnniversary?.toISOString() ?? null,
+      nextHqsDate:            buyHold.nextHqsDate?.toISOString() ?? null,
+      hqsResult:              buyHold.hqsResult ?? null,
+      fmrBedrooms:            buyHold.fmrBedrooms ?? null,
+      rentIncreaseNoticeDays: buyHold.rentIncreaseNoticeDays ?? null,
+      actualMonthlyRent:      buyHold.actualMonthlyRent?.toString() ?? null,
+      fmrAmount,
+      housingAuthorityName:   buyHold.housingAuthorityName ?? null,
+    }
+  }
+
   // Linked buyer contact (from Contact CRM)
   const linkedBuyerContact = wholesale?.buyerContact ?? null
   const linkedBuyer: LinkedBuyerContact | null = linkedBuyerContact
@@ -339,7 +378,6 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         matchingBuyers,
       }
     : null
-  const jur = property.jurisdiction
   const isLead = deal.status === DealStatus.LEAD
   const isNotWon = (deal.status as string) === 'NOT_WON'
   const overdueCount = events.filter(e => e.status === 'OVERDUE').length
@@ -581,6 +619,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
               : buyHold?.targetMonthlyRent != null ? Number(buyHold.targetMonthlyRent)
               : null}
           />
+        </div>
+      )}
+
+      {/* Section 8 engine — buy & hold SECTION_8 strategy, PREMIUM tier */}
+      {isSection8 && hasBuyHoldPremium && section8Data && (
+        <div className="mb-6">
+          <Section8Section data={section8Data} />
         </div>
       )}
 

@@ -52,6 +52,20 @@ model TenantModule {
   @@index([tenantId])
 }
 
+// HUD Fair Market Rent reference data (keyed to state/county/year/bedrooms)
+// Populated by the jurisdiction data program (#131); read-only from deal pages.
+model FmrRate {
+  id       String  @id @default(cuid())
+  state    String
+  county   String
+  year     Int
+  bedrooms Int     // 0=studio, 1=1BR, 2=2BR, etc.
+  amount   Decimal @db.Decimal(10, 2)
+
+  @@unique([state, county, year, bedrooms])
+  @@index([state, county])
+}
+
 model User {
   id          String   @id @default(cuid())
   clerkUserId String
@@ -407,10 +421,19 @@ model DealBuyHold {
   propertyManagerName   String?
   propertyManagerPhone  String?
   propertyManagerEmail  String?
-  section8VoucherAmount Decimal?  @db.Decimal(14, 2)
-  housingAuthorityName  String?
-  inspectionStatus      String?
-  operatingExpenses     Json?
+  section8VoucherAmount   Decimal?  @db.Decimal(14, 2)
+  housingAuthorityName    String?
+  inspectionStatus        String?
+  // Section 8 premium fields
+  hapContractNumber       String?
+  hapMonthlyAmount        Decimal?  @db.Decimal(14, 2)
+  tenantPortion           Decimal?  @db.Decimal(14, 2)
+  hapAnniversary          DateTime?
+  nextHqsDate             DateTime?
+  hqsResult               String?  // PASS | FAIL | PENDING
+  fmrBedrooms             Int?
+  rentIncreaseNoticeDays  Int?     @default(60)
+  operatingExpenses       Json?
   maintenanceReserve    Decimal?  @db.Decimal(14, 2)
   notes                 String?
   createdAt             DateTime  @default(now())
@@ -702,6 +725,8 @@ enum EventType {
   LEASE_EXPIRY
   LOAN_MATURITY
   UNIT_LEASE_END
+  HQS_INSPECTION
+  RENT_INCREASE_WINDOW
   CUSTOM
 }
 
@@ -778,5 +803,6 @@ enum ContactType {
   LENDER
   BUYER
   SELLER
+  AGENCY
   OTHER
 }
