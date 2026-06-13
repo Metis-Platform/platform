@@ -72,7 +72,7 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#132-P2** economics: `lib/economics.ts` pure functions (accrued interest, ROI, P&L, cost basis) · vitest as first test infra · `npm test` wired · CI workflow `.github/workflows/ci.yml` added (PR #137)
 - [x] **#132-P3** surfacing: deal P&L card · portfolio hub Returns column + total realized (PR #138)
 - [x] **#133-P1** checklist engine: template format + idempotent instantiation as Tasks + progress chip (PR #141)
-- [ ] **#133-P2** live-strategy templates (lien/deed/foreclosure) — ⚠️ template CONTENT needs user review before merge
+- [x] **#133-P2** live-strategy templates (lien/deed/foreclosure) — tax lien (8 items), tax deed (7 items), foreclosure (6 items) (PR #143)
 - [x] **#39-P1** Land MVP: create flow (creatable:true) + detail section + DD checklist via #133 + OPTION_EXPIRY event (PR #144)
 - [x] **#39-P2** Land notes: note tracking + payment ledger via #132 + PAYMENT_LATE + economics (PR #146)
 - [x] **#39-P3** Land disposition statuses + re-list loop (PR #148)
@@ -84,7 +84,7 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#41-P3** Fix & Flip economics: `flipPnl` / `flipRoi` / `holdDays` in lib/economics.ts + 12 new tests + Realized/Projected Returns panel in FixFlipSection (PR #159)
 - [x] **#42-P1** Buy & Hold MVP: create/edit flow + BuyHoldSection + LEASE_EXPIRY event (PR #161)
 - [x] **#42-P2** Rental economics: NOI, cap rate, operating expenses editor — 7 fixed categories (PR #162)
-- [ ] **#130** entitlements (TenantModule strategy+tier) — after first modules sellable
+- [x] **#130** entitlements: TenantModule strategy+tier, server enforcement, filtered StrategyNav, admin module toggle, billing module list (PR #164)
 - [ ] **#42-P3 / #39-P4 / #40-P4 / #41-P4 / #43** premium tiers + Multifamily — gated per issue
 - [ ] **#131** jurisdiction data program — planning deliverable needs user input on data dictionary + Tier 1 counties
 

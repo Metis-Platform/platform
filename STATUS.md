@@ -7,7 +7,7 @@
 ---
 
 ## Current Phase
-**Post-beta module UIs in progress.** #132, #133-P1, full #39 Land, full #40 Wholesale, full #41 Fix & Flip, full #42 Buy & Hold shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #130 Entitlements.
+**Entitlements live.** #132, #133 (P1+P2), full #39–#42 modules, and #130 Entitlements all shipped. Next: #42-P3/#39-P4/#40-P4/#41-P4 premium tiers and #43 Multifamily, then #131 jurisdiction data program.
 
 ---
 
@@ -37,6 +37,8 @@
 | #159 | feat(#41-P3): Fix & Flip economics — flipPnl/flipRoi/holdDays functions + 12 tests + Realized/Projected Returns panel | ✅ merged |
 | #161 | feat(#42-P1): Buy & Hold MVP — create/edit flow, BuyHoldSection, LEASE_EXPIRY event | ✅ merged |
 | #162 | feat(#42-P2): Rental economics — NOI, cap rate, operating expenses editor (7 categories) | ✅ merged |
+| #143 | feat(#133-P2): live strategy checklist templates — tax lien (8 items), tax deed (7 items), foreclosure (6 items) | ✅ merged |
+| #164 | feat(#130): entitlements — TenantModule strategy gating, server enforcement, filtered StrategyNav, admin toggle, billing module list | ✅ merged |
 
 **Infra fixed (not in code):**
 - `DATABASE_URL` GitHub Actions secret was NEVER set — created it 2026-06-12.
@@ -46,8 +48,9 @@
 
 ## Next Up — see BETA-PLAN.md for full detail
 
-1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content PR #143 open awaiting user review before merge.
-2. **#130** Entitlements — TenantModule strategy+tier gating (after modules are sellable)
+1. **#42-P3/#39-P4/#40-P4/#41-P4** — premium tier features (Section 8 engine, note servicing, buyer blast, AI comps/draw packages)
+2. **#43** — Multifamily module
+3. **#131** — jurisdiction data program (needs user input on data dictionary + Tier 1 counties)
 4. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
 
 ---
