@@ -186,6 +186,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const isBuyHold      = deal.strategyType === 'BUY_HOLD'
   const isMultifamily  = deal.strategyType === 'MULTIFAMILY'
 
+  const hasLandPremium = isLand ? await hasTier(tenant.id, 'LAND', 'PREMIUM') : false
+
   const fixFlipData: FixFlipData | null = isFixFlip
     ? {
         dealId:                deal.id,
@@ -670,7 +672,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       {/* Seller finance note — land only */}
       {isLand && (
         <div className="mb-6">
-          <LandNoteSection dealId={deal.id} notes={noteRows} payments={notePayments} />
+          <LandNoteSection dealId={deal.id} notes={noteRows} payments={notePayments} hasLandPremium={hasLandPremium} />
         </div>
       )}
 

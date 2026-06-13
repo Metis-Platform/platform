@@ -1,8 +1,11 @@
 'use client'
 
-import { useState, useActionState } from 'react'
+import { useState, useTransition } from 'react'
+import { useActionState } from 'react'
 import { createLandNote, recordPayment } from '@/lib/actions/land-note'
+import { sendLateNotice, computePayoffQuote } from '@/lib/actions/note-servicing'
 import type { LandNoteFormState } from '@/lib/actions/land-note'
+import { amortizationSchedule } from '@/lib/land-note-servicing'
 
 export type NoteData = {
   id: string
@@ -136,14 +139,191 @@ function RecordPaymentForm({ dealId, noteId, onClose }: { dealId: string; noteId
   )
 }
 
+// ---------------------------------------------------------------------------
+// Premium: amortization schedule
+// ---------------------------------------------------------------------------
+
+function AmortizationTable({ note }: { note: NoteData }) {
+  const [show, setShow] = useState(false)
+
+  const rows = show ? amortizationSchedule({
+    principal:        Number(note.principal),
+    interestRate:     Number(note.interestRate),
+    termMonths:       note.termMonths,
+    paymentAmount:    Number(note.paymentAmount),
+    firstPaymentDate: new Date(note.firstPaymentDate),
+    balance:          Number(note.principal), // always from original balance for full schedule
+  }) : []
+
+  return (
+    <div className="mt-4 pt-4 border-t border-zinc-100">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Amortization Schedule</p>
+        <button onClick={() => setShow(v => !v)}
+          className="text-xs text-violet-600 hover:text-violet-800">
+          {show ? 'Hide' : 'Show schedule'}
+        </button>
+      </div>
+      {show && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-zinc-400 border-b border-zinc-100">
+                <th className="pb-1 text-left font-medium w-8">#</th>
+                <th className="pb-1 text-left font-medium">Date</th>
+                <th className="pb-1 text-right font-medium">Payment</th>
+                <th className="pb-1 text-right font-medium">Principal</th>
+                <th className="pb-1 text-right font-medium">Interest</th>
+                <th className="pb-1 text-right font-medium">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.paymentNum} className="border-b border-zinc-50 hover:bg-zinc-50">
+                  <td className="py-1 text-zinc-400">{r.paymentNum}</td>
+                  <td className="py-1 text-zinc-600">
+                    {r.paymentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="py-1 text-right text-zinc-700">${r.payment.toFixed(2)}</td>
+                  <td className="py-1 text-right text-emerald-700">${r.principal.toFixed(2)}</td>
+                  <td className="py-1 text-right text-amber-700">${r.interest.toFixed(2)}</td>
+                  <td className="py-1 text-right font-medium text-zinc-800">${r.balance.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Premium: payoff quote calculator
+// ---------------------------------------------------------------------------
+
+type PayoffResult = {
+  outstandingBalance: number
+  perDiemInterest: number
+  daysToPayoff: number
+  totalPayoff: number
+}
+
+function PayoffCalculator({ dealId, noteId }: { dealId: string; noteId: string }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const [date, setDate] = useState(today)
+  const [honorDays, setHonorDays] = useState(10)
+  const [result, setResult] = useState<PayoffResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function calculate() {
+    setError(null)
+    startTransition(async () => {
+      const res = await computePayoffQuote(dealId, noteId, date, honorDays)
+      if (res.error) { setError(res.error); return }
+      if (res.quote) setResult(res.quote)
+    })
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-zinc-100">
+      <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Payoff Quote</p>
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1">As of date</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)}
+            className="input-base w-40 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1">Honor days</label>
+          <input type="number" min={1} max={30} value={honorDays} onChange={e => setHonorDays(Number(e.target.value))}
+            className="input-base w-20 text-sm" />
+        </div>
+        <button onClick={calculate} disabled={isPending}
+          className="px-3 py-2 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors">
+          {isPending ? 'Calculating…' : 'Calculate'}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {result && (
+        <dl className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <PayoffRow label="Balance" value={`$${result.outstandingBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
+          <PayoffRow label="Per diem" value={`$${result.perDiemInterest.toFixed(4)}/day`} />
+          <PayoffRow label="Honor days" value={`${result.daysToPayoff} days`} />
+          <PayoffRow label="Total payoff" value={`$${result.totalPayoff.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} highlight />
+        </dl>
+      )}
+    </div>
+  )
+}
+
+function PayoffRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="bg-zinc-50 rounded-lg px-3 py-2">
+      <div className="text-xs text-zinc-400 mb-0.5">{label}</div>
+      <div className={`text-sm font-semibold ${highlight ? 'text-violet-700' : 'text-zinc-800'}`}>{value}</div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Premium: late notice sender
+// ---------------------------------------------------------------------------
+
+const NOTICE_TYPES = [
+  { key: 'REMINDER',        label: 'Reminder',       className: 'border-blue-200 text-blue-700 hover:bg-blue-50' },
+  { key: 'LATE',            label: 'Late Notice',     className: 'border-amber-200 text-amber-700 hover:bg-amber-50' },
+  { key: 'DEFAULT_WARNING', label: 'Default Warning', className: 'border-red-200 text-red-700 hover:bg-red-50' },
+] as const
+
+function NoticeSender({ dealId, noteId }: { dealId: string; noteId: string }) {
+  const [status, setStatus] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function send(noticeType: 'REMINDER' | 'LATE' | 'DEFAULT_WARNING') {
+    setStatus(null)
+    startTransition(async () => {
+      const res = await sendLateNotice(dealId, noteId, noticeType)
+      if (res.error) setStatus({ type: 'err', msg: res.error })
+      else if (res.success) setStatus({ type: 'ok', msg: res.success })
+    })
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-zinc-100">
+      <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Send Notice</p>
+      <div className="flex flex-wrap gap-2">
+        {NOTICE_TYPES.map(n => (
+          <button key={n.key} onClick={() => send(n.key)} disabled={isPending}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors disabled:opacity-50 ${n.className}`}>
+            {n.label}
+          </button>
+        ))}
+      </div>
+      {status && (
+        <p className={`mt-2 text-xs ${status.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>
+          {status.msg}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export default function LandNoteSection({
   dealId,
   notes,
   payments,
+  hasLandPremium = false,
 }: {
   dealId: string
   notes: NoteData[]
   payments: NotePayment[]
+  hasLandPremium?: boolean
 }) {
   const [showCreate, setShowCreate] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
@@ -234,6 +414,23 @@ export default function LandNoteSection({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Premium features */}
+          {hasLandPremium && activeNote.status !== 'PAID_OFF' && (
+            <>
+              <AmortizationTable note={activeNote} />
+              <PayoffCalculator dealId={dealId} noteId={activeNote.id} />
+              <NoticeSender dealId={dealId} noteId={activeNote.id} />
+            </>
+          )}
+
+          {!hasLandPremium && (
+            <div className="mt-4 pt-4 border-t border-zinc-100">
+              <p className="text-xs text-zinc-400">
+                <span className="font-medium text-zinc-500">Premium:</span> Amortization schedule, payoff quotes, and automated notices require Land PREMIUM.
+              </p>
             </div>
           )}
         </>
