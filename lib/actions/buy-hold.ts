@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateBuyHoldEvents } from '@/lib/buy-hold-events'
+import { hasStrategy } from '@/lib/entitlements'
 
 export type BuyHoldFormState = {
   error?: string
@@ -37,6 +38,7 @@ export async function createBuyHold(
   const synced = await syncUserToDatabase()
   if (!synced) return { error: 'Tenant not found' }
   const { tenant } = synced
+  if (!await hasStrategy(tenant.id, 'BUY_HOLD')) return { error: 'Buy & Hold strategy is not enabled for your account.' }
 
   const apn            = fd(formData, 'apn')
   const address        = fd(formData, 'address')

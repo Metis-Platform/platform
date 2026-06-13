@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
+import { hasStrategy } from '@/lib/entitlements'
 
 export type LienFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -113,6 +114,7 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found.' }
+  if (!await hasStrategy(tenant.id, StrategyType.TAX_LIEN)) return { message: 'Tax Lien strategy is not enabled for your account.' }
 
   const raw = Object.fromEntries(formData)
   const schema = raw.status === 'LEAD'
@@ -266,6 +268,7 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found.' }
+  if (!await hasStrategy(tenant.id, StrategyType.TAX_DEED)) return { message: 'Tax Deed strategy is not enabled for your account.' }
 
   const raw = Object.fromEntries(formData)
   const schema = raw.status === 'LEAD' ? DeedLeadSchema : DeedActiveSchema
@@ -342,6 +345,7 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found.' }
+  if (!await hasStrategy(tenant.id, StrategyType.FORECLOSURE)) return { message: 'Foreclosure strategy is not enabled for your account.' }
 
   const raw = Object.fromEntries(formData)
   const schema = raw.status === 'LEAD' ? ForeclosureLeadSchema : ForeclosureActiveSchema

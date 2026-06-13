@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { DealStatus, EventStatus, StrategyType } from '@/app/generated/prisma'
 import { parseOptionalStrategyParam, getStrategyMeta, ALL_STRATEGIES, type StrategyKey } from '@/lib/strategy-meta'
 import { TRANSACTION_DIRECTION } from '@/lib/transactions'
+import { getEnabledStrategies } from '@/lib/entitlements'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -143,6 +144,7 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
       }
     })
 
+  const enabledStrategyKeys = new Set(await getEnabledStrategies(tenantId))
   const unusedStrategies = ALL_STRATEGIES.filter(m => !strategiesWithDeals.includes(m.key))
   const totalActive  = statusGroups.filter(g => g.status === 'ACTIVE').reduce((n, g) => n + g._count, 0)
   const totalCapital = Object.values(capitalByStrategy).reduce((a, b) => a + b, 0)
@@ -224,18 +226,33 @@ async function PortfolioDashboard({ tenantId }: { tenantId: string }) {
             {hasDeals ? 'Expand Your Portfolio' : 'Strategies'}
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {unusedStrategies.map(m => m.creatable ? (
-              <Link key={m.key} href={`/dashboard/deals/new?strategy=${m.key}`}
-                className="rounded-xl border border-zinc-200 bg-white p-4 hover:border-blue-300 hover:shadow-sm transition-all">
-                <p className="text-sm font-medium text-zinc-900">{m.navLabel}</p>
-                <p className="text-xs text-blue-600 mt-1">{m.newLabel}</p>
-              </Link>
-            ) : (
-              <div key={m.key} className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
-                <p className="text-sm font-medium text-zinc-400">{m.navLabel}</p>
-                <p className="text-xs text-zinc-400 mt-1">Coming soon</p>
-              </div>
-            ))}
+            {unusedStrategies.map(m => {
+              const isEnabled = enabledStrategyKeys.has(m.key)
+              if (!m.creatable) {
+                return (
+                  <div key={m.key} className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
+                    <p className="text-sm font-medium text-zinc-400">{m.navLabel}</p>
+                    <p className="text-xs text-zinc-400 mt-1">Coming soon</p>
+                  </div>
+                )
+              }
+              if (isEnabled) {
+                return (
+                  <Link key={m.key} href={`/dashboard/deals/new?strategy=${m.key}`}
+                    className="rounded-xl border border-zinc-200 bg-white p-4 hover:border-blue-300 hover:shadow-sm transition-all">
+                    <p className="text-sm font-medium text-zinc-900">{m.navLabel}</p>
+                    <p className="text-xs text-blue-600 mt-1">{m.newLabel}</p>
+                  </Link>
+                )
+              }
+              return (
+                <Link key={m.key} href="/dashboard/billing"
+                  className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 hover:border-zinc-400 hover:bg-white transition-all group">
+                  <p className="text-sm font-medium text-zinc-500 group-hover:text-zinc-900">{m.navLabel}</p>
+                  <p className="text-xs text-zinc-400 mt-1 group-hover:text-blue-600">Unlock module</p>
+                </Link>
+              )
+            })}
           </div>
         </div>
       )}

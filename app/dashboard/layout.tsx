@@ -1,11 +1,20 @@
 import { Suspense } from 'react'
 import { UserButton, OrganizationSwitcher } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import StrategyNav, { DealsNavLink } from './StrategyNav'
 import { isSuperAdmin } from '@/lib/admin-auth'
+import { getEnabledStrategies } from '@/lib/entitlements'
+import { db } from '@/lib/db'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const superAdmin = await isSuperAdmin()
+  const [superAdmin, { orgId }] = await Promise.all([isSuperAdmin(), auth()])
+
+  let enabledKeys: string[] = []
+  if (orgId) {
+    const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId }, select: { id: true } })
+    if (tenant) enabledKeys = await getEnabledStrategies(tenant.id)
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50">
@@ -87,7 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="mt-2 flex items-center gap-2">
           <span className="text-xs text-zinc-400 font-medium">Module:</span>
           <Suspense fallback={null}>
-            <StrategyNav />
+            <StrategyNav enabledKeys={enabledKeys} />
           </Suspense>
         </div>
       </header>
