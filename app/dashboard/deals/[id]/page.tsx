@@ -26,7 +26,8 @@ import RentalExpensesSection from './RentalExpensesSection'
 import MultifamilySection, { type MultifamilyData } from './MultifamilySection'
 import RentRollSection from './RentRollSection'
 import T12Section from './T12Section'
-import { RentRollSchema, T12FinancialsSchema } from '@/lib/multifamily-schemas'
+import BusinessPlanSection from './BusinessPlanSection'
+import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema } from '@/lib/multifamily-schemas'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
@@ -242,6 +243,10 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
   const mfT12 = multifamily?.t12Financials
     ? (() => { const r = T12FinancialsSchema.safeParse(multifamily.t12Financials); return r.success ? r.data : null })()
+    : null
+
+  const mfBusinessPlan = multifamily?.businessPlan
+    ? (() => { const r = BusinessPlanSchema.safeParse(multifamily.businessPlan); return r.success ? r.data : null })()
     : null
 
   const multifamilyData: MultifamilyData | null = isMultifamily
@@ -579,7 +584,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>
       )}
 
-      {/* Rent Roll + T12 — multifamily only */}
+      {/* Rent Roll + T12 + Business Plan — multifamily only */}
       {isMultifamily && (
         <div className="mb-6">
           <RentRollSection dealId={deal.id} initialRoll={mfRentRoll} />
@@ -588,6 +593,19 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
             initialT12={mfT12}
             proFormaNoi={multifamily?.netOperatingIncome != null ? Number(multifamily.netOperatingIncome) : null}
           />
+          <BusinessPlanSection
+            dealId={deal.id}
+            initialPlan={mfBusinessPlan}
+            unitCount={multifamily?.unitCount ?? null}
+            purchasePrice={deal.purchasePrice ? Number(deal.purchasePrice) : null}
+            currentNoi={multifamily?.netOperatingIncome ? Number(multifamily.netOperatingIncome) : null}
+          />
+          <div className="mt-4 flex justify-end">
+            <Link href={`/dashboard/deals/${deal.id}/print`} target="_blank"
+              className="text-xs text-zinc-500 hover:text-zinc-900 underline transition-colors">
+              Print / Investor Report ↗
+            </Link>
+          </div>
         </div>
       )}
 

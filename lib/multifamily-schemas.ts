@@ -78,6 +78,34 @@ export function computeT12Metrics(t12: T12Financials) {
   return { annualIncome, annualExpenses, annualNoi, monthlyNoi }
 }
 
+// ---------------------------------------------------------------------------
+// Business Plan
+// ---------------------------------------------------------------------------
+
+export const BusinessPlanSchema = z.object({
+  renovationLiftPerUnit:  z.number().min(0),
+  unitsRenovated:         z.number().int().min(0),
+  targetUnitsToRenovate:  z.number().int().min(1),
+  stabilizedNoiTarget:    z.number().min(0),
+  notes:                  z.string().nullable(),
+})
+
+export type BusinessPlan = z.infer<typeof BusinessPlanSchema>
+
+export function computeBusinessPlanMetrics(
+  plan: BusinessPlan,
+  purchasePrice: number | null,
+  currentNoi: number | null,
+) {
+  const { renovationLiftPerUnit, unitsRenovated, targetUnitsToRenovate, stabilizedNoiTarget } = plan
+  const progressPct = targetUnitsToRenovate > 0 ? unitsRenovated / targetUnitsToRenovate : 0
+  const achievedLift = unitsRenovated * renovationLiftPerUnit * 12
+  const projectedNoi = (currentNoi ?? 0) + unitsRenovated * renovationLiftPerUnit * 12
+  const stabilizedCapRate = purchasePrice && purchasePrice > 0 ? stabilizedNoiTarget / purchasePrice : null
+  const inPlaceCapRate = purchasePrice && purchasePrice > 0 && currentNoi != null ? currentNoi / purchasePrice : null
+  return { progressPct, achievedLift, projectedNoi, stabilizedCapRate, inPlaceCapRate }
+}
+
 /**
  * Parse a T12 CSV string.
  * Expected format: header row "Category,Type,Jan,...,Dec" then data rows.
