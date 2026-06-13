@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { updateLien } from '@/lib/actions/lien'
 import { updateLand } from '@/lib/actions/land'
 import { updateWholesale } from '@/lib/actions/wholesale'
+import { updateFixFlip } from '@/lib/actions/fix-flip'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { LandFormState } from '@/lib/actions/land'
 import type { WholesaleFormState } from '@/lib/actions/wholesale'
+import type { FixFlipFormState } from '@/lib/actions/fix-flip'
 import type { Jurisdiction, LandAccess } from '@/app/generated/prisma'
 
 type DealWithLien = {
@@ -440,6 +442,148 @@ export function EditWholesaleForm({ deal, jurisdictions }: { deal: DealWithWhole
         <Field label="Marketing Notes (optional)" error={state.errors?.marketingNotes}>
           <textarea name="marketingNotes" rows={2} defaultValue={w?.marketingNotes ?? ''} className="input-base resize-none" />
         </Field>
+      </section>
+
+      <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
+        <button type="submit" disabled={pending}
+          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {pending ? 'Saving…' : 'Save Changes'}
+        </button>
+        <Link href={`/dashboard/deals/${deal.id}`} className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+      </div>
+    </form>
+  )
+}
+
+type DealWithFixFlip = {
+  id: string
+  purchasePrice: { toString(): string } | null
+  purchaseDate: Date | null
+  notes: string | null
+  property: { apn: string; address: string | null; jurisdiction: Jurisdiction }
+  fixFlip: {
+    arv: { toString(): string } | null
+    rehabBudget: { toString(): string } | null
+    rehabActualCost: { toString(): string } | null
+    holdingCostEstimate: { toString(): string } | null
+    rehabStartDate: Date | null
+    rehabTargetCompletion: Date | null
+    rehabCompletedDate: Date | null
+    listingDate: Date | null
+    listingPrice: { toString(): string } | null
+    acceptedOfferDate: Date | null
+    acceptedOfferPrice: { toString(): string } | null
+    closingDate: Date | null
+    contractorName: string | null
+    contractorPhone: string | null
+    contractorEmail: string | null
+    permitStatus: string | null
+  } | null
+}
+
+const initialFixFlipState: FixFlipFormState = {}
+
+export function EditFixFlipForm({ deal }: { deal: DealWithFixFlip }) {
+  const boundAction = updateFixFlip.bind(null, deal.id)
+  const [state, formAction, pending] = useActionState(boundAction, initialFixFlipState)
+
+  const f = deal.fixFlip
+  const toDateStr = (d: Date | null) => d ? new Date(d).toISOString().slice(0, 10) : ''
+  const toNumStr  = (v: { toString(): string } | null) => v ? Number(v.toString()).toString() : ''
+
+  return (
+    <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
+      {state.error && <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.error}</div>}
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Acquisition</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Purchase Price ($)">
+            <input type="number" name="purchasePrice" min="0" step="1000" defaultValue={toNumStr(deal.purchasePrice)} className="input-base" />
+          </Field>
+          <Field label="Purchase Date">
+            <input type="date" name="purchaseDate" defaultValue={toDateStr(deal.purchaseDate)} className="input-base" />
+          </Field>
+          <Field label="ARV ($)">
+            <input type="number" name="arv" min="0" step="1000" defaultValue={toNumStr(f?.arv ?? null)} className="input-base" />
+          </Field>
+          <Field label="Rehab Budget ($)">
+            <input type="number" name="rehabBudget" min="0" step="500" defaultValue={toNumStr(f?.rehabBudget ?? null)} className="input-base" />
+          </Field>
+          <Field label="Actual Rehab Cost ($)">
+            <input type="number" name="rehabActualCost" min="0" step="500" defaultValue={toNumStr(f?.rehabActualCost ?? null)} className="input-base" />
+          </Field>
+          <Field label="Est. Holding Costs ($)">
+            <input type="number" name="holdingCostEstimate" min="0" step="100" defaultValue={toNumStr(f?.holdingCostEstimate ?? null)} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Rehab Timeline</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Rehab Start">
+            <input type="date" name="rehabStartDate" defaultValue={toDateStr(f?.rehabStartDate ?? null)} className="input-base" />
+          </Field>
+          <Field label="Target Completion">
+            <input type="date" name="rehabTargetCompletion" defaultValue={toDateStr(f?.rehabTargetCompletion ?? null)} className="input-base" />
+          </Field>
+          <Field label="Actual Completion">
+            <input type="date" name="rehabCompletedDate" defaultValue={toDateStr(f?.rehabCompletedDate ?? null)} className="input-base" />
+          </Field>
+          <Field label="Permit Status">
+            <select name="permitStatus" className="input-base" defaultValue={f?.permitStatus ?? ''}>
+              <option value="">— not set —</option>
+              <option value="NOT_REQUIRED">Not required</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="ISSUED">Issued</option>
+              <option value="FAILED">Failed inspection</option>
+              <option value="CLOSED">Closed out</option>
+            </select>
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Contractor</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Name">
+            <input type="text" name="contractorName" defaultValue={f?.contractorName ?? ''} className="input-base" />
+          </Field>
+          <Field label="Phone">
+            <input type="tel" name="contractorPhone" defaultValue={f?.contractorPhone ?? ''} className="input-base" />
+          </Field>
+          <Field label="Email">
+            <input type="email" name="contractorEmail" defaultValue={f?.contractorEmail ?? ''} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Disposition</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Target Listing Date">
+            <input type="date" name="listingDate" defaultValue={toDateStr(f?.listingDate ?? null)} className="input-base" />
+          </Field>
+          <Field label="Listing Price ($)">
+            <input type="number" name="listingPrice" min="0" step="1000" defaultValue={toNumStr(f?.listingPrice ?? null)} className="input-base" />
+          </Field>
+          <Field label="Offer Accepted Date">
+            <input type="date" name="acceptedOfferDate" defaultValue={toDateStr(f?.acceptedOfferDate ?? null)} className="input-base" />
+          </Field>
+          <Field label="Accepted Offer Price ($)">
+            <input type="number" name="acceptedOfferPrice" min="0" step="1000" defaultValue={toNumStr(f?.acceptedOfferPrice ?? null)} className="input-base" />
+          </Field>
+          <Field label="Closing Date">
+            <input type="date" name="closingDate" defaultValue={toDateStr(f?.closingDate ?? null)} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Notes</h2>
+        <textarea name="notes" rows={3} defaultValue={deal.notes ?? ''} className="input-base w-full resize-none" />
       </section>
 
       <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">

@@ -19,6 +19,7 @@ import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSect
 import LandDispositionSection from './LandDispositionSection'
 import WholesaleSection, { type WholesaleData, type MatchedBuyer, type LinkedBuyerContact } from './WholesaleSection'
 import MaoCalculator from './MaoCalculator'
+import FixFlipSection, { type FixFlipData } from './FixFlipSection'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -34,7 +35,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { id, tenantId: tenant.id },
       include: {
         property: { include: { jurisdiction: true } },
-        taxLien: true, taxDeed: true, foreclosure: true, land: true,
+        taxLien: true, taxDeed: true, foreclosure: true, land: true, fixFlip: true,
         wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { orderBy: { createdAt: 'desc' } },
@@ -93,7 +94,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     notes:         e.notes,
   }))
 
-  const { taxLien, taxDeed, foreclosure, land, wholesale, property, events, landNotes } = deal
+  const { taxLien, taxDeed, foreclosure, land, wholesale, fixFlip, property, events, landNotes } = deal
 
   const landData: DealLandData | null = land
     ? {
@@ -169,6 +170,33 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const isForeclosure = deal.strategyType === 'FORECLOSURE'
   const isLand       = deal.strategyType === 'LAND'
   const isWholesale  = deal.strategyType === 'WHOLESALE'
+  const isFixFlip    = deal.strategyType === 'FIX_FLIP'
+
+  const fixFlipData: FixFlipData | null = isFixFlip
+    ? {
+        dealId:                deal.id,
+        dealStatus:            deal.status,
+        purchasePrice:         deal.purchasePrice?.toString() ?? null,
+        purchaseDate:          deal.purchaseDate?.toISOString() ?? null,
+        arv:                   fixFlip?.arv?.toString() ?? null,
+        rehabBudget:           fixFlip?.rehabBudget?.toString() ?? null,
+        rehabActualCost:       fixFlip?.rehabActualCost?.toString() ?? null,
+        holdingCostEstimate:   fixFlip?.holdingCostEstimate?.toString() ?? null,
+        rehabStartDate:        fixFlip?.rehabStartDate?.toISOString() ?? null,
+        rehabTargetCompletion: fixFlip?.rehabTargetCompletion?.toISOString() ?? null,
+        rehabCompletedDate:    fixFlip?.rehabCompletedDate?.toISOString() ?? null,
+        listingDate:           fixFlip?.listingDate?.toISOString() ?? null,
+        listingPrice:          fixFlip?.listingPrice?.toString() ?? null,
+        acceptedOfferDate:     fixFlip?.acceptedOfferDate?.toISOString() ?? null,
+        acceptedOfferPrice:    fixFlip?.acceptedOfferPrice?.toString() ?? null,
+        closingDate:           fixFlip?.closingDate?.toISOString() ?? null,
+        contractorName:        fixFlip?.contractorName ?? null,
+        contractorPhone:       fixFlip?.contractorPhone ?? null,
+        contractorEmail:       fixFlip?.contractorEmail ?? null,
+        permitStatus:          fixFlip?.permitStatus ?? null,
+        notes:                 deal.notes ?? null,
+      }
+    : null
 
   // Linked buyer contact (from Contact CRM)
   const linkedBuyerContact = wholesale?.buyerContact ?? null
@@ -284,7 +312,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <span className="text-zinc-900 font-medium font-mono">{property.apn}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {isLead && !isWholesale && (
+          {isLead && !isWholesale && !isFixFlip && (
             <>
               <Link href={`/dashboard/deals/${deal.id}/convert`}
                 className="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
@@ -362,8 +390,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <WholesaleSection data={wholesaleData} />
         ) : null}
 
-        {/* Certificate / Lead details — hidden for land and wholesale */}
-        {!isLand && !isWholesale && <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        {/* Fix & Flip section — replaces certificate card for FIX_FLIP deals */}
+        {isFixFlip && fixFlipData ? (
+          <FixFlipSection data={fixFlipData} />
+        ) : null}
+
+        {/* Certificate / Lead details — hidden for land, wholesale, fix & flip */}
+        {!isLand && !isWholesale && !isFixFlip && <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
             {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : isForeclosure ? 'Auction Details' : 'Certificate Details'}
           </h2>
@@ -415,7 +448,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>}
 
         {/* Events */}
-        {(isLead && !isLand && !isWholesale) ? (
+        {(isLead && !isLand && !isWholesale && !isFixFlip) ? (
           <div className="bg-white rounded-xl border border-zinc-200 p-6">
             <h2 className="text-sm font-semibold text-zinc-900 mb-4">Deadlines</h2>
             <p className="text-sm text-zinc-400">

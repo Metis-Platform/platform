@@ -5,14 +5,17 @@ import Link from 'next/link'
 import { createLien, createDeed, createForeclosure } from '@/lib/actions/lien'
 import { createLand } from '@/lib/actions/land'
 import { createWholesale } from '@/lib/actions/wholesale'
+import { createFixFlip } from '@/lib/actions/fix-flip'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { LandFormState } from '@/lib/actions/land'
 import type { WholesaleFormState } from '@/lib/actions/wholesale'
+import type { FixFlipFormState } from '@/lib/actions/fix-flip'
 import type { Jurisdiction } from '@/app/generated/prisma'
 
 const initialState: LienFormState = {}
 const initialLandState: LandFormState = {}
 const initialWholesaleState: WholesaleFormState = {}
+const initialFixFlipState: FixFlipFormState = {}
 
 /** Dispatcher — renders strategy-specific form without calling lien hooks for other strategies. */
 export function NewLienForm({
@@ -24,6 +27,7 @@ export function NewLienForm({
 }) {
   if (strategy === 'LAND') return <NewLandForm jurisdictions={jurisdictions} />
   if (strategy === 'WHOLESALE') return <NewWholesaleForm jurisdictions={jurisdictions} />
+  if (strategy === 'FIX_FLIP') return <NewFixFlipForm jurisdictions={jurisdictions} />
   return <NewLienFormInner jurisdictions={jurisdictions} strategy={strategy} />
 }
 
@@ -365,6 +369,146 @@ function NewWholesaleForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) 
           {pending ? 'Saving…' : 'Add Lead'}
         </button>
         <Link href="/dashboard/deals?strategy=WHOLESALE" className="ml-auto px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+      </div>
+    </form>
+  )
+}
+
+function NewFixFlipForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) {
+  const [state, formAction, pending] = useActionState(createFixFlip, initialFixFlipState)
+  const [selectedState, setSelectedState] = useState('')
+
+  const states = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const j of jurisdictions) seen.set(j.state, j.stateName)
+    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [jurisdictions])
+
+  const counties = useMemo(
+    () => jurisdictions.filter(j => j.state === selectedState).sort((a, b) => a.county.localeCompare(b.county)),
+    [jurisdictions, selectedState],
+  )
+
+  return (
+    <form action={formAction} className="rounded-xl border border-zinc-200 bg-white overflow-hidden divide-y divide-zinc-100">
+      {state.error && (
+        <div className="px-6 py-3 bg-red-50 border-b border-red-100 text-sm text-red-700">{state.error}</div>
+      )}
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-sm font-semibold text-zinc-700">Location</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="State" error={state.fieldErrors?.jurisdictionId ? [state.fieldErrors.jurisdictionId] : undefined}>
+            <select name="_state" value={selectedState} onChange={e => setSelectedState(e.target.value)}
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900">
+              <option value="">Select state…</option>
+              {states.map(([abbr, name]) => <option key={abbr} value={abbr}>{name}</option>)}
+            </select>
+          </Field>
+          <Field label="County">
+            <select name="jurisdictionId" required
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900">
+              <option value="">Select county…</option>
+              {counties.map(j => <option key={j.id} value={j.id}>{j.county}</option>)}
+            </select>
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-sm font-semibold text-zinc-700">Property</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="APN" error={state.fieldErrors?.apn ? [state.fieldErrors.apn] : undefined}>
+            <input name="apn" type="text" required placeholder="123-456-789"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Address">
+            <input name="address" type="text" placeholder="123 Main St"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-sm font-semibold text-zinc-700">Acquisition</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Purchase Price ($)">
+            <input name="purchasePrice" type="number" min="0" step="1000"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Purchase Date">
+            <input name="purchaseDate" type="date"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="ARV ($)">
+            <input name="arv" type="number" min="0" step="1000" placeholder="After repair value"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Rehab Budget ($)">
+            <input name="rehabBudget" type="number" min="0" step="500"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-sm font-semibold text-zinc-700">Rehab Timeline</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Rehab Start">
+            <input name="rehabStartDate" type="date"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Target Completion">
+            <input name="rehabTargetCompletion" type="date"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Target Listing Date">
+            <input name="listingDate" type="date"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Est. Holding Costs ($)">
+            <input name="holdingCostEstimate" type="number" min="0" step="100"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-sm font-semibold text-zinc-700">Contractor</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Name">
+            <input name="contractorName" type="text"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Phone">
+            <input name="contractorPhone" type="tel"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+          <Field label="Email">
+            <input name="contractorEmail" type="email"
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+          </Field>
+        </div>
+        <Field label="Permit Status">
+          <select name="permitStatus"
+            className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900">
+            <option value="">— not set —</option>
+            <option value="NOT_REQUIRED">Not required</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="ISSUED">Issued</option>
+            <option value="FAILED">Failed inspection</option>
+            <option value="CLOSED">Closed out</option>
+          </select>
+        </Field>
+      </section>
+
+      <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
+        <button type="submit" disabled={pending}
+          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          {pending ? 'Saving…' : 'Add Deal'}
+        </button>
+        <Link href="/dashboard/deals?strategy=FIX_FLIP" className="ml-auto px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
       </div>
     </form>
   )
