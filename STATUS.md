@@ -2,7 +2,7 @@
 
 > **This is the lean session reference.** Full roadmap, vision, and phase history: see `ROADMAP.md`.
 > Execution plan for beta: see `BETA-PLAN.md`.
-> Last updated: 2026-06-12
+> Last updated: 2026-06-13
 
 ---
 
@@ -15,12 +15,11 @@
 
 | PR | Description | Status |
 |----|-------------|--------|
-| #167 | feat(#43-P1): Multifamily MVP — mfUnderwriting() pure fn, LOAN_MATURITY events, MultifamilySection, lazy-fix Resend | ✅ merged |
-| #168 | chore: tick #43-P1 in BETA-PLAN | ✅ merged |
-| #169 | feat(#43-P2): rent roll editor, T12 CSV import, UNIT_LEASE_END events (month-grouped) | ✅ merged |
-| #170 | chore: tick #43-P2 in BETA-PLAN | ✅ merged |
-| #171 | feat(#43-P3): value-add plan tracker, stabilized cap rate, investor print view | ✅ merged |
-| #172 | chore: tick #43-P3 in BETA-PLAN | ✅ merged |
+| #174 | feat(#42-P3): Section 8 premium — HAP/HQS/FMR tracking, rent-increase windows, HQS events | ✅ merged |
+| #175 | feat(#39-P4): Land note servicing — amortization schedule, payoff quotes, late notices, portfolio dashboard | ✅ merged |
+| #176 | chore: tick #42-P3 and #39-P4 in BETA-PLAN | ✅ merged |
+| #177 | feat(#40-P4): Wholesale premium — buyer blast campaigns, assignment packet, pipeline analytics | ✅ merged |
+| #178 | chore: tick #40-P4 in BETA-PLAN | ✅ merged |
 
 ## Previous Session (2026-06-13)
 
@@ -59,20 +58,18 @@
 
 ## Next Up — see BETA-PLAN.md for full detail
 
-All remaining items are gated. Decision needed on which path to take:
+**All non-blocked BETA-PLAN items are now complete.** Remaining items are gated:
 
-**Option A — Stripe PREMIUM module purchase flow first** (unblocks #42-P3/#39-P4/#40-P4):
-- One Stripe Product per (strategy, tier) → checkout → webhook upserts TenantModule.tier to PREMIUM
-- Reuses existing `app/api/billing/checkout` and `app/api/webhooks/stripe` plumbing
+- `#41-P4` — Fix & Flip premium — needs #25 AI (ON HOLD)
+- `#43-P4` — Multifamily premium — needs #25/#26 AI (ON HOLD)
+- `#131` — jurisdiction data program — needs user input on data dictionary + Tier 1 counties
 
-**Option B — Build PREMIUM features now** (relies on admin toggle from PR #164):
-- Admins can manually grant PREMIUM via `/admin` → users get features immediately
-- Stripe purchase flow can come later
+Option: Start Stripe premium purchase flow (#130 checkout → PREMIUM tier) to formalize what the admin toggle already enables.
 
-**Blocked regardless:**
-- `#41-P4` — needs #25 AI (ON HOLD)
-- `#43-P4` — needs #25/#26 AI (ON HOLD)
-- `#131` — needs user input on data dictionary + Tier 1 counties
+**New pages added this session:**
+- `/dashboard/notes` — Land note portfolio analytics
+- `/dashboard/analytics` — Wholesale pipeline analytics
+- `/dashboard/deals/:id/packet` — Assignment packet export (print)
 
 ---
 
@@ -91,6 +88,7 @@ LEAD ──→ [Won at Auction] ──→ ACTIVE ──→ REDEEMED / FORECLOSUR
 `Property` `Contact`
 `Deal` + `DealTaxLien` / `DealTaxDeed` / `DealForeclosure` / `DealLand` / `DealWholesale` / `DealFixFlip` / `DealBuyHold` / `DealMultifamily`
 `Event` `Task` `FinancialTransaction` `Document` `AuditLog`
+`LandNote` `FmrRate` `BuyerProfile` `BuyerBlastSend`
 
 ---
 
