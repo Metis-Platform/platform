@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
 const STRATEGY_LABELS: Record<string, string> = {
   LONG_TERM:  'Long-Term Rental',
@@ -35,6 +36,7 @@ export type BuyHoldData = {
   propertyManagerEmail: string | null
   inspectionStatus: string | null
   maintenanceReserve: string | null
+  operatingExpenses: RentalExpenses | null
   notes: string | null
 }
 
@@ -62,7 +64,7 @@ export default function BuyHoldSection({ data }: { data: BuyHoldData }) {
     dealId, rentalStrategy, targetMonthlyRent, actualMonthlyRent, securityDeposit,
     leaseStartDate, leaseEndDate, tenantName, tenantPhone, tenantEmail,
     propertyManagerName, propertyManagerPhone, propertyManagerEmail,
-    inspectionStatus, maintenanceReserve, purchasePrice,
+    inspectionStatus, maintenanceReserve, purchasePrice, operatingExpenses,
   } = data
 
   const now = new Date()
@@ -81,6 +83,11 @@ export default function BuyHoldSection({ data }: { data: BuyHoldData }) {
 
   const annualRent = displayRent ? displayRent * 12 : null
   const grossYield = annualRent && purchaseNum ? ((annualRent / purchaseNum) * 100) : null
+
+  const monthlyExpenses = operatingExpenses?.items.reduce((s, i) => s + i.monthlyAmount, 0) ?? 0
+  const annualExpenses  = monthlyExpenses * 12
+  const noi             = annualRent != null ? annualRent - annualExpenses : null
+  const capRate         = noi != null && purchaseNum ? ((noi / purchaseNum) * 100) : null
 
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-6">
@@ -122,27 +129,37 @@ export default function BuyHoldSection({ data }: { data: BuyHoldData }) {
         )}
       </dl>
 
-      {/* Gross yield summary */}
-      {(grossYield != null || annualRent != null) && (
+      {/* Economics summary */}
+      {(annualRent != null || noi != null || capRate != null) && (
         <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
           <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">Rental Economics</div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {annualRent != null && (
               <div>
                 <div className="text-xs text-zinc-500 mb-0.5">Annual Rent</div>
                 <div className="text-base font-bold text-emerald-700">{fmt$(String(annualRent))}</div>
               </div>
             )}
+            {noi != null && (
+              <div>
+                <div className="text-xs text-zinc-500 mb-0.5">NOI</div>
+                <div className={`text-base font-bold ${noi >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {fmt$(String(noi))}
+                </div>
+              </div>
+            )}
+            {capRate != null && (
+              <div>
+                <div className="text-xs text-zinc-500 mb-0.5">Cap Rate</div>
+                <div className={`text-base font-bold ${capRate >= 6 ? 'text-emerald-700' : capRate >= 4 ? 'text-zinc-800' : 'text-amber-600'}`}>
+                  {capRate.toFixed(1)}%
+                </div>
+              </div>
+            )}
             {grossYield != null && (
               <div>
                 <div className="text-xs text-zinc-500 mb-0.5">Gross Yield</div>
-                <div className="text-base font-bold text-emerald-700">{grossYield.toFixed(1)}%</div>
-              </div>
-            )}
-            {reserveNum != null && annualRent != null && (
-              <div>
-                <div className="text-xs text-zinc-500 mb-0.5">Reserve / Mo</div>
-                <div className="text-base font-bold text-zinc-800">{fmt$(String(reserveNum))}</div>
+                <div className="text-base font-bold text-zinc-800">{grossYield.toFixed(1)}%</div>
               </div>
             )}
           </div>

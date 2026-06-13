@@ -22,7 +22,9 @@ import MaoCalculator from './MaoCalculator'
 import FixFlipSection, { type FixFlipData } from './FixFlipSection'
 import RehabBudgetSection from './RehabBudgetSection'
 import BuyHoldSection, { type BuyHoldData } from './BuyHoldSection'
+import RentalExpensesSection from './RentalExpensesSection'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
+import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -222,6 +224,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         propertyManagerEmail: buyHold?.propertyManagerEmail ?? null,
         inspectionStatus:     buyHold?.inspectionStatus ?? null,
         maintenanceReserve:   buyHold?.maintenanceReserve?.toString() ?? null,
+        operatingExpenses:    (buyHold?.operatingExpenses ?? null) as RentalExpenses | null,
         notes:                deal.notes ?? null,
       }
     : null
@@ -514,6 +517,19 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <RehabBudgetSection
             dealId={deal.id}
             initialScope={(fixFlip?.scopeOfWork ?? null) as ScopeOfWork | null}
+          />
+        </div>
+      )}
+
+      {/* Rental Expenses — buy & hold only */}
+      {isBuyHold && (
+        <div className="mb-6">
+          <RentalExpensesSection
+            dealId={deal.id}
+            initialExpenses={(buyHold?.operatingExpenses ?? null) as RentalExpenses | null}
+            monthlyRent={buyHold?.actualMonthlyRent != null ? Number(buyHold.actualMonthlyRent)
+              : buyHold?.targetMonthlyRent != null ? Number(buyHold.targetMonthlyRent)
+              : null}
           />
         </div>
       )}
