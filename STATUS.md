@@ -7,7 +7,7 @@
 ---
 
 ## Current Phase
-**Post-beta module UIs in progress.** #132, #133-P1, full #39 Land module, #40-P1 Wholesale MVP, and #40-P2 Buyer CRM shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #40-P3 MAO calculator + board view.
+**Post-beta module UIs in progress.** #132, #133-P1, full #39 Land, and full #40 Wholesale (P1–P3) shipped. #133-P2 (live-strategy checklist templates) open awaiting user content review. Next: #41-P1..P3 Fix & Flip standard.
 
 ---
 
@@ -31,6 +31,7 @@
 | #148 | feat(#39-P3): Land disposition funnel — LandDispositionStatus, re-list loop, defaultLandNote | ✅ merged |
 | #150 | feat(#40-P1): Wholesale MVP — create/edit flow, WholesaleSection pipeline, INSPECTION_END/CLOSING_DUE events | ✅ merged |
 | #152 | feat(#40-P2): Buyer CRM — BuyerProfile, buyer list/add/edit pages, buy-box matching + link/unlink on WholesaleSection | ✅ merged |
+| #154 | feat(#40-P3): MAO calculator (collapsible, pre-fills from deal) + wholesale pipeline board (5-column Kanban) | ✅ merged |
 
 **Infra fixed (not in code):**
 - `DATABASE_URL` GitHub Actions secret was NEVER set — created it 2026-06-12.
@@ -41,14 +42,14 @@
 ## Next Up — see BETA-PLAN.md for full detail
 
 1. **#133-P2** — live strategy templates (tax lien / deed / foreclosure). Template content PR #143 open awaiting user review before merge.
-2. **#40-P3** MAO calculator + board view
+2. **#41-P1..P3** Fix & Flip standard (create flow, detail section, rehab budget tracker)
 4. **Sprint 6 — AI (ON HOLD, await user go-ahead):** #25 document extraction · #26 Deal Copilot
 
 ---
 
 ## Active Strategies (UI complete)
 `TAX_LIEN` · `TAX_DEED` · `FORECLOSURE`
-(Land, Wholesale: full module UI. Fix & Flip, Buy & Hold, Multifamily: schema + list columns only)
+(Land, Wholesale: full module UI including board + MAO calculator. Fix & Flip, Buy & Hold, Multifamily: schema + list columns only)
 
 ## Deal Status Flow
 ```

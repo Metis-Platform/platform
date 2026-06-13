@@ -78,7 +78,7 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#39-P3** Land disposition statuses + re-list loop (PR #148)
 - [x] **#40-P1** Wholesale MVP: progressive create + detail + INSPECTION_END/CLOSING_DUE events (PR #150)
 - [x] **#40-P2** Buyer CRM (Contact activation) + buy-box matching (PR #152)
-- [ ] **#40-P3** MAO calculator + board view
+- [x] **#40-P3** MAO calculator + board view (PR #154)
 - [ ] **#41-P1..P3** Fix & Flip standard (after #39/#40)
 - [ ] **#42-P1..P2** Buy & Hold standard (parallel-able with #41)
 - [ ] **#130** entitlements (TenantModule strategy+tier) — after first modules sellable
