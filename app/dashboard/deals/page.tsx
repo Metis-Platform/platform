@@ -147,7 +147,8 @@ export default async function LiensPage({
       faceAmount:              faceAmt,
       nextDeadlineLabel:       next?.label ?? null,
       nextDeadlineDays:        next ? Math.round((next.dueDate.getTime() - now.getTime()) / 86_400_000) : null,
-      landDispositionStatus:   d.land?.dispositionStatus ?? null,
+      landDispositionStatus:      d.land?.dispositionStatus ?? null,
+      wholesaleDispositionStatus: d.wholesale?.dispositionStatus ?? null,
     }
   })
 

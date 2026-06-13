@@ -18,6 +18,7 @@ import DealLandSection, { type DealLandData, type LandEconomics } from './DealLa
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
 import LandDispositionSection from './LandDispositionSection'
 import WholesaleSection, { type WholesaleData, type MatchedBuyer, type LinkedBuyerContact } from './WholesaleSection'
+import MaoCalculator from './MaoCalculator'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -430,6 +431,16 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           />
         )}
       </div>
+
+      {/* MAO Calculator — wholesale only */}
+      {isWholesale && (
+        <div className="mb-6">
+          <MaoCalculator
+            prefillAssignmentFee={wholesale?.assignmentFee != null ? Number(wholesale.assignmentFee) : null}
+            prefillContractPrice={wholesale?.contractPrice != null ? Number(wholesale.contractPrice) : null}
+          />
+        </div>
+      )}
 
       {/* Disposition funnel — land only, active deals */}
       {isLand && !isLead && (
