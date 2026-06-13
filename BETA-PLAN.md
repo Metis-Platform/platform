@@ -86,7 +86,7 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#42-P2** Rental economics: NOI, cap rate, operating expenses editor — 7 fixed categories (PR #162)
 - [x] **#130** entitlements: TenantModule strategy+tier, server enforcement, filtered StrategyNav, admin module toggle, billing module list (PR #164)
 - [x] **#43-P1** Multifamily Phase 1: creatable, mfUnderwriting() pure function (NOI/cap/DSCR), LOAN_MATURITY events at 12/6/3 mo + maturity, MultifamilySection, lazy-fix Resend email.ts (PR #167)
-- [ ] **#43-P2** Multifamily rent roll editor + T12 CSV import + UNIT_LEASE_END events
+- [x] **#43-P2** Multifamily rent roll editor + T12 CSV import + UNIT_LEASE_END events (PR #169)
 - [ ] **#43-P3** Multifamily value-add plan tracker + debt stack + reporting seed
 - [ ] **#42-P3** Buy & Hold Section 8 premium: HAP contract, HQS inspections, FMR tracking, rent-increase windows (gated on #130 PREMIUM tier)
 - [ ] **#39-P4** Land premium: note-servicing automation (amortization schedule, late-payment Resend sequence, payoff quotes) + note portfolio analytics (gated on #130 PREMIUM)
