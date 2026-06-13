@@ -1,9 +1,10 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useTransition, useState } from 'react'
 import Link from 'next/link'
 import { updateWholesaleDisposition } from '@/lib/actions/wholesale'
 import { linkBuyerToDeal, unlinkBuyerFromDeal, type BuyerFormState } from '@/lib/actions/buyer'
+import { sendBuyerBlast, type BuyerBlastState } from '@/lib/actions/buyer-blast'
 import type { WholesaleFormState } from '@/lib/actions/wholesale'
 
 const DISPOSITION_LABEL: Record<string, string> = {
@@ -93,6 +94,13 @@ export type LinkedBuyerContact = {
   phone: string | null
 }
 
+export type BlastSend = {
+  contactId: string
+  name: string
+  email: string | null
+  sentAt: string
+}
+
 export type WholesaleData = {
   dealId: string
   dealStatus: string
@@ -110,6 +118,64 @@ export type WholesaleData = {
   marketingNotes: string | null
   linkedBuyer: LinkedBuyerContact | null
   matchingBuyers: MatchedBuyer[]
+  hasWholesalePremium: boolean
+  blastHistory: BlastSend[]
+}
+
+function BuyerBlastButton({ dealId, initialHistory }: { dealId: string; initialHistory: BlastSend[] }) {
+  const [blastState, setBlastState] = useState<BuyerBlastState | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function blast() {
+    setBlastState(null)
+    startTransition(async () => {
+      const res = await sendBuyerBlast(dealId)
+      setBlastState(res)
+    })
+  }
+
+  const totalSent = initialHistory.length + (blastState?.sent ?? 0)
+
+  return (
+    <div className="mt-4 pt-4 border-t border-zinc-100">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+          Buyer Blast
+          <span className="ml-1.5 text-xs bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded font-medium">Premium</span>
+        </p>
+        <Link href={`/dashboard/deals/${dealId}/packet`}
+          className="text-xs text-violet-600 hover:text-violet-800 font-medium">
+          Assignment Packet →
+        </Link>
+      </div>
+      <button onClick={blast} disabled={isPending}
+        className="px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors">
+        {isPending ? 'Sending…' : 'Blast to Matched Buyers'}
+      </button>
+      {blastState?.error && (
+        <p className="mt-2 text-xs text-red-600">{blastState.error}</p>
+      )}
+      {blastState?.success && (
+        <p className="mt-2 text-xs text-emerald-700">{blastState.success}</p>
+      )}
+      {totalSent > 0 && (
+        <div className="mt-3">
+          <p className="text-xs text-zinc-400 mb-1">{totalSent} buyer{totalSent === 1 ? '' : 's'} received this blast</p>
+          <div className="space-y-1">
+            {initialHistory.map(s => (
+              <div key={s.contactId} className="flex items-center gap-2 text-xs">
+                <span className="text-zinc-700 font-medium">{s.name}</span>
+                {s.email && <span className="text-zinc-400">{s.email}</span>}
+                <span className="text-zinc-300 ml-auto">
+                  {new Date(s.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function WholesaleSection({ data }: { data: WholesaleData }) {
@@ -117,6 +183,7 @@ export default function WholesaleSection({ data }: { data: WholesaleData }) {
     dealId, dealStatus, leadSource, contractDate, contractPrice, earnestMoney,
     inspectionDeadline, closingDeadline, assignmentFee, buyerName, buyerEmail,
     buyerPhone, dispositionStatus, marketingNotes, linkedBuyer, matchingBuyers,
+    hasWholesalePremium, blastHistory,
   } = data
 
   const isLead   = dealStatus === 'LEAD'
@@ -241,6 +308,18 @@ export default function WholesaleSection({ data }: { data: WholesaleData }) {
             <span className="text-sm text-zinc-400">Assignment closed.</span>
           )}
         </div>
+
+        {/* Premium: buyer blast */}
+        {isActive && hasWholesalePremium && (
+          <BuyerBlastButton dealId={dealId} initialHistory={blastHistory} />
+        )}
+        {isActive && !hasWholesalePremium && (
+          <div className="mt-4 pt-4 border-t border-zinc-100">
+            <p className="text-xs text-zinc-400">
+              <span className="font-medium text-zinc-500">Premium:</span> Buyer blast campaigns and assignment packet export require Wholesale PREMIUM.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Matching buyers — shown during MARKETING stage */}

@@ -187,6 +187,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   const isMultifamily  = deal.strategyType === 'MULTIFAMILY'
 
   const hasLandPremium = isLand ? await hasTier(tenant.id, 'LAND', 'PREMIUM') : false
+  const hasWholesalePremium = isWholesale ? await hasTier(tenant.id, 'WHOLESALE', 'PREMIUM') : false
 
   const fixFlipData: FixFlipData | null = isFixFlip
     ? {
@@ -326,6 +327,19 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       }
     : null
 
+  // Blast send history
+  const rawBlastSends = isWholesale ? await db.buyerBlastSend.findMany({
+    where: { dealId: id, tenantId: tenant.id },
+    include: { contact: { select: { firstName: true, lastName: true, company: true, email: true } } },
+    orderBy: { sentAt: 'desc' },
+  }) : []
+  const blastHistory = rawBlastSends.map(s => ({
+    contactId: s.contactId,
+    name: [s.contact.firstName, s.contact.lastName].filter(Boolean).join(' ') || s.contact.company || 'Buyer',
+    email: s.contact.email,
+    sentAt: s.sentAt.toISOString(),
+  }))
+
   // Matching buyers — computed when in MARKETING stage with no buyer linked
   let matchingBuyers: MatchedBuyer[] = []
   if (isWholesale && deal.status === 'ACTIVE' && wholesale?.dispositionStatus === 'MARKETING' && !linkedBuyer) {
@@ -374,10 +388,12 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         buyerName:          wholesale?.buyerName ?? null,
         buyerEmail:         wholesale?.buyerEmail ?? null,
         buyerPhone:         wholesale?.buyerPhone ?? null,
-        dispositionStatus:  wholesale?.dispositionStatus ?? null,
-        marketingNotes:     wholesale?.marketingNotes ?? null,
+        dispositionStatus:    wholesale?.dispositionStatus ?? null,
+        marketingNotes:       wholesale?.marketingNotes ?? null,
         linkedBuyer,
         matchingBuyers,
+        hasWholesalePremium,
+        blastHistory,
       }
     : null
   const isLead = deal.status === DealStatus.LEAD
