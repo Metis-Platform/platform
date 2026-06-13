@@ -122,3 +122,55 @@ export function flipRoi(params: {
 export function holdDays(startDate: Date, endDate: Date): number {
   return Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
 }
+
+// ---------------------------------------------------------------------------
+// Multifamily underwriting
+// ---------------------------------------------------------------------------
+
+export interface MfUnderwriting {
+  grossScheduledIncome: number
+  effectiveGrossIncome: number
+  netOperatingIncome: number
+  capRate: number | null
+  annualDebtService: number | null
+  dscr: number | null
+}
+
+/**
+ * Compute MF underwriting metrics from inputs.
+ * All amounts in dollars; rates as decimal fractions (0.06 = 6%).
+ * vacancyRate as decimal fraction (0.05 = 5%).
+ * annualOpex = total annual operating expenses in dollars.
+ */
+export function mfUnderwriting(params: {
+  unitCount: number
+  averageMonthlyRent: number
+  vacancyRate: number
+  annualOpex: number
+  purchasePrice: number | null
+  loanAmount: number | null
+  interestRate: number | null
+  amortizationYears: number | null
+}): MfUnderwriting {
+  const { unitCount, averageMonthlyRent, vacancyRate, annualOpex, purchasePrice, loanAmount, interestRate, amortizationYears } = params
+
+  const grossScheduledIncome = unitCount * averageMonthlyRent * 12
+  const effectiveGrossIncome = grossScheduledIncome * (1 - vacancyRate)
+  const netOperatingIncome   = effectiveGrossIncome - annualOpex
+
+  const capRate = purchasePrice && purchasePrice > 0 ? netOperatingIncome / purchasePrice : null
+
+  let annualDebtService: number | null = null
+  if (loanAmount && loanAmount > 0 && interestRate != null && amortizationYears && amortizationYears > 0) {
+    const monthlyRate = interestRate / 12
+    const n = amortizationYears * 12
+    const monthlyPayment = monthlyRate > 0
+      ? loanAmount * monthlyRate / (1 - Math.pow(1 + monthlyRate, -n))
+      : loanAmount / n
+    annualDebtService = monthlyPayment * 12
+  }
+
+  const dscr = annualDebtService && annualDebtService > 0 ? netOperatingIncome / annualDebtService : null
+
+  return { grossScheduledIncome, effectiveGrossIncome, netOperatingIncome, capRate, annualDebtService, dscr }
+}

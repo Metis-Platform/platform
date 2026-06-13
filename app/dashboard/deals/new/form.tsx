@@ -7,11 +7,13 @@ import { createLand } from '@/lib/actions/land'
 import { createWholesale } from '@/lib/actions/wholesale'
 import { createFixFlip } from '@/lib/actions/fix-flip'
 import { createBuyHold } from '@/lib/actions/buy-hold'
+import { createMultifamily } from '@/lib/actions/multifamily'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { LandFormState } from '@/lib/actions/land'
 import type { WholesaleFormState } from '@/lib/actions/wholesale'
 import type { FixFlipFormState } from '@/lib/actions/fix-flip'
 import type { BuyHoldFormState } from '@/lib/actions/buy-hold'
+import type { MultifamilyFormState } from '@/lib/actions/multifamily'
 import type { Jurisdiction } from '@/app/generated/prisma'
 
 const initialState: LienFormState = {}
@@ -19,6 +21,7 @@ const initialLandState: LandFormState = {}
 const initialWholesaleState: WholesaleFormState = {}
 const initialFixFlipState: FixFlipFormState = {}
 const initialBuyHoldState: BuyHoldFormState = {}
+const initialMultifamilyState: MultifamilyFormState = {}
 
 /** Dispatcher — renders strategy-specific form without calling lien hooks for other strategies. */
 export function NewLienForm({
@@ -32,6 +35,7 @@ export function NewLienForm({
   if (strategy === 'WHOLESALE') return <NewWholesaleForm jurisdictions={jurisdictions} />
   if (strategy === 'FIX_FLIP') return <NewFixFlipForm jurisdictions={jurisdictions} />
   if (strategy === 'BUY_HOLD') return <NewBuyHoldForm jurisdictions={jurisdictions} />
+  if (strategy === 'MULTIFAMILY') return <NewMultifamilyForm jurisdictions={jurisdictions} />
   return <NewLienFormInner jurisdictions={jurisdictions} strategy={strategy} />
 }
 
@@ -640,6 +644,116 @@ function NewBuyHoldForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) {
           {pending ? 'Saving…' : 'Add Property'}
         </button>
         <Link href="/dashboard/deals?strategy=BUY_HOLD" className="ml-auto px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+      </div>
+    </form>
+  )
+}
+
+function NewMultifamilyForm({ jurisdictions }: { jurisdictions: Jurisdiction[] }) {
+  const [state, formAction, pending] = useActionState(createMultifamily, initialMultifamilyState)
+  const [selectedState, setSelectedState] = useState('')
+
+  const states = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const j of jurisdictions) seen.set(j.state, j.stateName)
+    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [jurisdictions])
+
+  const counties = useMemo(
+    () => jurisdictions.filter(j => j.state === selectedState),
+    [jurisdictions, selectedState],
+  )
+
+  return (
+    <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
+      {state.error && (
+        <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.error}</div>
+      )}
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Location</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="State" error={state.fieldErrors?.jurisdictionId ? [state.fieldErrors.jurisdictionId] : undefined}>
+            <select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="input-base">
+              <option value="">Select state…</option>
+              {states.map(([abbr, name]) => <option key={abbr} value={abbr}>{name}</option>)}
+            </select>
+          </Field>
+          <Field label="County" error={state.fieldErrors?.jurisdictionId ? [state.fieldErrors.jurisdictionId] : undefined}>
+            <select name="jurisdictionId" disabled={!selectedState} className="input-base disabled:opacity-50 disabled:cursor-not-allowed">
+              <option value="">{selectedState ? 'Select county…' : '← Select state first'}</option>
+              {counties.map(j => <option key={j.id} value={j.id}>{j.county} County</option>)}
+            </select>
+          </Field>
+          <Field label="APN / Parcel Number" error={state.fieldErrors?.apn ? [state.fieldErrors.apn] : undefined}>
+            <input type="text" name="apn" placeholder="e.g. 12-34-56-7890" className="input-base font-mono" />
+          </Field>
+          <Field label="Address (optional)">
+            <input type="text" name="address" placeholder="123 Main St, Chicago IL 60601" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Acquisition (optional)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Purchase Price ($)">
+            <input type="number" name="purchasePrice" min="0" step="1000" placeholder="1250000" className="input-base" />
+          </Field>
+          <Field label="Purchase Date">
+            <input type="date" name="purchaseDate" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Units &amp; Income (optional)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Unit Count">
+            <input type="number" name="unitCount" min="2" step="1" placeholder="12" className="input-base" />
+          </Field>
+          <Field label="Avg Monthly Rent / Unit ($)">
+            <input type="number" name="averageMonthlyRent" min="0" step="50" placeholder="1200" className="input-base" />
+          </Field>
+          <Field label="Vacancy Rate (%)">
+            <input type="number" name="vacancyRate" min="0" max="100" step="0.5" placeholder="5" className="input-base" />
+          </Field>
+          <Field label="Annual Operating Expenses ($)">
+            <input type="number" name="annualOpex" min="0" step="500" placeholder="45000" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Loan (optional)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Loan Amount ($)">
+            <input type="number" name="loanAmount" min="0" step="1000" placeholder="900000" className="input-base" />
+          </Field>
+          <Field label="Interest Rate (%)">
+            <input type="number" name="interestRate" min="0" max="30" step="0.125" placeholder="6.5" className="input-base" />
+          </Field>
+          <Field label="Amortization (years)">
+            <input type="number" name="amortizationYears" min="1" max="40" step="1" placeholder="30" className="input-base" />
+          </Field>
+          <Field label="Loan Maturity Date">
+            <input type="date" name="loanMaturityDate" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5">
+        <Field label="Notes (optional)">
+          <textarea name="notes" rows={3} placeholder="Deal notes, source, underwriting assumptions…" className="input-base resize-none" />
+        </Field>
+      </section>
+
+      <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
+        <button type="submit" disabled={pending}
+          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          {pending ? 'Saving…' : 'Add Property'}
+        </button>
+        <Link href="/dashboard/deals?strategy=MULTIFAMILY" className="ml-auto px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
       </div>
     </form>
   )
