@@ -7,11 +7,13 @@ import { updateLand } from '@/lib/actions/land'
 import { updateWholesale } from '@/lib/actions/wholesale'
 import { updateFixFlip } from '@/lib/actions/fix-flip'
 import { updateBuyHold } from '@/lib/actions/buy-hold'
+import { updateMultifamily } from '@/lib/actions/multifamily'
 import type { LienFormState } from '@/lib/actions/lien'
 import type { LandFormState } from '@/lib/actions/land'
 import type { WholesaleFormState } from '@/lib/actions/wholesale'
 import type { FixFlipFormState } from '@/lib/actions/fix-flip'
 import type { BuyHoldFormState } from '@/lib/actions/buy-hold'
+import type { MultifamilyFormState } from '@/lib/actions/multifamily'
 import type { Jurisdiction, LandAccess } from '@/app/generated/prisma'
 
 type DealWithLien = {
@@ -739,6 +741,130 @@ export function EditBuyHoldForm({ deal }: { deal: DealWithBuyHold }) {
       <section className="px-6 py-5 space-y-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Notes</h2>
         <textarea name="notes" rows={3} defaultValue={deal.notes ?? ''} className="input-base w-full resize-none" />
+      </section>
+
+      <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">
+        <button type="submit" disabled={pending}
+          className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {pending ? 'Saving…' : 'Save Changes'}
+        </button>
+        <Link href={`/dashboard/deals/${deal.id}`} className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors">Cancel</Link>
+      </div>
+    </form>
+  )
+}
+
+type DealWithMultifamily = {
+  id: string
+  notes: string | null
+  purchasePrice: { toString(): string } | null
+  purchaseDate: Date | null
+  multifamily: {
+    unitCount: number | null
+    occupiedUnits: number | null
+    averageMonthlyRent: { toString(): string } | null
+    vacancyRate: { toString(): string } | null
+    operatingExpenses: unknown
+    loanAmount: { toString(): string } | null
+    interestRate: { toString(): string } | null
+    amortizationYears: number | null
+    loanMaturityDate: Date | null
+    propertyManagerName: string | null
+    propertyManagerPhone: string | null
+    propertyManagerEmail: string | null
+  } | null
+}
+
+export function EditMultifamilyForm({ deal }: { deal: DealWithMultifamily }) {
+  const boundAction = updateMultifamily.bind(null, deal.id)
+  const [state, formAction, pending] = useActionState(boundAction, {} as MultifamilyFormState)
+
+  const mf = deal.multifamily
+  const mfOpex = mf?.operatingExpenses as { total?: number } | null
+  const vacancyPct = mf?.vacancyRate ? (Number(mf.vacancyRate) * 100).toFixed(1) : ''
+  const ratePct = mf?.interestRate ? (Number(mf.interestRate) * 100).toFixed(3) : ''
+  const maturityStr = mf?.loanMaturityDate ? new Date(mf.loanMaturityDate).toISOString().slice(0, 10) : ''
+  const purchaseDateStr = deal.purchaseDate ? new Date(deal.purchaseDate).toISOString().slice(0, 10) : ''
+
+  return (
+    <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
+      {state.error && (
+        <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.error}</div>
+      )}
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Acquisition</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Purchase Price ($)">
+            <input type="number" name="purchasePrice" defaultValue={deal.purchasePrice ? Number(deal.purchasePrice) : ''}
+              min="0" step="1000" className="input-base" />
+          </Field>
+          <Field label="Purchase Date">
+            <input type="date" name="purchaseDate" defaultValue={purchaseDateStr} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Units &amp; Income</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Unit Count">
+            <input type="number" name="unitCount" defaultValue={mf?.unitCount ?? ''} min="2" step="1" className="input-base" />
+          </Field>
+          <Field label="Occupied Units">
+            <input type="number" name="occupiedUnits" defaultValue={mf?.occupiedUnits ?? ''} min="0" step="1" className="input-base" />
+          </Field>
+          <Field label="Avg Monthly Rent / Unit ($)">
+            <input type="number" name="averageMonthlyRent" defaultValue={mf?.averageMonthlyRent ? Number(mf.averageMonthlyRent) : ''}
+              min="0" step="50" className="input-base" />
+          </Field>
+          <Field label="Vacancy Rate (%)">
+            <input type="number" name="vacancyRate" defaultValue={vacancyPct} min="0" max="100" step="0.5" className="input-base" />
+          </Field>
+          <Field label="Annual Operating Expenses ($)">
+            <input type="number" name="annualOpex" defaultValue={mfOpex?.total ?? ''} min="0" step="500" className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Loan</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Loan Amount ($)">
+            <input type="number" name="loanAmount" defaultValue={mf?.loanAmount ? Number(mf.loanAmount) : ''}
+              min="0" step="1000" className="input-base" />
+          </Field>
+          <Field label="Interest Rate (%)">
+            <input type="number" name="interestRate" defaultValue={ratePct} min="0" max="30" step="0.125" className="input-base" />
+          </Field>
+          <Field label="Amortization (years)">
+            <input type="number" name="amortizationYears" defaultValue={mf?.amortizationYears ?? ''} min="1" max="40" step="1" className="input-base" />
+          </Field>
+          <Field label="Loan Maturity Date">
+            <input type="date" name="loanMaturityDate" defaultValue={maturityStr} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5 space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Property Manager</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Field label="Name">
+            <input type="text" name="propertyManagerName" defaultValue={mf?.propertyManagerName ?? ''} className="input-base" />
+          </Field>
+          <Field label="Phone">
+            <input type="tel" name="propertyManagerPhone" defaultValue={mf?.propertyManagerPhone ?? ''} className="input-base" />
+          </Field>
+          <Field label="Email">
+            <input type="email" name="propertyManagerEmail" defaultValue={mf?.propertyManagerEmail ?? ''} className="input-base" />
+          </Field>
+        </div>
+      </section>
+
+      <section className="px-6 py-5">
+        <Field label="Notes">
+          <textarea name="notes" rows={3} defaultValue={deal.notes ?? ''} className="input-base w-full resize-none" />
+        </Field>
       </section>
 
       <div className="px-6 py-4 bg-zinc-50 flex items-center gap-3">

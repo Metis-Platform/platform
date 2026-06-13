@@ -144,13 +144,13 @@ const ALL: StrategyMeta[] = [
     navLabel: 'Multifamily',
     newLabel: '+ New Property',
     newTitle: 'New Multifamily',
-    newSubtitle: 'Multifamily deal creation is coming soon.',
+    newSubtitle: 'Track a multifamily property — units, underwriting (NOI, cap rate, DSCR), and loan maturity.',
     emptyText: 'No multifamily properties match your filters.',
     searchPlaceholder: 'Search APN, address…',
     dateCol: 'Purchase Date',
     amountCol: 'NOI',
     refCol: 'Units',
-    creatable: false,
+    creatable: true,
   },
 ]
 

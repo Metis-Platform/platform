@@ -23,6 +23,7 @@ import FixFlipSection, { type FixFlipData } from './FixFlipSection'
 import RehabBudgetSection from './RehabBudgetSection'
 import BuyHoldSection, { type BuyHoldData } from './BuyHoldSection'
 import RentalExpensesSection from './RentalExpensesSection'
+import MultifamilySection, { type MultifamilyData } from './MultifamilySection'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
@@ -40,7 +41,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { id, tenantId: tenant.id },
       include: {
         property: { include: { jurisdiction: true } },
-        taxLien: true, taxDeed: true, foreclosure: true, land: true, fixFlip: true, buyHold: true,
+        taxLien: true, taxDeed: true, foreclosure: true, land: true, fixFlip: true, buyHold: true, multifamily: true,
         wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { orderBy: { createdAt: 'desc' } },
@@ -99,7 +100,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     notes:         e.notes,
   }))
 
-  const { taxLien, taxDeed, foreclosure, land, wholesale, fixFlip, buyHold, property, events, landNotes } = deal
+  const { taxLien, taxDeed, foreclosure, land, wholesale, fixFlip, buyHold, multifamily, property, events, landNotes } = deal
 
   const landData: DealLandData | null = land
     ? {
@@ -171,12 +172,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         }
       : null
 
-  const isTaxDeed    = deal.strategyType === 'TAX_DEED'
-  const isForeclosure = deal.strategyType === 'FORECLOSURE'
-  const isLand       = deal.strategyType === 'LAND'
-  const isWholesale  = deal.strategyType === 'WHOLESALE'
-  const isFixFlip    = deal.strategyType === 'FIX_FLIP'
-  const isBuyHold    = deal.strategyType === 'BUY_HOLD'
+  const isTaxDeed      = deal.strategyType === 'TAX_DEED'
+  const isForeclosure  = deal.strategyType === 'FORECLOSURE'
+  const isLand         = deal.strategyType === 'LAND'
+  const isWholesale    = deal.strategyType === 'WHOLESALE'
+  const isFixFlip      = deal.strategyType === 'FIX_FLIP'
+  const isBuyHold      = deal.strategyType === 'BUY_HOLD'
+  const isMultifamily  = deal.strategyType === 'MULTIFAMILY'
 
   const fixFlipData: FixFlipData | null = isFixFlip
     ? {
@@ -225,6 +227,32 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         inspectionStatus:     buyHold?.inspectionStatus ?? null,
         maintenanceReserve:   buyHold?.maintenanceReserve?.toString() ?? null,
         operatingExpenses:    (buyHold?.operatingExpenses ?? null) as RentalExpenses | null,
+        notes:                deal.notes ?? null,
+      }
+    : null
+
+  const mfOpex = multifamily?.operatingExpenses as { total?: number } | null
+  const multifamilyData: MultifamilyData | null = isMultifamily
+    ? {
+        dealId:               deal.id,
+        purchasePrice:        deal.purchasePrice?.toString() ?? null,
+        unitCount:            multifamily?.unitCount ?? null,
+        occupiedUnits:        multifamily?.occupiedUnits ?? null,
+        averageMonthlyRent:   multifamily?.averageMonthlyRent?.toString() ?? null,
+        vacancyRate:          multifamily?.vacancyRate?.toString() ?? null,
+        annualOpex:           mfOpex?.total ?? null,
+        grossScheduledIncome: multifamily?.grossScheduledIncome?.toString() ?? null,
+        netOperatingIncome:   multifamily?.netOperatingIncome?.toString() ?? null,
+        capRate:              multifamily?.capRate?.toString() ?? null,
+        loanAmount:           multifamily?.loanAmount?.toString() ?? null,
+        interestRate:         multifamily?.interestRate?.toString() ?? null,
+        amortizationYears:    multifamily?.amortizationYears ?? null,
+        annualDebtService:    multifamily?.annualDebtService?.toString() ?? null,
+        dscr:                 multifamily?.dscr?.toString() ?? null,
+        loanMaturityDate:     multifamily?.loanMaturityDate?.toISOString() ?? null,
+        propertyManagerName:  multifamily?.propertyManagerName ?? null,
+        propertyManagerPhone: multifamily?.propertyManagerPhone ?? null,
+        propertyManagerEmail: multifamily?.propertyManagerEmail ?? null,
         notes:                deal.notes ?? null,
       }
     : null
@@ -431,8 +459,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <BuyHoldSection data={buyHoldData} />
         ) : null}
 
-        {/* Certificate / Lead details — hidden for land, wholesale, fix & flip, buy & hold */}
-        {!isLand && !isWholesale && !isFixFlip && !isBuyHold && <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        {/* Multifamily section */}
+        {isMultifamily && multifamilyData ? (
+          <MultifamilySection data={multifamilyData} />
+        ) : null}
+
+        {/* Certificate / Lead details — hidden for land, wholesale, fix & flip, buy & hold, multifamily */}
+        {!isLand && !isWholesale && !isFixFlip && !isBuyHold && !isMultifamily && <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-sm font-semibold text-zinc-900 mb-4">
             {isLead ? 'Pre-Bid Info' : isTaxDeed ? 'Deed Details' : isForeclosure ? 'Auction Details' : 'Certificate Details'}
           </h2>
@@ -484,7 +517,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>}
 
         {/* Events */}
-        {(isLead && !isLand && !isWholesale && !isFixFlip && !isBuyHold) ? (
+        {(isLead && !isLand && !isWholesale && !isFixFlip && !isBuyHold && !isMultifamily) ? (
           <div className="bg-white rounded-xl border border-zinc-200 p-6">
             <h2 className="text-sm font-semibold text-zinc-900 mb-4">Deadlines</h2>
             <p className="text-sm text-zinc-400">
