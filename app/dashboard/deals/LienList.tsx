@@ -19,6 +19,7 @@ export type LienRow = {
   nextDeadlineLabel: string | null
   nextDeadlineDays: number | null  // days from now (can be negative)
   landDispositionStatus?: string | null
+  wholesaleDispositionStatus?: string | null
 }
 
 type SortKey = 'apn' | 'state' | 'amount' | 'date' | 'deadline'
@@ -105,6 +106,12 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {strategy === 'WHOLESALE' && (
+            <Link href="/dashboard/deals/board?strategy=WHOLESALE"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
+              ⬛ Board
+            </Link>
+          )}
           <Link href="/dashboard/deals/import"
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors">
             ↑ Import CSV/XLS
@@ -245,6 +252,20 @@ export default function LienList({ deals, strategy = 'TAX_LIEN' }: { deals: Lien
                             : deal.landDispositionStatus === 'SOLD_TERMS' ? 'Sold (Terms)'
                             : deal.landDispositionStatus === 'RELISTED' ? 'Re-listed'
                             : deal.landDispositionStatus}
+                        </div>
+                      )}
+                      {deal.wholesaleDispositionStatus && (
+                        <div className={`mt-0.5 text-xs font-medium ${
+                          deal.wholesaleDispositionStatus === 'CLOSED' ? 'text-green-600'
+                          : deal.wholesaleDispositionStatus === 'ASSIGNED' ? 'text-violet-600'
+                          : deal.wholesaleDispositionStatus === 'BUYER_COMMITTED' ? 'text-amber-600'
+                          : 'text-blue-600'
+                        }`}>
+                          {deal.wholesaleDispositionStatus === 'MARKETING' ? 'Marketing'
+                            : deal.wholesaleDispositionStatus === 'BUYER_COMMITTED' ? 'Buyer Committed'
+                            : deal.wholesaleDispositionStatus === 'ASSIGNED' ? 'Assigned'
+                            : deal.wholesaleDispositionStatus === 'CLOSED' ? 'Closed'
+                            : deal.wholesaleDispositionStatus}
                         </div>
                       )}
                     </td>
