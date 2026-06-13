@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Prisma client output is generated code; lint source and schema instead.
     "app/generated/prisma/**",
+    // Worktree build artifacts (Claude Code worktrees can contain .next/ output).
+    ".claude/**",
   ]),
 ]);
 
