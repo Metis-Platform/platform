@@ -2,7 +2,7 @@
 
 import { useState, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { applyLienExtraction, applyDeedExtraction } from '@/lib/actions/ai-extract'
+import { applyLienExtraction, applyDeedExtraction, applyBidExtraction, type SowItem } from '@/lib/actions/ai-extract'
 
 export type DocRow = {
   id: string
@@ -23,6 +23,8 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   TITLE_REPORT:      'Title Report',
   DEED:              'Deed',
   LEASE:             'Lease',
+  CONTRACTOR_BID:    'Contractor Bid',
+  INVOICE:           'Invoice',
   OTHER:             'Other',
 }
 
@@ -36,6 +38,8 @@ const DOC_TYPE_COLOR: Record<string, string> = {
   TITLE_REPORT:      'bg-teal-100 text-teal-700',
   DEED:              'bg-emerald-100 text-emerald-700',
   LEASE:             'bg-cyan-100 text-cyan-700',
+  CONTRACTOR_BID:    'bg-amber-100 text-amber-700',
+  INVOICE:           'bg-rose-100 text-rose-700',
   OTHER:             'bg-zinc-100 text-zinc-600',
 }
 
@@ -104,6 +108,12 @@ type ExtractState =
   | { status: 'error'; message: string; settingsUrl?: string }
   | { status: 'review'; docId: string; docType: string; result: ExtractionResult; edited: Record<string, string>; applying: boolean; applyError?: string }
 
+type SowExtractState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; message: string; settingsUrl?: string }
+  | { status: 'review'; items: SowItem[]; applying: boolean; applyError?: string }
+
 export default function DocumentSection({ dealId, initialDocs }: { dealId: string; initialDocs: DocRow[] }) {
   const [docs, setDocs] = useState<DocRow[]>(initialDocs)
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' })
@@ -111,6 +121,7 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
   const [dragOver, setDragOver] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [extractState, setExtractState] = useState<ExtractState>({ status: 'idle' })
+  const [sowState, setSowState] = useState<SowExtractState>({ status: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
   const [, startTransition] = useTransition()
   const router = useRouter()
@@ -260,6 +271,39 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
     startTransition(() => router.refresh())
   }
 
+  async function handleExtractSow(doc: DocRow) {
+    setSowState({ status: 'loading' })
+    try {
+      const res = await fetch('/api/ai/extract-sow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: doc.id }),
+      })
+      const data = await res.json() as { error?: string; settingsUrl?: string; items?: SowItem[] }
+
+      if (!res.ok) {
+        setSowState({ status: 'error', message: data.error ?? 'Extraction failed', settingsUrl: data.settingsUrl })
+        return
+      }
+
+      setSowState({ status: 'review', items: data.items ?? [], applying: false })
+    } catch {
+      setSowState({ status: 'error', message: 'Network error during extraction' })
+    }
+  }
+
+  async function handleApplySow() {
+    if (sowState.status !== 'review') return
+    setSowState({ ...sowState, applying: true, applyError: undefined })
+    const res = await applyBidExtraction(dealId, sowState.items)
+    if (res.error) {
+      setSowState({ ...sowState, applying: false, applyError: res.error })
+      return
+    }
+    setSowState({ status: 'idle' })
+    startTransition(() => router.refresh())
+  }
+
   const isUploading = uploadState.status === 'uploading'
   const fieldLabels = (extractState.status === 'review' && extractState.docType === 'TAX_DEED')
     ? DEED_FIELD_LABELS
@@ -393,6 +437,16 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
                     Extract
                   </button>
                 )}
+                {(doc.docType === 'CONTRACTOR_BID' || doc.docType === 'INVOICE') && (
+                  <button
+                    onClick={() => handleExtractSow(doc)}
+                    disabled={sowState.status === 'loading'}
+                    className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs font-medium text-amber-600 hover:text-amber-800 border border-amber-200 hover:border-amber-400 rounded-md transition-all disabled:opacity-50"
+                    title="Extract SOW line items with AI"
+                  >
+                    Extract SOW
+                  </button>
+                )}
                 <button
                   onClick={() => handleDelete(doc)}
                   disabled={deletingId === doc.id}
@@ -405,6 +459,96 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
             </li>
           ))}
         </ul>
+      )}
+
+      {/* SOW extraction status */}
+      {sowState.status === 'error' && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center justify-between gap-3">
+          <span>
+            {sowState.message}
+            {sowState.settingsUrl && (
+              <a href={sowState.settingsUrl} className="ml-1 font-medium underline hover:text-red-900">
+                Add your API key in Settings →
+              </a>
+            )}
+          </span>
+          <button onClick={() => setSowState({ status: 'idle' })} className="text-red-400 hover:text-red-600 flex-shrink-0">✕</button>
+        </div>
+      )}
+      {sowState.status === 'loading' && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Extracting SOW line items with AI — this may take a few seconds.
+        </div>
+      )}
+
+      {/* SOW review modal */}
+      {sowState.status === 'review' && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-zinc-900">Extracted SOW Line Items</h3>
+                <button onClick={() => setSowState({ status: 'idle' })} className="text-zinc-400 hover:text-zinc-700 text-lg leading-none">✕</button>
+              </div>
+              <p className="text-xs text-zinc-500 mb-4">
+                Review the extracted line items. Clicking Apply will merge them into the Scope of Work as new PENDING items.
+              </p>
+              {sowState.items.length === 0 ? (
+                <p className="text-sm text-zinc-400">No line items found in this document.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-100 text-left text-xs text-zinc-400">
+                        <th className="pb-2 font-medium">Category</th>
+                        <th className="pb-2 font-medium">Description</th>
+                        <th className="pb-2 font-medium text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-50">
+                      {sowState.items.map((item, i) => (
+                        <tr key={i}>
+                          <td className="py-2 pr-3 text-xs text-zinc-500 whitespace-nowrap">{item.category}</td>
+                          <td className="py-2 pr-3 text-zinc-700">{item.description}</td>
+                          <td className="py-2 text-right font-medium text-zinc-800 whitespace-nowrap">
+                            ${item.amount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-zinc-200">
+                        <td colSpan={2} className="pt-2 text-xs font-semibold text-zinc-500">Total</td>
+                        <td className="pt-2 text-right font-bold text-zinc-900">
+                          ${sowState.items.reduce((s, i) => s + i.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+              {sowState.applyError && (
+                <p className="mt-3 text-xs text-red-600">{sowState.applyError}</p>
+              )}
+              <div className="flex gap-2 mt-5">
+                <button
+                  onClick={handleApplySow}
+                  disabled={sowState.applying || sowState.items.length === 0}
+                  className="flex-1 py-2 text-sm font-medium bg-zinc-900 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                >
+                  {sowState.applying ? 'Applying…' : `Add ${sowState.items.length} item${sowState.items.length !== 1 ? 's' : ''} to SOW`}
+                </button>
+                <button
+                  onClick={() => setSowState({ status: 'idle' })}
+                  disabled={sowState.applying}
+                  className="px-4 py-2 text-sm font-medium text-zinc-600 border border-zinc-300 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Extraction review modal */}

@@ -127,9 +127,14 @@ export default function FixFlipSection({ data }: { data: FixFlipData }) {
     <div className="bg-white rounded-xl border border-zinc-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-zinc-900">Fix & Flip Details</h2>
-        <Link href={`/dashboard/deals/${dealId}/edit`} className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">
-          Edit
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href={`/dashboard/deals/${dealId}/draw-package`} className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">
+            Draw Package
+          </Link>
+          <Link href={`/dashboard/deals/${dealId}/edit`} className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">
+            Edit
+          </Link>
+        </div>
       </div>
 
       <dl className="space-y-2.5 text-sm">
