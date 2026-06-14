@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateFixFlipEvents } from '@/lib/fix-flip-events'
+import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
 import { hasStrategy } from '@/lib/entitlements'
 
 export type FixFlipFormState = {
@@ -106,6 +107,7 @@ export async function createFixFlip(
   })
 
   await generateFixFlipEvents(deal.id)
+  await applyTenantWorkflowRules(tenant.id, deal.id)
   redirect(`/dashboard/deals/${deal.id}`)
 }
 

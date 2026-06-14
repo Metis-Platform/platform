@@ -8,6 +8,7 @@ import { db } from '@/lib/db'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
 import { generateWholesaleEvents } from '@/lib/wholesale-events'
+import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
 
 export type WholesaleFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -107,6 +108,7 @@ export async function createWholesale(
     })
     dealId = deal.id
     await generateWholesaleEvents(dealId, tenant.id)
+    await applyTenantWorkflowRules(tenant.id, dealId)
   } catch (err) {
     console.error('[createWholesale]', err)
     return { message: 'Failed to save. Please try again.' }

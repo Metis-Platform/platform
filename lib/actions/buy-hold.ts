@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateBuyHoldEvents } from '@/lib/buy-hold-events'
+import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
 import { hasStrategy } from '@/lib/entitlements'
 
 export type BuyHoldFormState = {
@@ -103,6 +104,7 @@ export async function createBuyHold(
   })
 
   await generateBuyHoldEvents(deal.id)
+  await applyTenantWorkflowRules(tenant.id, deal.id)
   redirect(`/dashboard/deals/${deal.id}`)
 }
 

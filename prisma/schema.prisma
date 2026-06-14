@@ -32,13 +32,31 @@ model Tenant {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
-  users      User[]
-  properties Property[]
-  deals      Deal[]
-  contacts   Contact[]
-  documents  Document[]
-  auditLogs  AuditLog[]
-  modules    TenantModule[]
+  users          User[]
+  properties     Property[]
+  deals          Deal[]
+  contacts       Contact[]
+  documents      Document[]
+  auditLogs      AuditLog[]
+  modules        TenantModule[]
+  workflowRules  TenantWorkflowRule[]
+}
+
+model TenantWorkflowRule {
+  id           String       @id @default(cuid())
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  strategy     StrategyType
+  name         String
+  triggerEvent String       // EventType key
+  offsetDays   Int          @default(0)
+  action       String       @default("CREATE_TASK")
+  actionConfig Json
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([tenantId, strategy])
 }
 
 model TenantModule {
