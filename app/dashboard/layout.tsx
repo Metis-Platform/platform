@@ -16,8 +16,27 @@ export default async function DashboardLayout({ children }: { children: React.Re
     if (tenant) enabledKeys = await getEnabledStrategies(tenant.id)
   }
 
+  const now = new Date()
+  const announcements = await db.announcement.findMany({
+    where: { startsAt: { lte: now }, endsAt: { gte: now } },
+    orderBy: { createdAt: 'desc' },
+  })
+
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50">
+      {/* Announcement banners */}
+      {announcements.map(a => (
+        <div
+          key={a.id}
+          className={`w-full px-6 py-2 text-sm text-center font-medium ${
+            a.severity === 'WARNING'
+              ? 'bg-amber-400 text-amber-900'
+              : 'bg-blue-600 text-white'
+          }`}
+        >
+          {a.message}
+        </div>
+      ))}
       {/* Top nav */}
       <header className="border-b border-zinc-200 bg-white px-6 py-3">
         <div className="flex items-center justify-between">

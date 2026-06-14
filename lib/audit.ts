@@ -8,6 +8,7 @@ type AuditAction =
   | 'NOTE_PAYMENT_LOGGED'
   | 'CHECKLIST_CREATED'
   | 'LOGIN'
+  | 'ADMIN_EMAIL_SENT'
 
 export async function emitAuditEvent(
   tenantId: string,
