@@ -64,8 +64,8 @@ Admin can send a targeted support email without leaving the app. Admin can updat
 
 ## Phase 5 — Monetization plumbing
 
-- [ ] **#190** Admin P5A: Stripe module purchase flow — Stripe webhook, `TenantModule` upsert on checkout, billing page with real purchase buttons, no more broken plan grid
-- [ ] **#191** Admin P5B: Pricing configuration and trial management — `ModulePrice` table, admin `/admin/pricing` CRUD, `TenantModule.trialEndsAt`, daily pg-boss trial expiry job, 3-day warning email
+- [x] **#190** Admin P5A: Stripe module purchase flow — Stripe webhook, `TenantModule` upsert on checkout, billing page with real purchase buttons, no more broken plan grid (PR #208)
+- [x] **#191** Admin P5B: Pricing configuration and trial management — `ModulePrice` table, admin `/admin/pricing` CRUD, `TenantModule.trialEndsAt`, daily Vercel cron trial expiry job, 3-day warning email (PR #209)
 
 ### P5 acceptance gate
 A tenant can purchase module access without admin intervention. Admin can offer a free trial with an expiry date. Pricing can be updated without a code deploy.
