@@ -29,6 +29,7 @@ model Tenant {
   trialEndsAt              DateTime?
   currentPeriodEnd         DateTime?
   adminNotes               String?
+  anthropicApiKey          String?   // BYOK: tenant-supplied, never platform key
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
