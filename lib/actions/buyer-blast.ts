@@ -6,6 +6,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { hasTier } from '@/lib/entitlements'
 import { getResend } from '@/lib/email'
+import { emitAuditEvent } from '@/lib/audit'
 
 export type BuyerBlastState = {
   error?: string
@@ -103,6 +104,10 @@ export async function sendBuyerBlast(dealId: string): Promise<BuyerBlastState> {
   }
 
   revalidatePath(`/dashboard/deals/${dealId}`)
+
+  if (sent > 0) {
+    await emitAuditEvent(tenant.id, 'BLAST_SENT', { dealId, sent, skipped }, userId)
+  }
 
   if (errors.length > 0) {
     return { error: `Sent ${sent}, failed for: ${errors.join(', ')}`, sent, skipped }

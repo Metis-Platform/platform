@@ -6,6 +6,24 @@ import { STRATEGY_META } from '@/lib/strategy-meta'
 import type { StrategyKey } from '@/lib/strategy-meta'
 import TenantDetailClient from './TenantDetailClient'
 
+const ACTION_ICON: Record<string, string> = {
+  DEAL_CREATED: '📋',
+  DEAL_ARCHIVED: '🗃',
+  BLAST_SENT: '📧',
+  NOTE_PAYMENT_LOGGED: '💰',
+  CHECKLIST_CREATED: '✅',
+  LOGIN: '🔑',
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  DEAL_CREATED: 'Deal created',
+  DEAL_ARCHIVED: 'Deal archived',
+  BLAST_SENT: 'Buyer blast sent',
+  NOTE_PAYMENT_LOGGED: 'Note payment logged',
+  CHECKLIST_CREATED: 'Checklist created',
+  LOGIN: 'Logged in',
+}
+
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700',
   trialing: 'bg-blue-100 text-blue-700',
@@ -26,7 +44,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
   })
   if (!tenant) notFound()
 
-  const [dealCounts, recentDeal] = await Promise.all([
+  const [dealCounts, recentDeal, recentEvents] = await Promise.all([
     db.deal.groupBy({
       by: ['strategyType'],
       where: { tenantId: id },
@@ -36,6 +54,11 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
       where: { tenantId: id },
       orderBy: { updatedAt: 'desc' },
       select: { id: true, updatedAt: true, strategyType: true },
+    }),
+    db.auditEvent.findMany({
+      where: { tenantId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 90,
     }),
   ])
 
@@ -114,6 +137,42 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
           </div>
         </section>
       )}
+
+      {/* Activity timeline */}
+      <section>
+        <h2 className="text-sm font-semibold text-zinc-900 mb-3">Activity Timeline</h2>
+        {recentEvents.length === 0 ? (
+          <div className="rounded-xl border border-zinc-200 bg-white p-4">
+            <p className="text-sm text-zinc-400">No recorded activity yet.</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+            <div className="divide-y divide-zinc-100 max-h-96 overflow-y-auto">
+              {recentEvents.map((e) => {
+                const meta = (e.meta ?? {}) as Record<string, unknown>
+                return (
+                  <div key={e.id} className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50">
+                    <span className="mt-0.5 flex-shrink-0 w-6 text-center text-base">{ACTION_ICON[e.action] ?? '•'}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-zinc-700">{ACTION_LABEL[e.action] ?? e.action}</p>
+                      {meta.strategy != null && (
+                        <p className="text-xs text-zinc-400">{String(meta.strategy).replace(/_/g, ' ')}{meta.dealId != null ? ` — deal ${String(meta.dealId).slice(-8)}` : ''}</p>
+                      )}
+                      {e.action === 'BLAST_SENT' && meta.sent != null && (
+                        <p className="text-xs text-zinc-400">Sent to {String(meta.sent)} buyer{Number(meta.sent) === 1 ? '' : 's'}</p>
+                      )}
+                      {e.action === 'NOTE_PAYMENT_LOGGED' && meta.amount != null && (
+                        <p className="text-xs text-zinc-400">${Number(meta.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                      )}
+                    </div>
+                    <time className="flex-shrink-0 text-xs text-zinc-400">{new Date(e.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</time>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Interactive sections (module panel, users table, admin notes) */}
       <TenantDetailClient

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
+import { emitAuditEvent } from '@/lib/audit'
 
 export type LandNoteFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -169,6 +170,7 @@ export async function recordPayment(
     return { message: 'Failed to record payment. Please try again.' }
   }
 
+  await emitAuditEvent(tenant.id, 'NOTE_PAYMENT_LOGGED', { dealId, noteId, amount }, userId)
   revalidatePath(`/dashboard/deals/${dealId}`)
   return {}
 }

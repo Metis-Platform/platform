@@ -7,6 +7,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateBuyHoldEvents } from '@/lib/buy-hold-events'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
+import { emitAuditEvent } from '@/lib/audit'
 import { hasStrategy } from '@/lib/entitlements'
 
 export type BuyHoldFormState = {
@@ -105,6 +106,7 @@ export async function createBuyHold(
 
   await generateBuyHoldEvents(deal.id)
   await applyTenantWorkflowRules(tenant.id, deal.id)
+  await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'BUY_HOLD' }, userId)
   redirect(`/dashboard/deals/${deal.id}`)
 }
 
