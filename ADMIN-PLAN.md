@@ -44,8 +44,8 @@ Jurisdiction data is visible to users on deal pages. Tenants can configure their
 
 ## Phase 3 — Operational intelligence (new signals, new models)
 
-- [ ] **#186** Admin P3A: Platform health dashboard — pg-boss job state counts, failed job list with retry, email bounce tracking via Resend webhook, churn signals (last login, zero deals)
-- [ ] **#187** Admin P3B: Tenant activity log + admin support notes — `AuditEvent` model, per-tenant timeline, autosave admin notes
+- [x] **#186** Admin P3A: Platform health dashboard — pg-boss job state counts, failed job list with retry, email bounce tracking via Resend webhook, churn signals (last login, zero deals) (PR #203)
+- [x] **#187** Admin P3B: Tenant activity log + admin support notes — `AuditEvent` model, per-tenant timeline, autosave admin notes (PR #202)
 
 ### P3 acceptance gate
 Admin can spot a failed job before a user reports it. Admin can review a tenant's full activity before a support call. Support notes persist across sessions.
