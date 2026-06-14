@@ -2,6 +2,9 @@
 
 import { getCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
+import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
+
+export type SowItem = { category: string; description: string; amount: number }
 
 type LienFields = {
   certificateNumber?: string | null
@@ -74,5 +77,53 @@ export async function applyDeedExtraction(
   } catch (err) {
     console.error('[applyDeedExtraction]', err)
     return { error: 'Failed to apply fields.' }
+  }
+}
+
+export async function applyBidExtraction(
+  dealId: string,
+  items: SowItem[],
+): Promise<{ error?: string }> {
+  if (items.length === 0) return { error: 'No items to apply.' }
+
+  const result = await getCurrentUser()
+  if (!result) return { error: 'Not authenticated.' }
+  const { tenant } = result
+
+  try {
+    const deal = await db.deal.findUnique({
+      where: { id: dealId, tenantId: tenant.id },
+      select: { fixFlip: { select: { scopeOfWork: true } } },
+    })
+    if (!deal?.fixFlip) return { error: 'Fix & Flip record not found.' }
+
+    const existing = deal.fixFlip.scopeOfWork as ScopeOfWork | null
+    const existingItems = existing?.items ?? []
+
+    const newItems = items.map(item => ({
+      id: Math.random().toString(36).slice(2),
+      category: item.category,
+      description: item.description,
+      budgeted: item.amount,
+      actual: null,
+      status: 'PENDING' as const,
+    }))
+
+    const merged: ScopeOfWork = {
+      version: 1,
+      items: [...existingItems, ...newItems],
+    }
+
+    const totalBudgeted = merged.items.reduce((s, i) => s + i.budgeted, 0)
+
+    await db.dealFixFlip.update({
+      where: { dealId },
+      data: { scopeOfWork: merged, rehabBudget: totalBudgeted || null },
+    })
+
+    return {}
+  } catch (err) {
+    console.error('[applyBidExtraction]', err)
+    return { error: 'Failed to apply items.' }
   }
 }

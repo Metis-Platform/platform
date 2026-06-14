@@ -910,6 +910,8 @@ enum DocumentType {
   TITLE_REPORT
   DEED
   LEASE
+  CONTRACTOR_BID
+  INVOICE
   OTHER
 }
 
