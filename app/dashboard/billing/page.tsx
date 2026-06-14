@@ -3,9 +3,15 @@ import { db } from '@/lib/db'
 import { ALL_STRATEGIES, STRATEGY_META } from '@/lib/strategy-meta'
 import type { StrategyKey } from '@/lib/strategy-meta'
 import BillingPortal from './BillingPlans'
+import PurchaseModuleButton from './PurchaseModuleButton'
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; module_success?: string }>
+}) {
   const { orgId } = await auth()
+  const params = await searchParams
   let ownedModules: { strategy: string; tier: string; createdAt: Date }[] = []
 
   if (orgId) {
@@ -20,6 +26,7 @@ export default async function BillingPage() {
   }
 
   const salesUrl = process.env.SALES_CONTACT_URL ?? 'mailto:support@metisplatforms.com'
+  const purchaseEnabled = !!(process.env.STRIPE_MODULE_PRICE_STANDARD_ID)
   const creatableStrategies = ALL_STRATEGIES.filter((s) => s.creatable)
   const ownedKeys = new Set(ownedModules.map((m) => m.strategy))
   const availableStrategies = creatableStrategies.filter((s) => !ownedKeys.has(s.key))
@@ -32,6 +39,17 @@ export default async function BillingPage() {
           Your active modules and available add-ons.
         </p>
       </div>
+
+      {params.module_success && (
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+          Module purchase complete — your new module is now active.
+        </div>
+      )}
+      {params.success && (
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+          Subscription activated — welcome to Metis!
+        </div>
+      )}
 
       {ownedModules.length > 0 ? (
         <div className="mb-8">
@@ -61,7 +79,7 @@ export default async function BillingPage() {
         </div>
       ) : (
         <div className="mb-8 rounded-xl border border-zinc-200 bg-white p-6 text-center">
-          <p className="text-sm text-zinc-500">No modules active yet. Contact us to get started.</p>
+          <p className="text-sm text-zinc-500">No modules active yet. Purchase a module below to get started.</p>
         </div>
       )}
 
@@ -73,12 +91,11 @@ export default async function BillingPage() {
               <div key={s.key} className="rounded-xl border border-zinc-200 bg-white p-4 flex flex-col">
                 <span className="font-medium text-zinc-900 mb-1">{s.label}</span>
                 <p className="text-xs text-zinc-400 flex-1 mb-4">{s.newSubtitle}</p>
-                <a
-                  href={salesUrl}
-                  className="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-                >
-                  Contact us to add
-                </a>
+                <PurchaseModuleButton
+                  strategy={s.key}
+                  purchaseEnabled={purchaseEnabled}
+                  salesUrl={salesUrl}
+                />
               </div>
             ))}
           </div>

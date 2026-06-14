@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 import { db } from '@/lib/db'
+import type { StrategyType, ModuleTier } from '@/app/generated/prisma'
 
 // Stripe sends raw body — disable Next.js body parsing
 export const dynamic = 'force-dynamic'
@@ -54,6 +55,20 @@ export async function POST(req: Request) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
+
+      if (session.metadata?.type === 'module') {
+        // Module one-time purchase
+        const { tenantId, strategy, tier } = session.metadata
+        if (tenantId && strategy && tier) {
+          await db.tenantModule.upsert({
+            where: { tenantId_strategy: { tenantId, strategy: strategy as StrategyType } },
+            create: { tenantId, strategy: strategy as StrategyType, tier: tier as ModuleTier },
+            update: { tier: tier as ModuleTier },
+          })
+        }
+        break
+      }
+
       if (session.mode === 'subscription' && session.customer && session.subscription) {
         // Link Stripe customer to tenant
         const tenantId = session.metadata?.tenantId
