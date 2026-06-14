@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
+import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
@@ -168,6 +169,7 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
         },
       })
       await generateEventsForDeal(deal.id, tenant.id)
+      await applyTenantWorkflowRules(tenant.id, deal.id)
       dealId = deal.id
     }
   } catch (err) {

@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateMultifamilyEvents } from '@/lib/multifamily-events'
+import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
 import { mfUnderwriting } from '@/lib/economics'
 import { hasStrategy } from '@/lib/entitlements'
 
@@ -137,6 +138,7 @@ export async function createMultifamily(
   })
 
   await generateMultifamilyEvents(deal.id)
+  await applyTenantWorkflowRules(tenant.id, deal.id)
   redirect(`/dashboard/deals/${deal.id}`)
 }
 

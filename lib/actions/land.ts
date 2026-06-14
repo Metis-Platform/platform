@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { generateLandEvents } from '@/lib/land-events'
+import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
 
@@ -97,6 +98,7 @@ export async function createLand(_prev: LandFormState, formData: FormData): Prom
     })
     dealId = deal.id
     await generateLandEvents(dealId, tenant.id)
+    await applyTenantWorkflowRules(tenant.id, dealId)
   } catch (err) {
     console.error('[createLand]', err)
     return { message: 'Failed to save. Please try again.' }
