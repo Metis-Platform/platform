@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useMemo } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 type JurisdictionRow = {
@@ -20,30 +21,70 @@ const INVESTMENT_LABELS: Record<string, string> = {
   REDEEMABLE_DEED: 'Red. Deed',
 }
 
-type FilterMode = 'all' | 'active' | 'missing' | 'available' | 'unavailable'
+type SortCol = 'state' | 'county' | 'available' | 'rules'
+type FilterMode = 'all' | 'available' | 'unavailable' | 'missing'
 
-export default function JurisdictionSearch({
-  jurisdictions,
-}: {
-  jurisdictions: JurisdictionRow[]
-}) {
-  const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState<FilterMode>('all')
+function SortIcon({ col, active, dir }: { col: string; active: boolean; dir: 'asc' | 'desc' }) {
+  if (!active) return <span className="ml-1 text-zinc-300">↕</span>
+  return <span className="ml-1 text-zinc-700">{dir === 'asc' ? '↑' : '↓'}</span>
+}
 
-  const filtered = jurisdictions.filter((j) => {
-    const matchQuery =
-      !query ||
-      `${j.state} ${j.stateName} ${j.county}`
-        .toLowerCase()
-        .includes(query.toLowerCase())
-    const matchFilter =
-      filter === 'all'         ? true
-      : filter === 'active'    ? !!j.activeRuleSet
-      : filter === 'missing'   ? !j.activeRuleSet
-      : filter === 'available' ? j.isAvailable
-      : /* unavailable */        !j.isAvailable
-    return matchQuery && matchFilter
-  })
+export default function JurisdictionSearch({ jurisdictions }: { jurisdictions: JurisdictionRow[] }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const sortCol = (searchParams.get('sort') as SortCol) ?? 'state'
+  const sortDir = (searchParams.get('dir') as 'asc' | 'desc') ?? 'asc'
+  const filterMode = (searchParams.get('filter') as FilterMode) ?? 'all'
+  const stateFilter = searchParams.get('state') ?? ''
+  const query = searchParams.get('q') ?? ''
+
+  const updateParams = useCallback((updates: Record<string, string>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    for (const [k, v] of Object.entries(updates)) {
+      if (v) params.set(k, v)
+      else params.delete(k)
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, pathname])
+
+  function toggleSort(col: SortCol) {
+    if (col === sortCol) {
+      updateParams({ sort: col, dir: sortDir === 'asc' ? 'desc' : 'asc' })
+    } else {
+      updateParams({ sort: col, dir: 'asc' })
+    }
+  }
+
+  const uniqueStates = useMemo(
+    () => [...new Set(jurisdictions.map((j) => j.state))].sort(),
+    [jurisdictions]
+  )
+
+  const filtered = useMemo(() => {
+    let rows = jurisdictions.filter((j) => {
+      const matchQuery = !query || `${j.state} ${j.stateName} ${j.county}`.toLowerCase().includes(query.toLowerCase())
+      const matchState = !stateFilter || j.state === stateFilter
+      const matchFilter =
+        filterMode === 'all'         ? true
+        : filterMode === 'available' ? j.isAvailable
+        : filterMode === 'unavailable' ? !j.isAvailable
+        : /* missing */                !j.activeRuleSet
+      return matchQuery && matchState && matchFilter
+    })
+
+    rows = [...rows].sort((a, b) => {
+      let cmp = 0
+      if (sortCol === 'state')     cmp = a.state.localeCompare(b.state) || a.county.localeCompare(b.county)
+      if (sortCol === 'county')    cmp = a.county.localeCompare(b.county)
+      if (sortCol === 'available') cmp = (b.isAvailable ? 1 : 0) - (a.isAvailable ? 1 : 0)
+      if (sortCol === 'rules')     cmp = (b.activeRuleSet?.ruleCount ?? 0) - (a.activeRuleSet?.ruleCount ?? 0)
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
+    return rows
+  }, [jurisdictions, query, stateFilter, filterMode, sortCol, sortDir])
 
   return (
     <div className="space-y-4">
@@ -53,26 +94,31 @@ export default function JurisdictionSearch({
           type="text"
           placeholder="Search state or county…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="block w-64 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-zinc-500 focus:outline-none"
+          onChange={(e) => updateParams({ q: e.target.value })}
+          className="block w-56 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-zinc-500 focus:outline-none"
         />
 
+        <select
+          value={stateFilter}
+          onChange={(e) => updateParams({ state: e.target.value })}
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-zinc-500 focus:outline-none"
+        >
+          <option value="">All states</option>
+          {uniqueStates.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+
         <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-1 shadow-sm">
-          {(
-            [
-              ['all',         'All'],
-              ['available',   'Available'],
-              ['unavailable', 'Unavailable'],
-              ['missing',     'No Rules'],
-            ] as [FilterMode, string][]
-          ).map(([mode, label]) => (
+          {([
+            ['all',         'All'],
+            ['available',   'Available'],
+            ['unavailable', 'Unavailable'],
+            ['missing',     'No Rules'],
+          ] as [FilterMode, string][]).map(([mode, label]) => (
             <button
               key={mode}
-              onClick={() => setFilter(mode)}
+              onClick={() => updateParams({ filter: mode === 'all' ? '' : mode })}
               className={`rounded-md px-3 py-1 text-sm transition-colors ${
-                filter === mode
-                  ? 'bg-zinc-900 text-white'
-                  : 'text-zinc-600 hover:bg-zinc-100'
+                filterMode === mode ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'
               }`}
             >
               {label}
@@ -88,31 +134,33 @@ export default function JurisdictionSearch({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50">
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                State
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                County
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Type
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Active Ruleset
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Rules
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Status
-              </th>
-              <th className="px-4 py-3" />
+              {([
+                ['state',     'State',    'text-left'],
+                ['county',    'County',   'text-left'],
+                [null,        'Type',     'text-left'],
+                [null,        'Coverage', 'text-left'],
+                ['rules',     'Rules',    'text-left'],
+                ['available', 'Status',   'text-left'],
+                [null,        '',         'text-right'],
+              ] as [SortCol | null, string, string][]).map(([col, label, align], i) => (
+                <th key={i} className={`px-4 py-3 ${align} text-xs font-semibold uppercase tracking-wide text-zinc-500`}>
+                  {col ? (
+                    <button
+                      onClick={() => toggleSort(col)}
+                      className="flex items-center gap-0.5 hover:text-zinc-800 transition-colors"
+                    >
+                      {label}
+                      <SortIcon col={col} active={sortCol === col} dir={sortDir} />
+                    </button>
+                  ) : label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-zinc-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-zinc-400">
                   No jurisdictions match your search.
                 </td>
               </tr>
@@ -127,15 +175,9 @@ export default function JurisdictionSearch({
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  {j.activeRuleSet ? (
-                    <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                      {j.activeRuleSet.name}
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                      No active rules
-                    </span>
-                  )}
+                  <span className={`text-xs font-medium ${j.activeRuleSet ? 'text-emerald-600' : 'text-zinc-300'}`}>
+                    TAX LIEN {j.activeRuleSet ? '✓' : '—'}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-zinc-500">
                   {j.activeRuleSet

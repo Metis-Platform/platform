@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { isSuperAdmin } from '@/lib/admin-auth'
+import { Suspense } from 'react'
 import JurisdictionSearch from './JurisdictionSearch'
 
 export const dynamic = 'force-dynamic'
@@ -60,7 +61,9 @@ export default async function AdminRulesPage() {
         </p>
       </div>
 
-      <JurisdictionSearch jurisdictions={rows} />
+      <Suspense fallback={<div className="text-sm text-zinc-400">Loading…</div>}>
+        <JurisdictionSearch jurisdictions={rows} />
+      </Suspense>
     </div>
   )
 }
