@@ -32,10 +32,10 @@ Admin can: grant MULTIFAMILY (any tier), grant PREMIUM to any strategy, view a t
 
 ## Phase 2 — Data surfacing (uses data already in the system)
 
-- [ ] **#182** Admin P2A: Jurisdiction table filtering — column sort, state dropdown, county text search, completeness badges
-- [ ] **#183** Admin P2B: Jurisdiction data model expansion — per-strategy jurisdiction fields (deed, foreclosure, wholesale, buy & hold, land, MF)
-- [ ] **#184** Admin P2C: Surface jurisdiction data on deal pages — collapsible "Jurisdiction Guide" card, strategy-scoped, read-only for users
-- [ ] **#185** Admin P2D: Tenant-configurable workflow rules — `TenantWorkflowRule` model, `/dashboard/settings/workflow` CRUD, rule evaluation on deal create
+- [x] **#182** Admin P2A: Jurisdiction table filtering — column sort, state dropdown, county text search, completeness badges (PR #197)
+- [x] **#183** Admin P2B: Jurisdiction data model expansion — per-strategy jurisdiction fields (deed, foreclosure, wholesale, buy & hold, land, MF) (PR #198)
+- [x] **#184** Admin P2C: Surface jurisdiction data on deal pages — collapsible "Jurisdiction Guide" card, strategy-scoped, read-only for users (PR #200)
+- [x] **#185** Admin P2D: Tenant-configurable workflow rules — `TenantWorkflowRule` model, `/dashboard/settings/workflow` CRUD, rule evaluation on deal create (PR #199)
 
 ### P2 acceptance gate
 Jurisdiction data is visible to users on deal pages. Tenants can configure their own deadline rules. Admin can filter the jurisdiction table like a spreadsheet.
