@@ -697,6 +697,20 @@ model AuditEvent {
   @@index([tenantId, createdAt])
 }
 
+model ChecklistTemplate {
+  id        String       @id @default(cuid())
+  tenantId  String?      // null = system template; set = tenant override
+  strategy  StrategyType
+  name      String
+  items     Json         // ChecklistItem[]
+  isActive  Boolean      @default(true)
+  version   Int          @default(1)
+  updatedAt DateTime     @updatedAt
+
+  @@unique([tenantId, strategy])
+  @@index([strategy])
+}
+
 model EmailEvent {
   id        String   @id @default(cuid())
   tenantId  String?

@@ -28,7 +28,7 @@ export async function POST(
   })
   if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-  const template = getTemplate(deal.strategyType)
+  const template = await getTemplate(deal.strategyType, tenant.id)
   if (!template) {
     return NextResponse.json({ error: 'No checklist template for this strategy' }, { status: 422 })
   }
