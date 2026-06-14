@@ -1,26 +1,28 @@
 # Metis Platform — Session Status
 
 > **This is the lean session reference.** Full roadmap, vision, and phase history: see `ROADMAP.md`.
-> Execution plan for beta: see `BETA-PLAN.md`.
-> Last updated: 2026-06-12
+> Execution plan for beta: see `BETA-PLAN.md`. Admin portal rollout: see `ADMIN-PLAN.md`.
+> Last updated: 2026-06-13
 
 ---
 
 ## Current Phase
-**Multifamily complete (P1–P3).** #132, #133 (P1+P2), full #39–#43 modules (P1–P3), and #130 Entitlements all shipped. All remaining BETA-PLAN items are gated: premium tier features (#42-P3/#39-P4/#40-P4) need Stripe PREMIUM module purchase flow; #41-P4/#43-P4 need AI (#25/#26 ON HOLD); #131 needs user input.
+**All BETA-PLAN features complete.** Every module shipped through P3 (or P4 for Land/Wholesale/Buy&Hold). Admin portal rollout planned — see `ADMIN-PLAN.md`. 13 GitHub issues (#179–#191) across 5 phases. Start new session with the kick-off prompt at the bottom of this file.
 
 ---
 
-## Last Session — What Was Done (2026-06-13, continued)
+## Last Session — What Was Done (2026-06-13)
 
 | PR | Description | Status |
 |----|-------------|--------|
-| #167 | feat(#43-P1): Multifamily MVP — mfUnderwriting() pure fn, LOAN_MATURITY events, MultifamilySection, lazy-fix Resend | ✅ merged |
-| #168 | chore: tick #43-P1 in BETA-PLAN | ✅ merged |
-| #169 | feat(#43-P2): rent roll editor, T12 CSV import, UNIT_LEASE_END events (month-grouped) | ✅ merged |
-| #170 | chore: tick #43-P2 in BETA-PLAN | ✅ merged |
-| #171 | feat(#43-P3): value-add plan tracker, stabilized cap rate, investor print view | ✅ merged |
-| #172 | chore: tick #43-P3 in BETA-PLAN | ✅ merged |
+| #174 | feat(#42-P3): Section 8 premium — HAP/HQS/FMR tracking, rent-increase windows | ✅ merged |
+| #175 | feat(#39-P4): Land note servicing — amortization, payoff quotes, late notice sends, portfolio page | ✅ merged |
+| #176 | chore: tick #42-P3 and #39-P4 in BETA-PLAN | ✅ merged |
+| #177 | feat(#40-P4): Wholesale premium — buyer blast, pipeline analytics, assignment packet export | ✅ merged |
+| #178 | chore: tick #40-P4 in BETA-PLAN + STATUS.md update | ✅ merged |
+| #192 | chore: ADMIN-PLAN.md — 13 admin portal issues (#179–#191) created + plan file | ✅ merged |
+
+**Admin portal issues created (not yet implemented):** #179–#191
 
 ## Previous Session (2026-06-13)
 
@@ -57,22 +59,32 @@
 
 ---
 
-## Next Up — see BETA-PLAN.md for full detail
+## Next Up — Admin portal rollout (see ADMIN-PLAN.md)
 
-All remaining items are gated. Decision needed on which path to take:
+Start with Phase 1 fixes — implement #179, #180, #181 (can be done in parallel).
+Full plan and issue list in `ADMIN-PLAN.md`.
 
-**Option A — Stripe PREMIUM module purchase flow first** (unblocks #42-P3/#39-P4/#40-P4):
-- One Stripe Product per (strategy, tier) → checkout → webhook upserts TenantModule.tier to PREMIUM
-- Reuses existing `app/api/billing/checkout` and `app/api/webhooks/stripe` plumbing
-
-**Option B — Build PREMIUM features now** (relies on admin toggle from PR #164):
-- Admins can manually grant PREMIUM via `/admin` → users get features immediately
-- Stripe purchase flow can come later
-
-**Blocked regardless:**
+**Still permanently blocked:**
 - `#41-P4` — needs #25 AI (ON HOLD)
 - `#43-P4` — needs #25/#26 AI (ON HOLD)
 - `#131` — needs user input on data dictionary + Tier 1 counties
+
+## Kick-off prompt for next session (admin portal)
+
+```
+Read ADMIN-PLAN.md and STATUS.md from the repo root, then check `gh pr list --state open`.
+
+Implement the Metis admin portal rollout per ADMIN-PLAN.md. Start from the first unticked item and work through all phases without stopping. 13 GitHub issues (#179–#191) across 5 phases.
+
+Session rules: fresh branch per PR, verify tsc/lint/build before push, wait for checks then merge manually (no --auto), run prisma generate yourself after schema PRs, tick ADMIN-PLAN.md in a tracker commit after each merge, update STATUS.md at end.
+
+P1 starts here:
+- #179: app/admin/AdminTenantsClient.tsx — add 'MULTIFAMILY' to CREATABLE_STRATEGIES; add Standard/Premium radio to grant form; pass tier to grantModule()
+- #180: new app/admin/tenants/[id]/page.tsx — account info, module panel, users list, deal counts, adminNotes autosave; requires Tenant.adminNotes String? migration
+- #181: app/dashboard/billing/BillingPlans.tsx — delete broken plan grid; show owned modules as badges; show non-granted strategies with "Contact us" CTA using SALES_CONTACT_URL env var
+
+Do not stop until all 13 issues are merged (respect dependency order in ADMIN-PLAN.md).
+```
 
 ---
 
