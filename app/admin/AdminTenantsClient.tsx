@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type ModuleRow = { strategy: string; tier: string }
 
@@ -20,9 +21,9 @@ type TenantRow = {
   modules: ModuleRow[]
 }
 
-const PLANS = ['STARTER', 'PROFESSIONAL', 'TEAM', 'ENTERPRISE']
-
-const CREATABLE_STRATEGIES = ['TAX_LIEN', 'TAX_DEED', 'FORECLOSURE', 'FIX_FLIP', 'WHOLESALE', 'BUY_HOLD', 'LAND']
+const CREATABLE_STRATEGIES = [
+  'TAX_LIEN', 'TAX_DEED', 'FORECLOSURE', 'FIX_FLIP', 'WHOLESALE', 'BUY_HOLD', 'LAND', 'MULTIFAMILY',
+]
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700',
@@ -33,53 +34,41 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminTenantsClient({ rows: initial }: { rows: TenantRow[] }) {
   const [rows, setRows] = useState(initial)
-  const [changingPlan, setChangingPlan] = useState<string | null>(null)
   const [changingModule, setChangingModule] = useState<string | null>(null)
   const [expandedTenant, setExpandedTenant] = useState<string | null>(null)
 
-  async function changePlan(tenantId: string, plan: string) {
-    setChangingPlan(tenantId)
-    const res = await fetch(`/api/admin/tenants/${tenantId}/plan`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan }),
-    })
-    if (res.ok) {
-      setRows((prev) => prev.map((r) => (r.id === tenantId ? { ...r, plan } : r)))
-    }
-    setChangingPlan(null)
-  }
+  async function setModuleTier(tenantId: string, strategy: string, tier: string | null) {
+    const key = `${tenantId}:${strategy}`
+    setChangingModule(key)
 
-  async function grantModule(tenantId: string, strategy: string) {
-    setChangingModule(`${tenantId}:${strategy}`)
-    const res = await fetch(`/api/admin/tenants/${tenantId}/modules`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ strategy, tier: 'STANDARD' }),
-    })
-    if (res.ok) {
-      setRows((prev) => prev.map((r) => {
-        if (r.id !== tenantId) return r
-        const existing = r.modules.find(m => m.strategy === strategy)
-        if (existing) return r
-        return { ...r, modules: [...r.modules, { strategy, tier: 'STANDARD' }] }
-      }))
-    }
-    setChangingModule(null)
-  }
-
-  async function revokeModule(tenantId: string, strategy: string) {
-    setChangingModule(`${tenantId}:${strategy}`)
-    const res = await fetch(`/api/admin/tenants/${tenantId}/modules`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ strategy }),
-    })
-    if (res.ok) {
-      setRows((prev) => prev.map((r) => {
-        if (r.id !== tenantId) return r
-        return { ...r, modules: r.modules.filter(m => m.strategy !== strategy) }
-      }))
+    if (tier === null) {
+      const res = await fetch(`/api/admin/tenants/${tenantId}/modules`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strategy }),
+      })
+      if (res.ok) {
+        setRows((prev) => prev.map((r) => {
+          if (r.id !== tenantId) return r
+          return { ...r, modules: r.modules.filter((m) => m.strategy !== strategy) }
+        }))
+      }
+    } else {
+      const res = await fetch(`/api/admin/tenants/${tenantId}/modules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strategy, tier }),
+      })
+      if (res.ok) {
+        setRows((prev) => prev.map((r) => {
+          if (r.id !== tenantId) return r
+          const existing = r.modules.find((m) => m.strategy === strategy)
+          if (existing) {
+            return { ...r, modules: r.modules.map((m) => m.strategy === strategy ? { ...m, tier } : m) }
+          }
+          return { ...r, modules: [...r.modules, { strategy, tier }] }
+        }))
+      }
     }
     setChangingModule(null)
   }
@@ -90,7 +79,6 @@ export default function AdminTenantsClient({ rows: initial }: { rows: TenantRow[
         <thead className="bg-zinc-50 border-b border-zinc-200">
           <tr>
             <th className="text-left px-4 py-3 font-medium text-zinc-600">Tenant</th>
-            <th className="text-left px-4 py-3 font-medium text-zinc-600">Plan</th>
             <th className="text-left px-4 py-3 font-medium text-zinc-600">Status</th>
             <th className="text-right px-4 py-3 font-medium text-zinc-600">Deals</th>
             <th className="text-right px-4 py-3 font-medium text-zinc-600">Users</th>
@@ -104,18 +92,10 @@ export default function AdminTenantsClient({ rows: initial }: { rows: TenantRow[
             <>
               <tr key={r.id} className="hover:bg-zinc-50">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-zinc-900">{r.name}</div>
+                  <Link href={`/admin/tenants/${r.id}`} className="font-medium text-zinc-900 hover:text-blue-700 hover:underline">
+                    {r.name}
+                  </Link>
                   <div className="text-xs text-zinc-400">{r.slug}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <select
-                    value={r.plan}
-                    disabled={changingPlan === r.id}
-                    onChange={(e) => changePlan(r.id, e.target.value)}
-                    className="border border-zinc-300 rounded px-2 py-1 text-xs disabled:opacity-50"
-                  >
-                    {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
                 </td>
                 <td className="px-4 py-3">
                   {r.stripeSubscriptionStatus ? (
@@ -145,26 +125,62 @@ export default function AdminTenantsClient({ rows: initial }: { rows: TenantRow[
               </tr>
               {expandedTenant === r.id && (
                 <tr key={`${r.id}-modules`} className="bg-zinc-50">
-                  <td colSpan={8} className="px-6 py-4">
-                    <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">Module Access</div>
+                  <td colSpan={7} className="px-6 py-4">
+                    <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">Module Access</div>
                     <div className="flex flex-wrap gap-2">
-                      {CREATABLE_STRATEGIES.map(strategy => {
-                        const enabled = r.modules.some(m => m.strategy === strategy)
+                      {CREATABLE_STRATEGIES.map((strategy) => {
+                        const mod = r.modules.find((m) => m.strategy === strategy)
                         const key = `${r.id}:${strategy}`
+                        const busy = changingModule === key
+                        const label = strategy.replace(/_/g, ' ')
+
                         return (
-                          <button
-                            key={strategy}
-                            disabled={changingModule === key}
-                            onClick={() => enabled ? revokeModule(r.id, strategy) : grantModule(r.id, strategy)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
-                              enabled
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700'
-                                : 'bg-zinc-100 text-zinc-500 hover:bg-emerald-100 hover:text-emerald-700'
-                            }`}
-                            title={enabled ? `Revoke ${strategy}` : `Grant ${strategy}`}
-                          >
-                            {strategy.replace(/_/g, ' ')} {enabled ? '✓' : '+'}
-                          </button>
+                          <div key={strategy} className="flex items-center gap-1.5 border border-zinc-200 rounded-lg px-2 py-1.5 bg-white">
+                            <span className="text-xs text-zinc-600 w-24 truncate">{label}</span>
+                            {mod ? (
+                              <>
+                                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                                  mod.tier === 'PREMIUM' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                                }`}>
+                                  {mod.tier === 'PREMIUM' ? 'PRE' : 'STD'}
+                                </span>
+                                {mod.tier === 'STANDARD' ? (
+                                  <button
+                                    disabled={busy}
+                                    onClick={() => setModuleTier(r.id, strategy, 'PREMIUM')}
+                                    className="text-xs text-amber-600 hover:underline disabled:opacity-50"
+                                    title="Upgrade to Premium"
+                                  >↑PRE</button>
+                                ) : (
+                                  <button
+                                    disabled={busy}
+                                    onClick={() => setModuleTier(r.id, strategy, 'STANDARD')}
+                                    className="text-xs text-zinc-500 hover:underline disabled:opacity-50"
+                                    title="Downgrade to Standard"
+                                  >↓STD</button>
+                                )}
+                                <button
+                                  disabled={busy}
+                                  onClick={() => setModuleTier(r.id, strategy, null)}
+                                  className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50 ml-1"
+                                  title="Revoke"
+                                >×</button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  disabled={busy}
+                                  onClick={() => setModuleTier(r.id, strategy, 'STANDARD')}
+                                  className="text-xs px-1.5 py-0.5 rounded border border-zinc-200 text-zinc-500 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 disabled:opacity-50 transition-colors"
+                                >+STD</button>
+                                <button
+                                  disabled={busy}
+                                  onClick={() => setModuleTier(r.id, strategy, 'PREMIUM')}
+                                  className="text-xs px-1.5 py-0.5 rounded border border-zinc-200 text-zinc-500 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 disabled:opacity-50 transition-colors"
+                                >+PRE</button>
+                              </>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
