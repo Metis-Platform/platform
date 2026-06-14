@@ -29,10 +29,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Module already owned' }, { status: 409 })
   }
 
+  // Prefer DB-configured price; fall back to env var
+  const dbPrice = await db.modulePrice.findUnique({
+    where: { strategy_tier: { strategy, tier } },
+    select: { stripePriceId: true, isActive: true },
+  })
+
   const priceId =
-    tier === 'PREMIUM'
+    (dbPrice?.isActive ? dbPrice.stripePriceId : null) ??
+    (tier === 'PREMIUM'
       ? process.env.STRIPE_MODULE_PRICE_PREMIUM_ID
-      : process.env.STRIPE_MODULE_PRICE_STANDARD_ID
+      : process.env.STRIPE_MODULE_PRICE_STANDARD_ID)
 
   if (!priceId) {
     return NextResponse.json({ error: 'Purchase not configured — contact support@metisplatforms.com' }, { status: 503 })
