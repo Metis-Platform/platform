@@ -54,8 +54,8 @@ Admin can spot a failed job before a user reports it. Admin can review a tenant'
 
 ## Phase 4 — Proactive operations tooling
 
-- [ ] **#188** Admin P4A: Communications center — per-tenant email, broadcast to all tenants, optional in-app announcement banner
-- [ ] **#189** Admin P4B: Checklist template editor — `ChecklistTemplate` DB model, seed from hardcoded data, admin editor at `/admin/templates`, tenant self-service fork
+- [x] **#188** Admin P4A: Communications center — per-tenant email, broadcast to all tenants, optional in-app announcement banner (PR #206)
+- [x] **#189** Admin P4B: Checklist template editor — `ChecklistTemplate` DB model, seed from hardcoded data, admin editor at `/admin/templates`, tenant self-service fork (PR #205)
 
 ### P4 acceptance gate
 Admin can send a targeted support email without leaving the app. Admin can update checklist templates without a code deploy.
