@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema, computeRentRollMetrics, computeT12Metrics, MONTHS } from '@/lib/multifamily-schemas'
+import { computeGrid, DEFAULT_CAP_RATES, DEFAULT_HOLD_YEARS } from '@/lib/multifamily-scenarios'
 
 export default async function MultifamilyPrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -13,13 +14,23 @@ export default async function MultifamilyPrintPage({ params }: { params: Promise
   if (!synced) redirect('/onboarding')
   const { tenant } = synced
 
-  const deal = await db.deal.findUnique({
-    where: { id, tenantId: tenant.id },
-    include: {
-      property: { include: { jurisdiction: true } },
-      multifamily: true,
-    },
-  })
+  const [deal, closedDeals] = await Promise.all([
+    db.deal.findUnique({
+      where: { id, tenantId: tenant.id },
+      include: {
+        property: { include: { jurisdiction: true } },
+        multifamily: true,
+      },
+    }),
+    db.deal.findMany({
+      where: { tenantId: tenant.id, status: { in: ['CLOSED', 'SOLD', 'REDEEMED'] } },
+      include: {
+        property: { include: { jurisdiction: { select: { county: true, state: true } } } },
+      },
+      orderBy: { exitDate: 'desc' },
+      take: 10,
+    }),
+  ])
   if (!deal || deal.strategyType !== 'MULTIFAMILY') notFound()
 
   const { multifamily, property } = deal
@@ -49,6 +60,15 @@ export default async function MultifamilyPrintPage({ params }: { params: Promise
   }
 
   const purchasePrice = deal.purchasePrice ? Number(deal.purchasePrice) : null
+
+  const scenarioGrid = (multifamily?.netOperatingIncome && purchasePrice)
+    ? computeGrid({
+        baseNOI:           Number(multifamily.netOperatingIncome),
+        purchasePrice,
+        loanAmount:        multifamily.loanAmount ? Number(multifamily.loanAmount) : 0,
+        annualDebtService: multifamily.annualDebtService ? Number(multifamily.annualDebtService) : 0,
+      })
+    : null
 
   return (
     <div className="max-w-4xl mx-auto p-8 print:p-0">
@@ -193,6 +213,80 @@ export default async function MultifamilyPrintPage({ params }: { params: Promise
             {purchasePrice && <Metric label="Stabilized Cap Rate" value={fmtPct(businessPlan.stabilizedNoiTarget / purchasePrice)} />}
           </div>
           {businessPlan.notes && <p className="mt-2 text-xs text-zinc-500">{businessPlan.notes}</p>}
+        </section>
+      )}
+
+      {/* Sensitivity grid */}
+      {scenarioGrid && (
+        <section className="mb-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 mb-1">Sensitivity — Equity Multiple (3% NOI Growth)</h2>
+          <p className="text-[10px] text-zinc-400 mb-3">Exit cap rate × hold period. Assumes interest-only balloon at exit.</p>
+          <table className="w-full text-xs border border-zinc-100 rounded-lg">
+            <thead>
+              <tr className="bg-zinc-50 text-zinc-400">
+                <th className="px-3 py-2 text-left font-medium">Exit Cap ↓ / Hold →</th>
+                {DEFAULT_HOLD_YEARS.map(y => (
+                  <th key={y} className="px-3 py-2 text-center font-medium">{y} yr</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {DEFAULT_CAP_RATES.map((cap, rowIdx) => (
+                <tr key={cap} className="border-t border-zinc-100">
+                  <td className="px-3 py-1.5 font-medium text-zinc-500">{(cap * 100).toFixed(1)}%</td>
+                  {DEFAULT_HOLD_YEARS.map((_, colIdx) => {
+                    const s = scenarioGrid[rowIdx][colIdx]
+                    const em = s.equityMultiple
+                    const color = em == null ? '' : em >= 2 ? 'text-emerald-700 font-bold' : em >= 1.5 ? 'text-emerald-600 font-semibold' : em >= 1 ? 'text-amber-600' : 'text-red-600'
+                    return (
+                      <td key={colIdx} className="px-3 py-1.5 text-center">
+                        <div className={color}>{em != null ? `${em.toFixed(2)}×` : '—'}</div>
+                        <div className="text-[10px] text-zinc-400">
+                          {s.exitValue >= 1_000_000 ? `$${(s.exitValue / 1_000_000).toFixed(1)}M` : `$${(s.exitValue / 1_000).toFixed(0)}K`}
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* Sponsor track record */}
+      {closedDeals.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 mb-3">Sponsor Track Record</h2>
+          <table className="w-full text-xs border border-zinc-100 rounded-lg">
+            <thead>
+              <tr className="bg-zinc-50 text-left text-zinc-400">
+                <th className="px-3 py-2 font-medium">Property / APN</th>
+                <th className="px-3 py-2 font-medium">Strategy</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium text-right">Purchase Price</th>
+                <th className="px-3 py-2 font-medium">Closed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {closedDeals.map(d => (
+                <tr key={d.id} className="border-t border-zinc-100">
+                  <td className="px-3 py-1.5">
+                    <div className="font-mono text-zinc-700">{d.property.apn}</div>
+                    {d.property.address && <div className="text-zinc-400 text-[10px]">{d.property.address}</div>}
+                  </td>
+                  <td className="px-3 py-1.5 text-zinc-500">{d.strategyType.replace(/_/g, ' ')}</td>
+                  <td className="px-3 py-1.5 text-zinc-500">{d.status}</td>
+                  <td className="px-3 py-1.5 text-right font-medium text-zinc-700">
+                    {d.purchasePrice ? `$${Number(d.purchasePrice).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+                  </td>
+                  <td className="px-3 py-1.5 text-zinc-500">
+                    {d.exitDate ? new Date(d.exitDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 
