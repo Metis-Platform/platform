@@ -44,19 +44,26 @@
 
 ---
 
-## Next Up
+## Next Up — Phase 2 AI Layer
 
-No planned work items remain. All phases complete.
+Issues scoped and ready. One owner decision needed first.
+
+| Issue | Title | Status |
+|-------|-------|--------|
+| #25 | AI document extraction — upload cert, extract fields via Claude | Scoped, ready |
+| #26 | Deal Copilot — streaming chat scoped to portfolio data | Scoped, ready (depends on #25) |
+
+**⚠️ Owner decision required before starting:**
+How to gate AI features? Subscription plan tiers (STARTER/PROFESSIONAL) are not actively enforced — billing moved to per-module (TenantModule). Options: (A) gate on any active module, (B) AI as its own purchasable module, (C) ungated, (D) env var toggle. Recommend D for now: `ENABLE_AI_EXTRACTION=true` / `ENABLE_AI_COPILOT=true`.
 
 **Still permanently blocked:**
-- `#41-P4` — needs #25 AI (ON HOLD)
-- `#43-P4` — needs #25/#26 AI (ON HOLD)
-- `#131` — needs user input on data dictionary + Tier 1 counties
+- `#41-P4` — Fix & Flip AI (depends on #25)
+- `#43-P4` — Multifamily AI underwriting (depends on #25/#26)
+- `#131` — needs owner input on data dictionary + Tier 1 counties
 
-**Possible next directions:**
-- AI Layer (Phase 2) — Deal Copilot, document OCR, AI auto-suggest (#25, #26)
-- Platform primitives — Contact CRM, import pipeline (#132 already shipped, #133 shipped)
-- Any new issues filed in GitHub
+## Billing model — IMPORTANT
+
+Subscription plan tiers (STARTER/PROFESSIONAL/TEAM) are **not enforced**. `Tenant.plan` field exists but nothing reads it for feature gating. `PLAN_LIMITS.aiIncluded` in `lib/stripe.ts` is dead code. Real gate is `TenantModule` via `hasStrategy()` / `hasTier()` in `lib/entitlements.ts`.
 
 ---
 
