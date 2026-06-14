@@ -7,7 +7,7 @@
 ---
 
 ## Current Phase
-**Phase 2 AI Layer complete.** #25 and #26 shipped. `@anthropic-ai/sdk` installed, BYOK key flow live, document extraction and Deal Copilot both merged.
+**Phase 4 AI complete.** #41-P4 and #43-P4 shipped. All AI features across Fix & Flip and Multifamily now live (BYOK-gated). Remaining AI work blocked on #131 (comps data).
 
 ---
 
@@ -15,13 +15,15 @@
 
 | PR | Description | Status |
 |----|-------------|--------|
-| #213 | feat(#25): AI document extraction — BYOK key, extract endpoint, review modal | ✅ merged |
-| #214 | feat(#26): Deal Copilot — streaming chat scoped to portfolio | ✅ merged |
+| #216 | feat(#41-P4): Fix & Flip AI — contractor bid/invoice extraction, draw package | ✅ merged |
+| #217 | feat(#43-P4): Multifamily AI — OM extraction, sensitivity grid, lender package | ✅ merged |
 
-## Previous Session (2026-06-14)
+## Previous Sessions (2026-06-14)
 
 | PR | Description | Status |
 |----|-------------|--------|
+| #213 | feat(#25): AI document extraction — BYOK key, extract endpoint, review modal | ✅ merged |
+| #214 | feat(#26): Deal Copilot — streaming chat scoped to portfolio | ✅ merged |
 | #194 | feat(#179): fix module management — MULTIFAMILY + PREMIUM tier toggle | ✅ merged |
 | #195 | feat(#181): fix billing page — owned modules + available modules + Contact us CTA | ✅ merged |
 | #196 | feat(#180): tenant detail page `/admin/tenants/[id]` | ✅ merged |
@@ -38,13 +40,15 @@
 
 ---
 
-## Next Up — Now Unblocked
+## Next Up
 
 | Issue | Title | Status |
 |-------|-------|--------|
-| #41-P4 | Fix & Flip AI (depends on #25 ✅) | Ready |
-| #43-P4 | Multifamily AI underwriting (depends on #25/#26 ✅) | Ready |
 | #131 | Jurisdiction data dictionary + Tier 1 counties | Needs owner input |
+| #41-P4 comps | ARV market context on Fix & Flip underwriting | BLOCKED on #131 |
+| #43-P4 comps | Rent comps, sale comps, FMR on MF underwriting | BLOCKED on #131 |
+
+All Phase 4 AI work that depends only on #25/#26 is complete. Next meaningful work requires #131 (jurisdiction data program with comps pipeline).
 
 ## AI Layer — BYOK Architecture (IMPORTANT)
 
@@ -53,6 +57,15 @@
 - Gating: `Tenant.anthropicApiKey IS NOT NULL` — setting a key is the opt-in. No TenantModule needed for AI.
 - Missing key → `{ error: '...', settingsUrl: '/dashboard/settings/ai' }` with 402
 - Metis-hosted AI (platform key + token metering) is a separate future issue
+
+## AI extraction routes (all use BYOK pattern)
+
+| Route | DocType(s) | Target |
+|-------|-----------|--------|
+| `POST /api/ai/extract` | LIEN_CERTIFICATE, TAX_DEED | `DealTaxLien` / `DealTaxDeed` fields |
+| `POST /api/ai/extract-sow` | CONTRACTOR_BID, INVOICE | `DealFixFlip.scopeOfWork` line items |
+| `POST /api/ai/extract-mf` | OFFERING_MEMORANDUM | `DealMultifamily` fields |
+| `POST /api/ai/copilot` | N/A | SSE streaming chat (portfolio context) |
 
 ## Billing model — IMPORTANT
 
