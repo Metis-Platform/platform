@@ -7,11 +7,18 @@
 ---
 
 ## Current Phase
-**All ADMIN-PLAN features complete.** All 13 admin portal issues (#179–#191) shipped across 5 phases. Every feature from BETA-PLAN and ADMIN-PLAN is now merged.
+**Phase 2 AI Layer complete.** #25 and #26 shipped. `@anthropic-ai/sdk` installed, BYOK key flow live, document extraction and Deal Copilot both merged.
 
 ---
 
 ## Last Session — What Was Done (2026-06-14)
+
+| PR | Description | Status |
+|----|-------------|--------|
+| #213 | feat(#25): AI document extraction — BYOK key, extract endpoint, review modal | ✅ merged |
+| #214 | feat(#26): Deal Copilot — streaming chat scoped to portfolio | ✅ merged |
+
+## Previous Session (2026-06-14)
 
 | PR | Description | Status |
 |----|-------------|--------|
@@ -26,40 +33,26 @@
 | #203 | feat(#186): platform health dashboard — pg-boss job state, email bounce tracking, churn signals | ✅ merged |
 | #205 | feat(#189): checklist template editor — ChecklistTemplate DB model, admin editor, tenant fork | ✅ merged |
 | #206 | feat(#188): admin communications center — per-tenant email, broadcast, in-app announcements | ✅ merged |
-| #207 | chore: tick #188 and #189 in ADMIN-PLAN | ✅ merged |
 | #208 | feat(#190): Stripe module purchase flow — checkout, webhook handler, billing page buttons | ✅ merged |
 | #209 | feat(#191): pricing configuration and trial management — ModulePrice, trialEndsAt, expire-trials cron | ✅ merged |
-| #210 | chore: tick #190 and #191 in ADMIN-PLAN — Phase 5 complete | ✅ merged |
-
-## Previous Session (2026-06-13)
-
-| PR | Description | Status |
-|----|-------------|--------|
-| #174 | feat(#42-P3): Section 8 premium | ✅ merged |
-| #175 | feat(#39-P4): Land note servicing | ✅ merged |
-| #176 | chore: BETA-PLAN tick | ✅ merged |
-| #177 | feat(#40-P4): Wholesale premium | ✅ merged |
-| #178 | chore: BETA-PLAN tick | ✅ merged |
-| #192 | chore: ADMIN-PLAN.md created | ✅ merged |
 
 ---
 
-## Next Up — Phase 2 AI Layer
-
-Issues scoped and ready. One owner decision needed first.
+## Next Up — Now Unblocked
 
 | Issue | Title | Status |
 |-------|-------|--------|
-| #25 | AI document extraction — upload cert, extract fields via Claude | Scoped, ready |
-| #26 | Deal Copilot — streaming chat scoped to portfolio data | Scoped, ready (depends on #25) |
+| #41-P4 | Fix & Flip AI (depends on #25 ✅) | Ready |
+| #43-P4 | Multifamily AI underwriting (depends on #25/#26 ✅) | Ready |
+| #131 | Jurisdiction data dictionary + Tier 1 counties | Needs owner input |
 
-**⚠️ Owner decision required before starting:**
-How to gate AI features? Subscription plan tiers (STARTER/PROFESSIONAL) are not actively enforced — billing moved to per-module (TenantModule). Options: (A) gate on any active module, (B) AI as its own purchasable module, (C) ungated, (D) env var toggle. Recommend D for now: `ENABLE_AI_EXTRACTION=true` / `ENABLE_AI_COPILOT=true`.
+## AI Layer — BYOK Architecture (IMPORTANT)
 
-**Still permanently blocked:**
-- `#41-P4` — Fix & Flip AI (depends on #25)
-- `#43-P4` — Multifamily AI underwriting (depends on #25/#26)
-- `#131` — needs owner input on data dictionary + Tier 1 counties
+- `Tenant.anthropicApiKey String?` — tenant stores their own key; platform key is **never** used as fallback
+- `lib/ai.ts`: `getAnthropic(apiKey)` throws if empty; `resolveAnthropicKey(tenantId)` throws user-readable error if null → callers return 402
+- Gating: `Tenant.anthropicApiKey IS NOT NULL` — setting a key is the opt-in. No TenantModule needed for AI.
+- Missing key → `{ error: '...', settingsUrl: '/dashboard/settings/ai' }` with 402
+- Metis-hosted AI (platform key + token metering) is a separate future issue
 
 ## Billing model — IMPORTANT
 
@@ -96,3 +89,4 @@ LEAD ──→ [Won at Auction] ──→ ACTIVE ──→ REDEEMED / FORECLOSUR
 | 005 | Extension table pattern for strategy modules |
 | 006 | Claude API for all AI features |
 | 007 | Vercel Cron routes for scheduled jobs (not pg-boss — not installed as npm package) |
+| 008 | BYOK for AI features — tenant supplies their own Anthropic key; platform key never used for tenant requests |
