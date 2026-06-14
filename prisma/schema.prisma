@@ -62,15 +62,29 @@ model TenantWorkflowRule {
 }
 
 model TenantModule {
-  id        String      @id @default(cuid())
-  tenantId  String
-  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  strategy  StrategyType
-  tier      ModuleTier  @default(STANDARD)
-  createdAt DateTime    @default(now())
+  id          String       @id @default(cuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  strategy    StrategyType
+  tier        ModuleTier   @default(STANDARD)
+  trialEndsAt DateTime?
+  createdAt   DateTime     @default(now())
 
   @@unique([tenantId, strategy])
   @@index([tenantId])
+}
+
+model ModulePrice {
+  id            String       @id @default(cuid())
+  strategy      StrategyType
+  tier          ModuleTier
+  stripePriceId String?
+  displayPrice  Decimal?     @db.Decimal(10, 2)
+  currency      String       @default("usd")
+  isActive      Boolean      @default(true)
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([strategy, tier])
 }
 
 // HUD Fair Market Rent reference data (keyed to state/county/year/bedrooms)
