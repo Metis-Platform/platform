@@ -60,8 +60,19 @@ export async function syncUserToDatabase() {
         email,
         name,
         role: orgRole === 'org:admin' ? 'OWNER' : 'READ_ONLY',
+        lastActiveAt: new Date(),
       },
     })
+  } else {
+    // Debounce: only write if lastActiveAt is null or older than 5 minutes
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000)
+    if (user.lastActiveAt == null || user.lastActiveAt < fiveMinAgo) {
+      await db.user.update({
+        where: { id: user.id },
+        data: { lastActiveAt: new Date() },
+      })
+      user = { ...user, lastActiveAt: new Date() }
+    }
   }
 
   return { tenant, user }
