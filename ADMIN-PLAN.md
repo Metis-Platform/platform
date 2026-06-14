@@ -21,7 +21,7 @@ then add proactive tools (P4), then monetization plumbing (P5).
 
 These are breakages. Implement immediately — they cost hours of admin time as manual workarounds.
 
-- [ ] **#179** Admin P1A: Fix module management — add MULTIFAMILY to CREATABLE_STRATEGIES, add PREMIUM tier toggle to grant UI
+- [x] **#179** Admin P1A: Fix module management — add MULTIFAMILY to CREATABLE_STRATEGIES, add PREMIUM tier toggle to grant UI (PR #194)
 - [ ] **#180** Admin P1B: Tenant detail page at `/admin/tenants/[id]` — account info, module panel, users list, deal counts, admin notes field
 - [ ] **#181** Admin P1C: Fix billing page — remove broken plan grid, replace with owned modules + available modules + "Contact us" CTA
 
