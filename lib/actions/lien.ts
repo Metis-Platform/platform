@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
+import { emitAuditEvent } from '@/lib/audit'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
@@ -150,6 +151,7 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
           },
         },
       })
+      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof ActiveSchema>
@@ -170,6 +172,7 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
       })
       await generateEventsForDeal(deal.id, tenant.id)
       await applyTenantWorkflowRules(tenant.id, deal.id)
+      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN' }, userId)
       dealId = deal.id
     }
   } catch (err) {
@@ -302,6 +305,7 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
           },
         },
       })
+      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof DeedActiveSchema>
@@ -327,6 +331,7 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
         },
       })
       await generateEventsForDeal(deal.id, tenant.id)
+      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED' }, userId)
       dealId = deal.id
     }
   } catch (err) {
@@ -381,6 +386,7 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
           },
         },
       })
+      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof ForeclosureActiveSchema>
@@ -400,6 +406,7 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
         },
       })
       await generateEventsForDeal(deal.id, tenant.id)
+      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE' }, userId)
       dealId = deal.id
     }
   } catch (err) {

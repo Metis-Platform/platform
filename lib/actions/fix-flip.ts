@@ -7,6 +7,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateFixFlipEvents } from '@/lib/fix-flip-events'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
+import { emitAuditEvent } from '@/lib/audit'
 import { hasStrategy } from '@/lib/entitlements'
 
 export type FixFlipFormState = {
@@ -108,6 +109,7 @@ export async function createFixFlip(
 
   await generateFixFlipEvents(deal.id)
   await applyTenantWorkflowRules(tenant.id, deal.id)
+  await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FIX_FLIP' }, userId)
   redirect(`/dashboard/deals/${deal.id}`)
 }
 

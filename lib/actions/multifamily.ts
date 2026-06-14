@@ -7,6 +7,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateMultifamilyEvents } from '@/lib/multifamily-events'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
+import { emitAuditEvent } from '@/lib/audit'
 import { mfUnderwriting } from '@/lib/economics'
 import { hasStrategy } from '@/lib/entitlements'
 
@@ -139,6 +140,7 @@ export async function createMultifamily(
 
   await generateMultifamilyEvents(deal.id)
   await applyTenantWorkflowRules(tenant.id, deal.id)
+  await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'MULTIFAMILY' }, userId)
   redirect(`/dashboard/deals/${deal.id}`)
 }
 
