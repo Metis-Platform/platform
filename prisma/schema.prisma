@@ -697,6 +697,16 @@ model AuditEvent {
   @@index([tenantId, createdAt])
 }
 
+model Announcement {
+  id        String   @id @default(cuid())
+  message   String
+  severity  String   @default("INFO") // INFO, WARNING
+  startsAt  DateTime @default(now())
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+  createdBy String?
+}
+
 model ChecklistTemplate {
   id        String       @id @default(cuid())
   tenantId  String?      // null = system template; set = tenant override
