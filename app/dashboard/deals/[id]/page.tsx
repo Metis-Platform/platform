@@ -30,6 +30,7 @@ import RentRollSection from './RentRollSection'
 import T12Section from './T12Section'
 import BusinessPlanSection from './BusinessPlanSection'
 import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema } from '@/lib/multifamily-schemas'
+import JurisdictionGuide from './JurisdictionGuide'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
@@ -68,6 +69,12 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     }),
   ])
   if (!deal) notFound()
+
+  const jurStrategyRow = await db.jurisdictionStrategyData.findUnique({
+    where: { jurisdictionId_strategy: { jurisdictionId: deal.property.jurisdictionId, strategy: deal.strategyType } },
+    select: { data: true },
+  })
+  const jurStrategyData = jurStrategyRow ? (jurStrategyRow.data as Record<string, unknown>) : null
 
   const docs: DocRow[] = rawDocs.map(d => ({
     id:         d.id,
@@ -691,6 +698,14 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
           <LandNoteSection dealId={deal.id} notes={noteRows} payments={notePayments} hasLandPremium={hasLandPremium} />
         </div>
       )}
+
+      {/* Jurisdiction Guide */}
+      <JurisdictionGuide
+        strategy={deal.strategyType}
+        jurisdictionName={`${jur.county} County, ${jur.stateName}`}
+        strategyData={jurStrategyData}
+        stateInfo={stateInfo}
+      />
 
       {/* Research Links */}
       <div className="bg-white rounded-xl border border-zinc-200 p-6 mb-6">
