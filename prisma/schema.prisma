@@ -103,10 +103,24 @@ model Jurisdiction {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  ruleSets   RuleSet[]
-  properties Property[]
+  ruleSets      RuleSet[]
+  properties    Property[]
+  strategyData  JurisdictionStrategyData[]
 
   @@unique([state, county])
+}
+
+model JurisdictionStrategyData {
+  id             String       @id @default(cuid())
+  jurisdictionId String
+  jurisdiction   Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  strategy       StrategyType
+  data           Json
+  updatedAt      DateTime     @updatedAt
+  updatedBy      String?
+
+  @@unique([jurisdictionId, strategy])
+  @@index([jurisdictionId])
 }
 
 model RuleSet {

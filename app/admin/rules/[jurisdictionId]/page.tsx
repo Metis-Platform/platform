@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import Link from 'next/link'
 import RulesClient from './RulesClient'
+import StrategyDataClient from './StrategyDataClient'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 
 export const dynamic = 'force-dynamic'
@@ -23,17 +24,20 @@ export default async function JurisdictionRulesPage({
 
   const { jurisdictionId } = await params
 
-  const jurisdiction = await db.jurisdiction.findUnique({
-    where: { id: jurisdictionId },
-    include: {
-      ruleSets: {
-        orderBy: [{ isActive: 'desc' }, { effectiveDate: 'desc' }],
-        include: {
-          rules: { orderBy: [{ sortOrder: 'asc' }, { offsetDays: 'asc' }] },
+  const [jurisdiction, strategyDataRows] = await Promise.all([
+    db.jurisdiction.findUnique({
+      where: { id: jurisdictionId },
+      include: {
+        ruleSets: {
+          orderBy: [{ isActive: 'desc' }, { effectiveDate: 'desc' }],
+          include: {
+            rules: { orderBy: [{ sortOrder: 'asc' }, { offsetDays: 'asc' }] },
+          },
         },
       },
-    },
-  })
+    }),
+    db.jurisdictionStrategyData.findMany({ where: { jurisdictionId } }),
+  ])
 
   if (!jurisdiction) notFound()
 
@@ -181,6 +185,22 @@ export default async function JurisdictionRulesPage({
         isAvailable={jurisdiction.isAvailable}
         ruleSets={ruleSets}
       />
+
+      {/* Strategy-specific data */}
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-900 mb-1">Strategy Data</h2>
+        <p className="text-xs text-zinc-500 mb-4">
+          Jurisdiction-specific legal data by strategy. Used to surface relevant rules to investors on deal pages.
+        </p>
+        <StrategyDataClient
+          jurisdictionId={jurisdictionId}
+          initialData={strategyDataRows.map((r) => ({
+            strategy: r.strategy,
+            data: r.data as Record<string, unknown>,
+            updatedAt: r.updatedAt.toISOString(),
+          }))}
+        />
+      </div>
     </div>
   )
 }
