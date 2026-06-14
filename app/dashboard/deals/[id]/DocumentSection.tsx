@@ -2,7 +2,7 @@
 
 import { useState, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { applyLienExtraction, applyDeedExtraction, applyBidExtraction, type SowItem } from '@/lib/actions/ai-extract'
+import { applyLienExtraction, applyDeedExtraction, applyBidExtraction, applyOmExtraction, type SowItem, type OmFields } from '@/lib/actions/ai-extract'
 
 export type DocRow = {
   id: string
@@ -23,9 +23,10 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   TITLE_REPORT:      'Title Report',
   DEED:              'Deed',
   LEASE:             'Lease',
-  CONTRACTOR_BID:    'Contractor Bid',
-  INVOICE:           'Invoice',
-  OTHER:             'Other',
+  CONTRACTOR_BID:       'Contractor Bid',
+  INVOICE:              'Invoice',
+  OFFERING_MEMORANDUM:  'Offering Memo',
+  OTHER:                'Other',
 }
 
 const DOC_TYPE_COLOR: Record<string, string> = {
@@ -38,9 +39,10 @@ const DOC_TYPE_COLOR: Record<string, string> = {
   TITLE_REPORT:      'bg-teal-100 text-teal-700',
   DEED:              'bg-emerald-100 text-emerald-700',
   LEASE:             'bg-cyan-100 text-cyan-700',
-  CONTRACTOR_BID:    'bg-amber-100 text-amber-700',
-  INVOICE:           'bg-rose-100 text-rose-700',
-  OTHER:             'bg-zinc-100 text-zinc-600',
+  CONTRACTOR_BID:      'bg-amber-100 text-amber-700',
+  INVOICE:             'bg-rose-100 text-rose-700',
+  OFFERING_MEMORANDUM: 'bg-purple-100 text-purple-700',
+  OTHER:               'bg-zinc-100 text-zinc-600',
 }
 
 const ALLOWED_EXTENSIONS = '.pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx,.txt,.csv'
@@ -96,9 +98,23 @@ const DEED_FIELD_LABELS: Record<string, string> = {
   grantorName: 'Grantor Name',
 }
 
+const OM_FIELD_LABELS: Record<string, string> = {
+  unitCount:             'Unit Count',
+  askingPrice:           'Asking Price ($)',
+  grossScheduledIncome:  'GSI Annual ($)',
+  vacancyRate:           'Vacancy Rate (decimal)',
+  operatingExpenses:     'Operating Expenses ($)',
+  netOperatingIncome:    'NOI Annual ($)',
+  capRate:               'Cap Rate (decimal)',
+  loanAmount:            'Loan Amount ($)',
+  interestRate:          'Interest Rate (decimal)',
+  loanTermYears:         'Loan Term (years)',
+}
+
 // Fields that can be written back to the deal extension table
 const LIEN_APPLY_FIELDS = new Set(['certificateNumber', 'faceAmount', 'interestRate', 'issueDate'])
 const DEED_APPLY_FIELDS = new Set(['saleDate', 'winningBid', 'openingBid'])
+const OM_APPLY_FIELDS   = new Set(['unitCount', 'askingPrice', 'grossScheduledIncome', 'vacancyRate', 'operatingExpenses', 'netOperatingIncome', 'capRate', 'loanAmount', 'interestRate', 'loanTermYears'])
 
 type UploadState = { status: 'idle' } | { status: 'uploading'; progress: number } | { status: 'error'; message: string }
 
@@ -215,8 +231,9 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
 
   async function handleExtract(doc: DocRow) {
     setExtractState({ status: 'loading' })
+    const endpoint = doc.docType === 'OFFERING_MEMORANDUM' ? '/api/ai/extract-mf' : '/api/ai/extract'
     try {
-      const res = await fetch('/api/ai/extract', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: doc.id }),
@@ -252,6 +269,13 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
         interestRate:      edited.interestRate       || null,
         issueDate:         edited.issueDate          || null,
       })
+      error = res.error
+    } else if (docType === 'OFFERING_MEMORANDUM') {
+      const omFields: OmFields = {}
+      for (const key of Object.keys(edited)) {
+        omFields[key as keyof OmFields] = edited[key] || null
+      }
+      const res = await applyOmExtraction(dealId, omFields)
       error = res.error
     } else {
       const res = await applyDeedExtraction(dealId, {
@@ -305,11 +329,16 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
   }
 
   const isUploading = uploadState.status === 'uploading'
-  const fieldLabels = (extractState.status === 'review' && extractState.docType === 'TAX_DEED')
+  const docTypeForLabels = extractState.status === 'review' ? extractState.docType : ''
+  const fieldLabels = docTypeForLabels === 'TAX_DEED'
     ? DEED_FIELD_LABELS
+    : docTypeForLabels === 'OFFERING_MEMORANDUM'
+    ? OM_FIELD_LABELS
     : LIEN_FIELD_LABELS
-  const applyFields = (extractState.status === 'review' && extractState.docType === 'TAX_DEED')
+  const applyFields = docTypeForLabels === 'TAX_DEED'
     ? DEED_APPLY_FIELDS
+    : docTypeForLabels === 'OFFERING_MEMORANDUM'
+    ? OM_APPLY_FIELDS
     : LIEN_APPLY_FIELDS
 
   return (
@@ -427,14 +456,14 @@ export default function DocumentSection({ dealId, initialDocs }: { dealId: strin
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                {(doc.docType === 'LIEN_CERTIFICATE' || doc.docType === 'TAX_DEED') && (
+                {(doc.docType === 'LIEN_CERTIFICATE' || doc.docType === 'TAX_DEED' || doc.docType === 'OFFERING_MEMORANDUM') && (
                   <button
                     onClick={() => handleExtract(doc)}
                     disabled={extractState.status === 'loading'}
                     className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-800 border border-violet-200 hover:border-violet-400 rounded-md transition-all disabled:opacity-50"
                     title="Extract fields with AI"
                   >
-                    Extract
+                    {doc.docType === 'OFFERING_MEMORANDUM' ? 'Extract OM' : 'Extract'}
                   </button>
                 )}
                 {(doc.docType === 'CONTRACTOR_BID' || doc.docType === 'INVOICE') && (

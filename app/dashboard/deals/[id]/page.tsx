@@ -29,6 +29,7 @@ import Section8Section, { type Section8Data } from './Section8Section'
 import RentRollSection from './RentRollSection'
 import T12Section from './T12Section'
 import BusinessPlanSection from './BusinessPlanSection'
+import SensitivitySection from './SensitivitySection'
 import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema } from '@/lib/multifamily-schemas'
 import JurisdictionGuide from './JurisdictionGuide'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
@@ -670,10 +671,22 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
             purchasePrice={deal.purchasePrice ? Number(deal.purchasePrice) : null}
             currentNoi={multifamily?.netOperatingIncome ? Number(multifamily.netOperatingIncome) : null}
           />
+          {multifamily?.netOperatingIncome && deal.purchasePrice && (
+            <div className="mt-4">
+              <SensitivitySection
+                inputs={{
+                  baseNOI:           Number(multifamily.netOperatingIncome),
+                  purchasePrice:     Number(deal.purchasePrice),
+                  loanAmount:        multifamily.loanAmount ? Number(multifamily.loanAmount) : 0,
+                  annualDebtService: multifamily.annualDebtService ? Number(multifamily.annualDebtService) : 0,
+                }}
+              />
+            </div>
+          )}
           <div className="mt-4 flex justify-end">
             <Link href={`/dashboard/deals/${deal.id}/print`} target="_blank"
               className="text-xs text-zinc-500 hover:text-zinc-900 underline transition-colors">
-              Print / Investor Report ↗
+              Print / Lender Package ↗
             </Link>
           </div>
         </div>

@@ -80,6 +80,69 @@ export async function applyDeedExtraction(
   }
 }
 
+export type OmFields = {
+  unitCount?: string | null
+  askingPrice?: string | null
+  grossScheduledIncome?: string | null
+  vacancyRate?: string | null
+  operatingExpenses?: string | null
+  netOperatingIncome?: string | null
+  capRate?: string | null
+  loanAmount?: string | null
+  interestRate?: string | null
+  loanTermYears?: string | null
+}
+
+export async function applyOmExtraction(
+  dealId: string,
+  fields: OmFields,
+): Promise<{ error?: string }> {
+  const result = await getCurrentUser()
+  if (!result) return { error: 'Not authenticated.' }
+  const { tenant } = result
+
+  try {
+    const deal = await db.deal.findUnique({
+      where: { id: dealId, tenantId: tenant.id },
+      select: { multifamily: { select: { id: true } }, purchasePrice: true },
+    })
+    if (!deal?.multifamily) return { error: 'Multifamily record not found.' }
+
+    const mfData: Record<string, unknown> = {}
+    if (fields.unitCount) mfData.unitCount = parseInt(fields.unitCount)
+    if (fields.grossScheduledIncome) mfData.grossScheduledIncome = parseFloat(fields.grossScheduledIncome)
+    if (fields.vacancyRate) mfData.vacancyRate = parseFloat(fields.vacancyRate)
+    if (fields.netOperatingIncome) mfData.netOperatingIncome = parseFloat(fields.netOperatingIncome)
+    if (fields.capRate) mfData.capRate = parseFloat(fields.capRate)
+    if (fields.loanAmount) mfData.loanAmount = parseFloat(fields.loanAmount)
+    if (fields.interestRate) mfData.interestRate = parseFloat(fields.interestRate)
+    if (fields.loanTermYears) mfData.amortizationYears = parseInt(fields.loanTermYears)
+
+    if (fields.operatingExpenses) {
+      mfData.operatingExpenses = { total: parseFloat(fields.operatingExpenses) }
+    }
+
+    const dealData: Record<string, unknown> = {}
+    if (fields.askingPrice && !deal.purchasePrice) {
+      dealData.purchasePrice = parseFloat(fields.askingPrice)
+    }
+
+    if (Object.keys(mfData).length === 0 && Object.keys(dealData).length === 0) {
+      return { error: 'No fields to apply.' }
+    }
+
+    await db.$transaction([
+      db.dealMultifamily.update({ where: { dealId }, data: mfData }),
+      ...(Object.keys(dealData).length > 0 ? [db.deal.update({ where: { id: dealId }, data: dealData })] : []),
+    ])
+
+    return {}
+  } catch (err) {
+    console.error('[applyOmExtraction]', err)
+    return { error: 'Failed to apply fields.' }
+  }
+}
+
 export async function applyBidExtraction(
   dealId: string,
   items: SowItem[],
