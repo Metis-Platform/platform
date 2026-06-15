@@ -1,13 +1,6 @@
-import type { Deal, DealLand, Jurisdiction, Property } from '@/app/generated/prisma'
+import type { Deal, DealLand, Jurisdiction, ParcelDataCache, Property } from '@/app/generated/prisma'
 import { normalizeApn } from './apn'
 import type { ParcelFieldSource, ParcelProfile } from '@/lib/exit-engine/types'
-
-export interface ParcelDataCache {
-  provider?: string
-  retrievedAt?: Date
-  ttlHours?: number
-  data?: unknown
-}
 
 type DealWithParcel = Deal & {
   property: Property & { jurisdiction: Jurisdiction | null }
@@ -39,7 +32,7 @@ export function assembleParcelProfile(
   const wetlandsPercent = decimalToNumber(deal.land?.wetlandsPercent)
   const acreage = lotSizeAcres ?? 0
 
-  const profile: ParcelProfile = {
+  const profile = applyCacheFields({
     apn: normalizedApn.normalized,
     apnRaw: normalizedApn.raw,
     fipsCounty,
@@ -71,7 +64,7 @@ export function assembleParcelProfile(
     dataCompleteness: 0,
     lastUpdated: maxDate(property.updatedAt, deal.updatedAt, deal.land?.updatedAt),
     sources,
-  }
+  }, cacheRows)
 
   return {
     ...profile,
@@ -114,7 +107,7 @@ function buildSources(
     .sort((a, b) => b.retrievedAt!.getTime() - a.retrievedAt!.getTime())[0]
 
   if (newestCache?.retrievedAt) {
-    sources.marketValueEstimate = source(newestCache.provider ?? 'unknown', newestCache.retrievedAt, newestCache.ttlHours)
+    sources.marketValueEstimate = source(newestCache.source, newestCache.retrievedAt, newestCache.ttlHours)
   }
 
   return sources
@@ -173,4 +166,45 @@ function maxDate(...dates: Array<Date | null | undefined>): Date {
 
 function hasValue(value: unknown): boolean {
   return value !== undefined && value !== null && value !== ''
+}
+
+function applyCacheFields(profile: ParcelProfile, cacheRows: ParcelDataCache[]): ParcelProfile {
+  return cacheRows.reduce((next, row) => {
+    if (row.expiresAt.getTime() <= Date.now()) return next
+    const value = row.normalized ?? row.valueJson
+    if (!isProfileField(row.field) || !isJsonPrimitiveForProfile(value)) return next
+
+    return {
+      ...next,
+      [row.field]: value,
+      sources: {
+        ...next.sources,
+        [row.field]: source(row.source, row.retrievedAt, row.ttlHours),
+      },
+    }
+  }, profile)
+}
+
+function isProfileField(field: string): field is keyof ParcelProfile {
+  return [
+    'lotSizeSqFt',
+    'lotSizeAcres',
+    'assessedValue',
+    'assessedYear',
+    'landUseCode',
+    'improved',
+    'marketValueEstimate',
+    'floodZone',
+    'floodPanel',
+    'brownfieldFlag',
+    'undergroundTankFlag',
+    'electricAvailable',
+    'waterAvailable',
+    'sewerAvailable',
+    'gasAvailable',
+  ].includes(field)
+}
+
+function isJsonPrimitiveForProfile(value: unknown): value is string | number | boolean {
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
 }

@@ -29,20 +29,21 @@ model Tenant {
   trialEndsAt              DateTime?
   currentPeriodEnd         DateTime?
   adminNotes               String?
-  anthropicApiKey          String?   // BYOK: tenant-supplied, never platform key
+  anthropicApiKey          String? // BYOK: tenant-supplied, never platform key
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
-  users          User[]
-  properties     Property[]
-  deals          Deal[]
-  contacts       Contact[]
-  documents      Document[]
-  auditLogs      AuditLog[]
-  auditEvents    AuditEvent[]
-  emailEvents    EmailEvent[]
-  modules        TenantModule[]
-  workflowRules  TenantWorkflowRule[]
+  users            User[]
+  properties       Property[]
+  deals            Deal[]
+  contacts         Contact[]
+  documents        Document[]
+  auditLogs        AuditLog[]
+  auditEvents      AuditEvent[]
+  emailEvents      EmailEvent[]
+  modules          TenantModule[]
+  workflowRules    TenantWorkflowRule[]
+  parcelDataCaches ParcelDataCache[]
 }
 
 model TenantWorkflowRule {
@@ -51,7 +52,7 @@ model TenantWorkflowRule {
   tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   strategy     StrategyType
   name         String
-  triggerEvent String       // EventType key
+  triggerEvent String // EventType key
   offsetDays   Int          @default(0)
   action       String       @default("CREATE_TASK")
   actionConfig Json
@@ -95,7 +96,7 @@ model FmrRate {
   state    String
   county   String
   year     Int
-  bedrooms Int     // 0=studio, 1=1BR, 2=2BR, etc.
+  bedrooms Int // 0=studio, 1=1BR, 2=2BR, etc.
   amount   Decimal @db.Decimal(10, 2)
 
   @@unique([state, county, year, bedrooms])
@@ -103,10 +104,10 @@ model FmrRate {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  clerkUserId String
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  clerkUserId  String
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   role         UserRole  @default(ANALYST)
   email        String
   name         String?
@@ -165,26 +166,26 @@ model JurisdictionStrategyData {
 }
 
 model JurisdictionProfile {
-  id                String       @id @default(cuid())
-  jurisdictionId    String       @unique
-  jurisdiction      Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  jurisdictionId String       @unique
+  jurisdiction   Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
 
-  taxSale           Json         @default("{}")
-  foreclosure       Json         @default("{}")
-  recording         Json         @default("{}")
-  zoning            Json         @default("{}")
-  physical          Json         @default("{}")
-  permits           Json         @default("{}")
-  landlordTenant    Json         @default("{}")
-  section8          Json         @default("{}")
-  wholesale         Json         @default("{}")
-  marketSignals     Json         @default("{}")
-  contacts          Json         @default("{}")
+  taxSale        Json @default("{}")
+  foreclosure    Json @default("{}")
+  recording      Json @default("{}")
+  zoning         Json @default("{}")
+  physical       Json @default("{}")
+  permits        Json @default("{}")
+  landlordTenant Json @default("{}")
+  section8       Json @default("{}")
+  wholesale      Json @default("{}")
+  marketSignals  Json @default("{}")
+  contacts       Json @default("{}")
 
-  publishedSections String[]     @default([])
+  publishedSections String[] @default([])
 
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([jurisdictionId])
 }
@@ -206,9 +207,9 @@ model JurisdictionSourceUrl {
 }
 
 model ExtractionCandidate {
-  id             String            @id @default(cuid())
+  id             String                 @id @default(cuid())
   jurisdictionId String
-  jurisdiction   Jurisdiction      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  jurisdiction   Jurisdiction           @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
   sourceUrlId    String?
   sourceUrl      JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
   section        String
@@ -217,11 +218,11 @@ model ExtractionCandidate {
   confidence     Float
   sourceSnippet  String?
   modelUsed      String
-  status         ExtractionStatus  @default(PENDING)
+  status         ExtractionStatus       @default(PENDING)
   reviewedAt     DateTime?
   reviewedBy     String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
 
   @@index([jurisdictionId])
   @@index([status])
@@ -229,18 +230,18 @@ model ExtractionCandidate {
 }
 
 model AuctionSaleFeed {
-  id                      String             @id @default(cuid())
+  id                      String            @id @default(cuid())
   jurisdictionId          String
-  jurisdiction            Jurisdiction       @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  jurisdiction            Jurisdiction      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
   source                  AuctionFeedSource
   saleDate                DateTime
   registrationDeadline    DateTime?
   depositRequirementCents Int?
   platformUrl             String?
   notes                   String?
-  syncedAt                DateTime           @default(now())
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  syncedAt                DateTime          @default(now())
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
 
   @@unique([jurisdictionId, source, saleDate])
   @@index([jurisdictionId])
@@ -313,6 +314,26 @@ model Property {
   @@index([tenantId])
 }
 
+model ParcelDataCache {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  apnNormalized String
+  fipsCounty    String
+  source        String
+  field         String
+  valueJson     Json
+  normalized    Json?
+  retrievedAt   DateTime
+  ttlHours      Int
+  expiresAt     DateTime
+  metadata      Json?
+
+  @@unique([tenantId, apnNormalized, fipsCounty, source, field])
+  @@index([tenantId, apnNormalized, fipsCounty])
+  @@index([expiresAt])
+}
+
 model Contact {
   id        String      @id @default(cuid())
   tenantId  String
@@ -341,19 +362,19 @@ model Contact {
 }
 
 model BuyerProfile {
-  id                   String   @id @default(cuid())
-  contactId            String   @unique
-  contact              Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  tenantId             String
-  priceMin             Decimal? @db.Decimal(14, 2)
-  priceMax             Decimal? @db.Decimal(14, 2)
-  assignmentFeeMax     Decimal? @db.Decimal(14, 2)
-  preferredStates      String[]
-  preferredPropTypes   String[]
-  isActive             Boolean  @default(true)
-  notes                String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  contactId          String   @unique
+  contact            Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tenantId           String
+  priceMin           Decimal? @db.Decimal(14, 2)
+  priceMax           Decimal? @db.Decimal(14, 2)
+  assignmentFeeMax   Decimal? @db.Decimal(14, 2)
+  preferredStates    String[]
+  preferredPropTypes String[]
+  isActive           Boolean  @default(true)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([tenantId])
 }
@@ -380,20 +401,20 @@ model Deal {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  taxLien      DealTaxLien?
-  taxDeed      DealTaxDeed?
-  foreclosure  DealForeclosure?
-  fixFlip      DealFixFlip?
-  land         DealLand?
-  wholesale    DealWholesale?
-  buyHold      DealBuyHold?
-  multifamily  DealMultifamily?
-  events       Event[]
-  tasks        Task[]
-  transactions FinancialTransaction[]
-  documents    Document[]
-  auditLogs    AuditLog[]
-  landNotes      LandNote[]
+  taxLien         DealTaxLien?
+  taxDeed         DealTaxDeed?
+  foreclosure     DealForeclosure?
+  fixFlip         DealFixFlip?
+  land            DealLand?
+  wholesale       DealWholesale?
+  buyHold         DealBuyHold?
+  multifamily     DealMultifamily?
+  events          Event[]
+  tasks           Task[]
+  transactions    FinancialTransaction[]
+  documents       Document[]
+  auditLogs       AuditLog[]
+  landNotes       LandNote[]
   buyerBlastSends BuyerBlastSend[]
 
   @@index([tenantId])
@@ -563,38 +584,38 @@ model DealWholesale {
 
 // Extension table — Buy & Hold / Section 8 strategy
 model DealBuyHold {
-  id                    String    @id @default(cuid())
-  dealId                String    @unique
-  deal                  Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  rentalStrategy        String? // LONG_TERM | SHORT_TERM | MID_TERM | SECTION_8
-  targetMonthlyRent     Decimal?  @db.Decimal(14, 2)
-  actualMonthlyRent     Decimal?  @db.Decimal(14, 2)
-  securityDeposit       Decimal?  @db.Decimal(14, 2)
-  leaseStartDate        DateTime?
-  leaseEndDate          DateTime?
-  tenantName            String?
-  tenantPhone           String?
-  tenantEmail           String?
-  propertyManagerName   String?
-  propertyManagerPhone  String?
-  propertyManagerEmail  String?
-  section8VoucherAmount   Decimal?  @db.Decimal(14, 2)
-  housingAuthorityName    String?
-  inspectionStatus        String?
+  id                     String    @id @default(cuid())
+  dealId                 String    @unique
+  deal                   Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  rentalStrategy         String? // LONG_TERM | SHORT_TERM | MID_TERM | SECTION_8
+  targetMonthlyRent      Decimal?  @db.Decimal(14, 2)
+  actualMonthlyRent      Decimal?  @db.Decimal(14, 2)
+  securityDeposit        Decimal?  @db.Decimal(14, 2)
+  leaseStartDate         DateTime?
+  leaseEndDate           DateTime?
+  tenantName             String?
+  tenantPhone            String?
+  tenantEmail            String?
+  propertyManagerName    String?
+  propertyManagerPhone   String?
+  propertyManagerEmail   String?
+  section8VoucherAmount  Decimal?  @db.Decimal(14, 2)
+  housingAuthorityName   String?
+  inspectionStatus       String?
   // Section 8 premium fields
-  hapContractNumber       String?
-  hapMonthlyAmount        Decimal?  @db.Decimal(14, 2)
-  tenantPortion           Decimal?  @db.Decimal(14, 2)
-  hapAnniversary          DateTime?
-  nextHqsDate             DateTime?
-  hqsResult               String?  // PASS | FAIL | PENDING
-  fmrBedrooms             Int?
-  rentIncreaseNoticeDays  Int?     @default(60)
-  operatingExpenses       Json?
-  maintenanceReserve    Decimal?  @db.Decimal(14, 2)
-  notes                 String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  hapContractNumber      String?
+  hapMonthlyAmount       Decimal?  @db.Decimal(14, 2)
+  tenantPortion          Decimal?  @db.Decimal(14, 2)
+  hapAnniversary         DateTime?
+  nextHqsDate            DateTime?
+  hqsResult              String? // PASS | FAIL | PENDING
+  fmrBedrooms            Int?
+  rentIncreaseNoticeDays Int?      @default(60)
+  operatingExpenses      Json?
+  maintenanceReserve     Decimal?  @db.Decimal(14, 2)
+  notes                  String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 }
 
 // Extension table — Multifamily strategy
@@ -794,8 +815,8 @@ model AuditEvent {
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId    String?
-  action    String   // DEAL_CREATED, DEAL_ARCHIVED, BLAST_SENT, NOTE_PAYMENT_LOGGED, CHECKLIST_CREATED, LOGIN
-  meta      Json?    // contextual data: { dealId, strategy, amount, etc. }
+  action    String // DEAL_CREATED, DEAL_ARCHIVED, BLAST_SENT, NOTE_PAYMENT_LOGGED, CHECKLIST_CREATED, LOGIN
+  meta      Json? // contextual data: { dealId, strategy, amount, etc. }
   createdAt DateTime @default(now())
 
   @@index([tenantId, createdAt])
@@ -813,10 +834,10 @@ model Announcement {
 
 model ChecklistTemplate {
   id        String       @id @default(cuid())
-  tenantId  String?      // null = system template; set = tenant override
+  tenantId  String? // null = system template; set = tenant override
   strategy  StrategyType
   name      String
-  items     Json         // ChecklistItem[]
+  items     Json // ChecklistItem[]
   isActive  Boolean      @default(true)
   version   Int          @default(1)
   updatedAt DateTime     @updatedAt
@@ -829,7 +850,7 @@ model EmailEvent {
   id        String   @id @default(cuid())
   tenantId  String?
   tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  type      String   // 'bounced', 'complained', 'delivery_delayed', 'opened', 'clicked'
+  type      String // 'bounced', 'complained', 'delivery_delayed', 'opened', 'clicked'
   email     String
   meta      Json?
   timestamp DateTime @default(now())

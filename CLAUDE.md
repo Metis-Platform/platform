@@ -84,6 +84,14 @@ Do this after every merge (not just at session end — protects against abrupt s
 - Update "Next up" with the top 3 remaining issues
 - Memory auto-loads before the first user message next session — keeping it current means instant orientation
 
+**Commit checkpoint files directly to `main` — no branch, no PR:**
+```bash
+git add ACTIVE-SPRINT.md STATUS.md
+git commit -m "chore: checkpoint after <feature name> merge"
+git push origin main
+```
+Memory files live outside the repo and don't need a commit. **Never open a PR for checkpoint commits** — they create noise Preview deployments in Vercel and clutter the deployment history with chore rows.
+
 **D) If the PR created any required human action** (env var to add, manual seed to run, DNS record, external service setup):
 - Add a row to the `## Pending Actions` table in STATUS.md
 - Send a Telegram notification: `curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" -d "chat_id=$TELEGRAM_CHAT_ID" -d "text=⚠️ Metis — action needed: <description>"`
