@@ -22,9 +22,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| #131-P4 Auction platform feeds (GovEase, RealAuction FL, Tax Sale Resources) | Merged — PR #252 |
 | #229-P4 `lib/exit-engine` core | Merged — PR #248 |
 | #131-P3 Admin AI extraction pipeline | Merged — PR #246 |
-| #131-P2 Seed 3,143 counties + 50-state statutory baseline | Merged — PR #244 (6 bugs fixed post-review) |
 
 ---
 
@@ -43,7 +43,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | #222 | #131-P4 Auction platform feeds — GovEase, RealAuction, Tax Sale Resources |
+| 1 | #223 | #131-P5 Market signals ingestion + opportunity/saturation scoring |
 | 2 | #230 | #229-P1 ParcelProfile + APN normalization |
 | 3 | #234 | #229-P5 Exit evaluators — all 30 exits across 8 strategy families |
 
