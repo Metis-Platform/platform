@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { getTemplate } from '@/lib/checklists/registry'
 import { computeMissingItems } from '@/lib/checklists/instantiate'
+import { buildJurisdictionChecklistTemplate } from '@/lib/jurisdiction-checklist'
 
 export async function POST(
   _req: NextRequest,
@@ -20,6 +20,7 @@ export async function POST(
   const deal = await db.deal.findUnique({
     where: { id: dealId, tenantId: tenant.id },
     include: {
+      property:    { include: { jurisdiction: { include: { profile: true } } } },
       taxLien:     true,
       taxDeed:     true,
       foreclosure: true,
@@ -28,7 +29,7 @@ export async function POST(
   })
   if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-  const template = await getTemplate(deal.strategyType, tenant.id)
+  const template = buildJurisdictionChecklistTemplate(deal.strategyType, deal.property.jurisdiction.profile)
   if (!template) {
     return NextResponse.json({ error: 'No checklist template for this strategy' }, { status: 422 })
   }
