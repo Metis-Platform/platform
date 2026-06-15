@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
+import { InvestmentType } from '@/app/generated/prisma'
 import { parseStrategyParam, getStrategyMeta } from '@/lib/strategy-meta'
 import { NewLienForm } from './form'
 
@@ -18,10 +19,17 @@ export default async function NewLienPage({
     redirect(`/dashboard/deals?strategy=${strategyKey}`)
   }
 
-  // Non-lien strategies can be in any county, not just lien-configured ones
-  const allJurisdictions = strategyKey === 'LAND' || strategyKey === 'WHOLESALE' || strategyKey === 'FIX_FLIP' || strategyKey === 'BUY_HOLD'
+  // TAX_LIEN → LIEN counties only; TAX_DEED → DEED + REDEEMABLE_DEED; everything else → all counties.
+  // isAvailable (ruleset-activated) is no longer the gate — strategy × investmentType is sufficient.
+  const investmentTypeWhere =
+    strategyKey === 'TAX_LIEN'
+      ? { investmentType: InvestmentType.LIEN }
+      : strategyKey === 'TAX_DEED'
+      ? { investmentType: { in: [InvestmentType.DEED, InvestmentType.REDEEMABLE_DEED] } }
+      : {}
+
   const jurisdictions = await db.jurisdiction.findMany({
-    where: allJurisdictions ? {} : { isAvailable: true },
+    where: investmentTypeWhere,
     orderBy: [{ stateName: 'asc' }, { county: 'asc' }],
   })
 
