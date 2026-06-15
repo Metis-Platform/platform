@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
+import { STATE_INFO, getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 
 type JurisdictionRow = {
   id: string
@@ -31,15 +32,7 @@ const STRATEGIES = [
   { value: 'MULTIFAMILY', label: 'Multifamily' },
 ]
 
-const TYPE_FILTERS = [
-  { value: '', label: 'All' },
-  { value: 'LIEN', label: 'Tax Lien' },
-  { value: 'DEED', label: 'Tax Deed' },
-  { value: 'REDEEMABLE_DEED', label: 'Redeemable' },
-]
-
-// Tile grid layout: [col, row] positions, 12 cols × 9 rows
-// Roughly geographic — standard data-viz tile grid for US states
+// Tile grid: [col, row] — 12 cols × 9 rows, roughly geographic
 const STATE_GRID: { abbr: string; col: number; row: number }[] = [
   { abbr: 'ME', col: 11, row: 0 },
   { abbr: 'VT', col: 10, row: 1 }, { abbr: 'NH', col: 11, row: 1 },
@@ -64,235 +57,194 @@ const STATE_GRID: { abbr: string; col: number; row: number }[] = [
   { abbr: 'AK', col: 0, row: 8 },
 ]
 
-function StateMapCell({
-  abbr,
-  investmentType,
-  countyCount,
-  selected,
-  onClick,
-}: {
-  abbr: string
-  investmentType: string
-  countyCount: number
-  selected: boolean
-  onClick: () => void
-}) {
-  const bgClass =
-    investmentType === 'TAX_LIEN' ? 'bg-blue-100 hover:bg-blue-200 text-blue-800' :
-    investmentType === 'TAX_DEED' ? 'bg-purple-100 hover:bg-purple-200 text-purple-800' :
-    investmentType === 'REDEEMABLE_DEED' ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800' :
-    'bg-zinc-100 hover:bg-zinc-200 text-zinc-500'
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={`${abbr} — ${countyCount} counties`}
-      className={`flex items-center justify-center rounded text-xs font-bold transition-all ${bgClass} ${
-        selected ? 'ring-2 ring-offset-1 ring-zinc-800 scale-110' : ''
-      }`}
-      style={{ gridColumn: undefined, gridRow: undefined }}
-    >
-      {abbr}
-    </button>
-  )
+function cellBg(investmentType: string, selected: boolean) {
+  const base =
+    investmentType === 'TAX_LIEN'       ? 'bg-blue-100 hover:bg-blue-200 text-blue-800' :
+    investmentType === 'TAX_DEED'       ? 'bg-orange-100 hover:bg-orange-200 text-orange-800' :
+    investmentType === 'REDEEMABLE_DEED' ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' :
+    investmentType === 'HYBRID'         ? 'bg-purple-100 hover:bg-purple-200 text-purple-800' :
+                                          'bg-zinc-100 hover:bg-zinc-200 text-zinc-400'
+  return `${base} ${selected ? 'ring-2 ring-zinc-800 ring-offset-1 scale-110 z-10' : ''}`
 }
 
-export function JurisdictionsTable({ jurisdictions }: { jurisdictions: JurisdictionRow[] }) {
-  const [stateFilter, setStateFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
+export function JurisdictionsTable({
+  counties,
+  selectedState,
+}: {
+  counties: JurisdictionRow[]
+  selectedState: string
+}) {
+  const router = useRouter()
   const [search, setSearch] = useState('')
 
-  // Per-state investment type (from state-info) and county counts for the map
-  const stateStats = useMemo(() => {
-    const map = new Map<string, { investmentType: string; count: number }>()
-    for (const j of jurisdictions) {
-      const existing = map.get(j.state)
-      if (existing) {
-        existing.count++
-      } else {
-        const si = getStateInfo(j.state)
-        map.set(j.state, { investmentType: si?.investmentType ?? 'NOT_ACTIVE', count: 1 })
-      }
-    }
-    return map
-  }, [jurisdictions])
+  function handleStateClick(abbr: string) {
+    setSearch('')
+    const next = abbr === selectedState ? '' : abbr
+    router.push(next ? `/dashboard/jurisdictions?state=${next}` : '/dashboard/jurisdictions')
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return jurisdictions.filter(j => {
-      if (stateFilter && j.state !== stateFilter) return false
-      if (typeFilter && j.investmentType !== typeFilter) return false
-      if (q && !j.county.toLowerCase().includes(q)) return false
-      return true
-    })
-  }, [jurisdictions, stateFilter, typeFilter, search])
+    if (!q) return counties
+    return counties.filter(j => j.county.toLowerCase().includes(q))
+  }, [counties, search])
 
-  function handleStateClick(abbr: string) {
-    setStateFilter(prev => prev === abbr ? '' : abbr)
-  }
-
-  const COLS = 12
-  const ROWS = 9
+  const selectedInfo = selectedState ? STATE_INFO[selectedState] : null
 
   return (
     <div className="space-y-4">
-      {/* Tile grid map */}
+      {/* Tile grid map — uses only static state-info data, no DB */}
       <div className="rounded-xl border border-zinc-200 bg-white p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Click a state to filter</p>
+          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+            Click a state to browse its counties
+          </p>
           <div className="flex items-center gap-3 text-xs text-zinc-400">
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-100" /> Lien</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-purple-100" /> Deed</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-100" /> Redeemable</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-zinc-100" /> Not active</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-100" /> Tax Lien</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-orange-100" /> Tax Deed</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-slate-200" /> Redeemable</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-purple-100" /> Hybrid</span>
           </div>
         </div>
         <div
+          className="relative"
           style={{
             display: 'grid',
-            gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-            gridTemplateRows: `repeat(${ROWS}, 28px)`,
+            gridTemplateColumns: 'repeat(12, 1fr)',
+            gridTemplateRows: 'repeat(9, 28px)',
             gap: '3px',
           }}
         >
           {STATE_GRID.map(({ abbr, col, row }) => {
-            const stats = stateStats.get(abbr)
+            const info = STATE_INFO[abbr]
             return (
-              <div
+              <button
                 key={abbr}
+                type="button"
+                onClick={() => handleStateClick(abbr)}
+                title={info?.stateName ?? abbr}
+                className={`flex items-center justify-center rounded text-xs font-bold transition-all relative ${cellBg(info?.investmentType ?? 'NOT_ACTIVE', selectedState === abbr)}`}
                 style={{ gridColumn: col + 1, gridRow: row + 1 }}
               >
-                <StateMapCell
-                  abbr={abbr}
-                  investmentType={stats?.investmentType ?? 'NOT_ACTIVE'}
-                  countyCount={stats?.count ?? 0}
-                  selected={stateFilter === abbr}
-                  onClick={() => handleStateClick(abbr)}
-                />
-              </div>
+                {abbr}
+              </button>
             )
           })}
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          placeholder="Search counties…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="input-base w-44"
-        />
-        <div className="flex rounded-lg border border-zinc-200 overflow-hidden text-sm">
-          {TYPE_FILTERS.map(({ value, label }) => (
+      {selectedState ? (
+        <>
+          {/* State summary + search */}
+          <div className="flex items-center gap-4 rounded-lg border border-zinc-200 bg-white px-4 py-3">
+            <div className="flex-1 min-w-0">
+              <span className="font-semibold text-zinc-900">{selectedInfo?.stateName ?? selectedState}</span>
+              {selectedInfo && (
+                <span className="ml-3 text-sm text-zinc-500">
+                  {selectedInfo.investmentLabel}
+                  {selectedInfo.interestRate && ` · ${selectedInfo.interestRate}`}
+                  {selectedInfo.redemptionPeriod && ` · ${selectedInfo.redemptionPeriod} redemption`}
+                </span>
+              )}
+            </div>
+            <input
+              type="search"
+              placeholder="Search counties…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input-base w-44"
+            />
+            <span className="text-sm text-zinc-400 whitespace-nowrap">
+              {filtered.length} of {counties.length} counties
+            </span>
             <button
-              key={value}
               type="button"
-              onClick={() => setTypeFilter(value)}
-              className={`px-3 py-1.5 transition-colors ${
-                typeFilter === value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-zinc-600 hover:bg-zinc-50'
-              }`}
+              onClick={() => router.push('/dashboard/jurisdictions')}
+              className="text-sm text-zinc-400 hover:text-zinc-700 transition-colors"
             >
-              {label}
+              Clear ×
             </button>
-          ))}
-        </div>
-        {stateFilter && (
-          <button
-            type="button"
-            onClick={() => setStateFilter('')}
-            className="flex items-center gap-1 rounded-full bg-zinc-900 pl-3 pr-2 py-1 text-xs font-medium text-white"
-          >
-            {stateFilter} <span className="ml-0.5 opacity-60">×</span>
-          </button>
-        )}
-        <span className="ml-auto text-sm text-zinc-400">
-          {filtered.length.toLocaleString()} of {jurisdictions.length.toLocaleString()} counties
-        </span>
-      </div>
+          </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-zinc-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-zinc-50 border-b border-zinc-200">
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">County</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">State</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Interest Rate</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Redemption</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Rules</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">New Deal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {filtered.map(j => {
-                const stateInfo = getStateInfo(j.state)
-                const activeRuleSet = j.ruleSets[0] ?? null
-                return (
-                  <tr key={j.id} className="hover:bg-zinc-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/dashboard/jurisdictions/${j.id}`}
-                        className="font-medium text-zinc-900 hover:text-blue-700 transition-colors"
-                      >
-                        {j.county} County
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-zinc-500">{j.stateName}</td>
-                    <td className="px-4 py-3">
-                      <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${investmentTypeBadgeClass(stateInfo?.investmentType ?? 'NOT_ACTIVE')}`}>
-                        {stateInfo?.investmentLabel ?? TYPE_LABELS[j.investmentType] ?? j.investmentType}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-zinc-600">{stateInfo?.interestRate ?? '—'}</td>
-                    <td className="px-4 py-3 text-zinc-600">{stateInfo?.redemptionPeriod ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      {activeRuleSet
-                        ? <span className="font-medium text-blue-700">{activeRuleSet._count.rules} rules</span>
-                        : <span className="text-xs text-amber-600">Pending</span>
-                      }
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <details className="relative inline-block text-left">
-                        <summary className="inline-flex cursor-pointer select-none list-none items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
-                          New Deal
-                          <svg className="h-3 w-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </summary>
-                        <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
-                          {STRATEGIES.map(s => (
-                            <Link
-                              key={s.value}
-                              href={`/dashboard/deals/new?strategy=${s.value}&jid=${j.id}`}
-                              className="block px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 transition-colors"
-                            >
-                              {s.label}
-                            </Link>
-                          ))}
-                        </div>
-                      </details>
+          <div className="rounded-xl border border-zinc-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-zinc-50 border-b border-zinc-200">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">County</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Interest Rate</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Redemption</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Rules</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">New Deal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {filtered.map(j => {
+                  const stateInfo = getStateInfo(j.state)
+                  const activeRuleSet = j.ruleSets[0] ?? null
+                  return (
+                    <tr key={j.id} className="hover:bg-zinc-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/dashboard/jurisdictions/${j.id}`}
+                          className="font-medium text-zinc-900 hover:text-blue-700 transition-colors"
+                        >
+                          {j.county} County
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${investmentTypeBadgeClass(stateInfo?.investmentType ?? 'NOT_ACTIVE')}`}>
+                          {stateInfo?.investmentLabel ?? TYPE_LABELS[j.investmentType] ?? j.investmentType}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-zinc-600">{stateInfo?.interestRate ?? '—'}</td>
+                      <td className="px-4 py-3 text-zinc-600">{stateInfo?.redemptionPeriod ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        {activeRuleSet
+                          ? <span className="font-medium text-blue-700">{activeRuleSet._count.rules} rules</span>
+                          : <span className="text-xs text-amber-600">Pending</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <details className="relative inline-block text-left">
+                          <summary className="inline-flex cursor-pointer select-none list-none items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
+                            New Deal
+                            <svg className="h-3 w-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </summary>
+                          <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
+                            {STRATEGIES.map(s => (
+                              <Link
+                                key={s.value}
+                                href={`/dashboard/deals/new?strategy=${s.value}&jid=${j.id}`}
+                                className="block px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 transition-colors"
+                              >
+                                {s.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </details>
+                      </td>
+                    </tr>
+                  )
+                })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-zinc-400">
+                      No counties match your search.
                     </td>
                   </tr>
-                )
-              })}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-zinc-400">
-                    No counties match your filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <div className="rounded-xl border border-zinc-200 bg-white px-6 py-12 text-center text-sm text-zinc-400">
+          Select a state on the map to browse its counties.
         </div>
-      </div>
+      )}
     </div>
   )
 }
