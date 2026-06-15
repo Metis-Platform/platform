@@ -1,10 +1,15 @@
 import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { syncUserToDatabase } from '@/lib/sync-user'
+import {
+  JURISDICTION_PROFILE_SECTIONS,
+  type JurisdictionProfileSection,
+} from '@/lib/jurisdiction-profile'
+import type { ResearchProfile, ResearchProfileField } from '@/lib/jurisdiction-research'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
+import { syncUserToDatabase } from '@/lib/sync-user'
+import JurisdictionResearchHub from './JurisdictionResearchHub'
 
 type Links = Record<string, unknown>
 
@@ -46,6 +51,19 @@ function linkEntries(links: unknown) {
     .map(([key, value]) => ({ label: LINK_LABELS[key] ?? key.replace(/Url$/, '').replace(/([A-Z])/g, ' $1'), url: value }))
 }
 
+function profileSection(value: unknown): Record<string, ResearchProfileField> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as Record<string, ResearchProfileField>
+}
+
+function buildResearchProfile(profile: {
+  [K in JurisdictionProfileSection]?: unknown
+} | null): ResearchProfile {
+  return Object.fromEntries(
+    JURISDICTION_PROFILE_SECTIONS.map((section) => [section, profileSection(profile?.[section])])
+  ) as ResearchProfile
+}
+
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
@@ -65,6 +83,7 @@ export default async function JurisdictionDetailPage({
   const jurisdiction = await db.jurisdiction.findUnique({
     where: { id },
     include: {
+      profile: true,
       ruleSets: {
         orderBy: [{ isActive: 'desc' }, { effectiveDate: 'desc' }],
         include: { rules: { orderBy: [{ sortOrder: 'asc' }, { offsetDays: 'asc' }] } },
@@ -97,15 +116,15 @@ export default async function JurisdictionDetailPage({
         </span>
       </nav>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">{jurisdiction.stateName}</p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-900">
+            <h1 className="mt-1 text-3xl font-bold text-zinc-900">
               {jurisdiction.county} County Research Hub
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">
-              {stateInfo?.summary ?? jurisdiction.notes ?? 'County-level rules and resources for evaluating tax sale opportunities.'}
+              {stateInfo?.summary ?? jurisdiction.notes ?? 'County-level rules, market signals, contacts, and source-backed research for evaluating real estate investments.'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -121,108 +140,47 @@ export default async function JurisdictionDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-4">
-        <InfoCard label="Interest / Penalty" value={stateInfo?.interestRate ?? 'Varies by county'} />
-        <InfoCard label="Bid Method" value={stateInfo?.bidMethod ?? 'Varies'} />
-        <InfoCard label="Redemption Period" value={stateInfo?.redemptionPeriod ?? 'N/A'} />
-        <InfoCard label="Sale Dates" value={stateInfo?.saleDates ?? 'Varies'} />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-        <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-900">Rules and deadlines</h2>
-              <p className="mt-1 text-sm text-zinc-500">
-                {activeRuleSet ? `${activeRuleSet.name} · effective ${formatDate(activeRuleSet.effectiveDate)}` : 'No active ruleset yet.'}
-              </p>
-            </div>
-            {activeRuleSet && (
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                {activeRuleSet.rules.length} rules
-              </span>
-            )}
-          </div>
-
-          {activeRuleSet ? (
-            <div className="mt-4 overflow-hidden rounded-lg border border-zinc-200">
-              <table className="min-w-full divide-y divide-zinc-200 text-sm">
-                <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  <tr>
-                    <th className="px-4 py-3">Deadline</th>
-                    <th className="px-4 py-3">Anchor</th>
-                    <th className="px-4 py-3">Offset</th>
-                    <th className="px-4 py-3">Notes</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 bg-white">
-                  {activeRuleSet.rules.map((rule) => (
-                    <tr key={rule.id}>
-                      <td className="px-4 py-3 font-medium text-zinc-900">{rule.label}</td>
-                      <td className="px-4 py-3 text-zinc-600">{rule.anchorField}</td>
-                      <td className="px-4 py-3 text-zinc-600">{rule.offsetDays} days</td>
-                      <td className="px-4 py-3 text-zinc-500">{rule.description ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="mt-4 rounded-lg border border-dashed border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              Rules are not configured yet. Use the state reference and official links below for manual research until an admin activates a ruleset.
-            </div>
-          )}
-        </section>
-
-        <aside className="space-y-6">
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
             <h2 className="text-lg font-semibold text-zinc-900">Official resources</h2>
-            <div className="mt-4 space-y-3">
-              {stateInfo?.stateWebsite && <ResourceLink label="State website" url={stateInfo.stateWebsite} />}
-              {stateInfo?.stateStatutes && <ResourceLink label="State statutes" url={stateInfo.stateStatutes} />}
-              {links.map((link) => <ResourceLink key={link.url} label={link.label} url={link.url} />)}
-              {!stateInfo?.stateWebsite && !stateInfo?.stateStatutes && links.length === 0 && (
-                <p className="text-sm text-zinc-500">No official links have been added for this jurisdiction.</p>
-              )}
-            </div>
-          </section>
+            <p className="mt-1 text-sm text-zinc-500">
+              State and county sources used to verify profile fields.
+            </p>
+          </div>
+          {activeRuleSet && (
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              Active ruleset: {activeRuleSet.name} · {formatDate(activeRuleSet.effectiveDate)}
+            </span>
+          )}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {stateInfo?.stateWebsite && <ResourceLink label="State website" url={stateInfo.stateWebsite} />}
+          {stateInfo?.stateStatutes && <ResourceLink label="State statutes" url={stateInfo.stateStatutes} />}
+          {links.map((link) => <ResourceLink key={link.url} label={link.label} url={link.url} />)}
+          {!stateInfo?.stateWebsite && !stateInfo?.stateStatutes && links.length === 0 && (
+            <p className="text-sm text-zinc-500">No official links have been added for this jurisdiction.</p>
+          )}
+        </div>
+      </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-zinc-900">County notes</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="font-medium text-zinc-500">Timezone</dt>
-                <dd className="mt-0.5 text-zinc-900">{jurisdiction.timezone}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-zinc-500">Tracked properties</dt>
-                <dd className="mt-0.5 text-zinc-900">{trackedPropertyCount}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-zinc-500">Over-the-counter</dt>
-                <dd className={stateInfo?.overTheCounter ? 'mt-0.5 font-medium text-emerald-700' : 'mt-0.5 text-zinc-900'}>
-                  {stateInfo?.overTheCounter ? 'Available' : 'Not indicated'}
-                </dd>
-              </div>
-              {jurisdiction.notes && (
-                <div>
-                  <dt className="font-medium text-zinc-500">Notes</dt>
-                  <dd className="mt-0.5 text-zinc-900">{jurisdiction.notes}</dd>
-                </div>
-              )}
-            </dl>
-          </section>
-        </aside>
-      </div>
-    </div>
-  )
-}
-
-function InfoCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{label}</p>
-      <p className="mt-2 text-sm font-medium text-zinc-900">{value}</p>
+      <JurisdictionResearchHub
+        jurisdictionId={jurisdiction.id}
+        profile={buildResearchProfile(jurisdiction.profile)}
+        trackedPropertyCount={trackedPropertyCount}
+        timezone={jurisdiction.timezone}
+        activeRuleSet={activeRuleSet ? {
+          name: activeRuleSet.name,
+          effectiveDate: activeRuleSet.effectiveDate.toISOString(),
+          rules: activeRuleSet.rules.map((rule) => ({
+            id: rule.id,
+            label: rule.label,
+            anchorField: rule.anchorField,
+            offsetDays: rule.offsetDays,
+            description: rule.description,
+          })),
+        } : null}
+      />
     </div>
   )
 }
@@ -233,10 +191,10 @@ function ResourceLink({ label, url }: { label: string; url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-blue-700 transition hover:border-blue-200 hover:bg-blue-50"
+      className="rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-blue-700 transition hover:border-blue-200 hover:bg-blue-50"
     >
-      <span>{label}</span>
-      <span aria-hidden="true">↗</span>
+      {label}
     </a>
   )
 }
+
