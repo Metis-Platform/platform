@@ -5,7 +5,19 @@ import { EXIT_REGISTRY } from './registry'
 import type { EvalContext, ParcelProfile } from './types'
 
 function source(observedAt: Date, provider: 'fl_dor' | 'manual' = 'fl_dor') {
-  return { provider, observedAt, ttlDays: 180 }
+  return { provider, retrievedAt: observedAt, ttlHours: 24 * 180, observedAt, ttlDays: 180 }
+}
+
+function parcel(overrides: Partial<ParcelProfile>): ParcelProfile {
+  return {
+    apn: '1234567890',
+    apnRaw: '123-456-7890',
+    fipsCounty: '12127',
+    dataCompleteness: 1,
+    lastUpdated: freshDate,
+    sources: {},
+    ...overrides,
+  }
 }
 
 const freshDate = new Date()
@@ -13,7 +25,7 @@ const freshDate = new Date()
 describe('scoreConfidence', () => {
   it('returns score 0 and hard gaps when a hard field is missing', () => {
     const result = scoreConfidence({
-      parcel: { lotSizeSqFt: 5000 },
+      parcel: parcel({ lotSizeSqFt: 5000 }),
       hardFields: ['lotSizeSqFt', 'zoning'],
       softFields: ['assessedValue'],
     })
@@ -29,7 +41,7 @@ describe('scoreConfidence', () => {
   })
 
   it('scores completeness, recency, and source reliability', () => {
-    const parcel: ParcelProfile = {
+    const profile = parcel({
       lotSizeSqFt: 5000,
       zoning: 'R-1',
       assessedValue: 80000,
@@ -38,10 +50,10 @@ describe('scoreConfidence', () => {
         zoning: source(freshDate),
         assessedValue: source(freshDate, 'manual'),
       },
-    }
+    })
 
     const result = scoreConfidence({
-      parcel,
+      parcel: profile,
       hardFields: ['lotSizeSqFt', 'zoning'],
       softFields: ['assessedValue'],
     })
@@ -68,11 +80,11 @@ describe('evaluateExits confidence wrapper', () => {
     })
 
     const ctx: EvalContext = {
-      parcel: {
+      parcel: parcel({
         improved: true,
         structureSqFt: 1200,
         arv: { low: 150000, mid: 160000, high: 170000 },
-      },
+      }),
       jurisdiction: {
         minLotSizeSqFt: () => undefined,
         setbackFeet: () => undefined,
