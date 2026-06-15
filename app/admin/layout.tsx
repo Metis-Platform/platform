@@ -53,6 +53,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             >
               Extraction
             </Link>
+            <Link
+              href="/admin/parcel-research"
+              className="px-3 py-1.5 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-md transition-colors"
+            >
+              Parcel Research
+            </Link>
           </nav>
         </div>
         <Link

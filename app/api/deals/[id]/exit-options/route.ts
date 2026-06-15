@@ -103,6 +103,7 @@ export async function GET(
     results,
     parcelCompleteness: ctx.parcel.dataCompleteness,
     parcelLastUpdated: ctx.parcel.lastUpdated.toISOString(),
+    researchRequest: await researchStatus(dealId, tenant.id),
   })
 }
 
@@ -112,7 +113,13 @@ async function readCachedEvaluation(
   apn: string,
   fipsCounty: string | null,
   investor: InvestorConstraints,
-): Promise<{ results: ExitResult[]; parcelCompleteness: number; parcelLastUpdated: string; cached: true } | null> {
+): Promise<{
+  results: ExitResult[]
+  parcelCompleteness: number
+  parcelLastUpdated: string
+  cached: true
+  researchRequest: Awaited<ReturnType<typeof researchStatus>>
+} | null> {
   const cache = await db.exitEvaluation.findFirst({
     where: {
       tenantId,
@@ -124,7 +131,8 @@ async function readCachedEvaluation(
   })
   if (!cache) return null
   if (stableJson(cache.investorProfile) !== stableJson(investor)) return null
-  if (!fipsCounty) return cachedResponse(cache.results, cache.parcelSnapshot)
+  const researchRequest = await researchStatus(dealId, tenantId)
+  if (!fipsCounty) return cachedResponse(cache.results, cache.parcelSnapshot, researchRequest)
 
   const normalized = normalizeApn(apn, fipsCounty)
   const newestParcelData = await db.parcelDataCache.findFirst({
@@ -138,17 +146,36 @@ async function readCachedEvaluation(
   })
   if (newestParcelData) return null
 
-  return cachedResponse(cache.results, cache.parcelSnapshot)
+  return cachedResponse(cache.results, cache.parcelSnapshot, researchRequest)
 }
 
-function cachedResponse(results: unknown, parcelSnapshot: unknown) {
+function cachedResponse(
+  results: unknown,
+  parcelSnapshot: unknown,
+  researchRequest: Awaited<ReturnType<typeof researchStatus>>,
+) {
   const parcel = parcelSnapshot as Partial<ParcelProfile>
   return {
     results: Array.isArray(results) ? results as ExitResult[] : [],
     parcelCompleteness: typeof parcel.dataCompleteness === 'number' ? parcel.dataCompleteness : 0,
     parcelLastUpdated: typeof parcel.lastUpdated === 'string' ? parcel.lastUpdated : new Date().toISOString(),
     cached: true as const,
+    researchRequest,
   }
+}
+
+async function researchStatus(dealId: string, tenantId: string) {
+  return db.parcelResearchRequest.findFirst({
+    where: { dealId, tenantId, status: { not: 'CANCELLED' } },
+    orderBy: { requestedAt: 'desc' },
+    select: {
+      id: true,
+      status: true,
+      priority: true,
+      requestedAt: true,
+      completedAt: true,
+    },
+  })
 }
 
 function decorateGap(gap: DataGap, dealId: string): DataGap {

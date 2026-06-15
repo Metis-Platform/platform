@@ -46,6 +46,7 @@ model Tenant {
   parcelDataCaches ParcelDataCache[]
   exitEvaluations  ExitEvaluation[]
   investorProfile  InvestorProfile?
+  parcelResearchRequests ParcelResearchRequest[]
 }
 
 model TenantWorkflowRule {
@@ -434,10 +435,32 @@ model Deal {
   landNotes       LandNote[]
   buyerBlastSends BuyerBlastSend[]
   exitEvaluations ExitEvaluation[]
+  parcelResearchRequests ParcelResearchRequest[]
 
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, strategyType])
+}
+
+model ParcelResearchRequest {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dealId          String
+  deal            Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  apnNormalized   String
+  fipsCounty      String
+  status          String
+  priority        String
+  requestedAt     DateTime @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  adminUserId     String?
+  notes           String?
+  fieldsCompleted String[] @default([])
+
+  @@index([tenantId, status])
+  @@index([status, requestedAt])
 }
 
 model ExitEvaluation {
