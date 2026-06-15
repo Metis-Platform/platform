@@ -170,9 +170,9 @@ function hasValue(value: unknown): boolean {
 
 function applyCacheFields(profile: ParcelProfile, cacheRows: ParcelDataCache[]): ParcelProfile {
   return cacheRows.reduce((next, row) => {
-    if (row.expiresAt.getTime() <= Date.now()) return next
+    if (row.ttlHours !== 0 && row.expiresAt.getTime() <= Date.now()) return next
     const value = row.normalized ?? row.valueJson
-    if (!isProfileField(row.field) || !isJsonPrimitiveForProfile(value)) return next
+    if (!isProfileField(row.field) || !isJsonValueForProfile(value)) return next
 
     return {
       ...next,
@@ -204,9 +204,21 @@ function isProfileField(field: string): field is keyof ParcelProfile {
     'waterAvailable',
     'sewerAvailable',
     'gasAvailable',
+    'irsLienPresent',
+    'bankruptcyStay',
+    'survivingLiens',
+    'quietTitleRequired',
+    'deedQuality',
+    'conditionScore',
+    'topography',
+    'wetlandsAcres',
+    'hoa',
   ].includes(field)
 }
 
-function isJsonPrimitiveForProfile(value: unknown): value is string | number | boolean {
-  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+function isJsonValueForProfile(value: unknown): value is string | number | boolean | unknown[] | Record<string, unknown> {
+  if (value == null) return false
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return true
+  if (Array.isArray(value)) return true
+  return typeof value === 'object'
 }
