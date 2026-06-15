@@ -22,9 +22,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| #131-P6 Jurisdiction research hub — per-strategy tabs + provenance display | Merged — PR #256 |
 | #131-P5 Market signals ingestion + opportunity/saturation scoring | Merged — PR #254 |
 | #131-P4 Auction platform feeds (GovEase, RealAuction FL, Tax Sale Resources) | Merged — PR #252 |
-| #229-P4 `lib/exit-engine` core | Merged — PR #248 |
 
 ---
 
@@ -35,7 +35,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Action | Blocking? | Added | Notes |
 |---|---|---|---|
 | ~~Add `ANTHROPIC_API_KEY` (platform key) to Vercel env vars~~ | ~~No~~ | 2026-06-15 | ✅ Done 2026-06-15 |
-| Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | `source /home/xovox/.nvm/nvm.sh && npx tsx prisma/seeds/seed-netroline.ts` — seeds FL county profile data from NETROnline scrape. Ready to run. |
+| Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | `source /home/xovox/.nvm/nvm.sh && npx tsx prisma/seeds/seed-netronline.ts` — seeds FL county profile data from NETROnline scrape. Ready to run. |
 
 ---
 
@@ -43,9 +43,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | #224 | #131-P6 Jurisdiction research hub — per-strategy tabs + provenance display |
-| 2 | #230 | #229-P1 ParcelProfile + APN normalization |
-| 3 | #234 | #229-P5 Exit evaluators — all 30 exits across 8 strategy families |
+| 1 | #225 | #131-P7 In-deal jurisdiction surfacing — stage-aware context on deal pages |
+| 2 | #226 | #131-P8 Per-deal DD checklist generation from strategy × jurisdiction matrix |
+| 3 | #230 | #229-P1 ParcelProfile + APN normalization |
 
 ---
 
