@@ -235,6 +235,16 @@ These will break Vercel builds silently. Don't repeat them.
 
 **Windows app — PR bodies with special characters:** write body to `C:\Users\aswit\AppData\Local\Temp\pr-body.md` and pass `--body-file /mnt/c/Users/aswit/AppData/Local/Temp/pr-body.md` to `gh pr create`. Heredocs in `wsl bash -c` are unreliable.
 
+### Issue authoring
+
+When creating or expanding GitHub issues, write at implementation depth. The test: could an agent open this issue cold and ship it in one session without asking questions?
+
+In practice this means including whatever the implementer actually needs — Prisma models, TypeScript signatures, SQL, API routes, architecture diagrams, data sources — not descriptions of them. State the why behind any non-obvious design choice. End with checkboxed acceptance criteria so done is unambiguous.
+
+The shape varies by issue: a schema change leads with the model; a spatial query leads with the architecture flow and SQL; a seed task leads with the data source and the idempotency approach. Follow the shape of the work, not a fixed template.
+
+---
+
 ### Git & GitHub
 - Branch naming: `feature/<issue-number>-short-description`, `fix/<issue-number>-short-description`
 - Never force-push to `main`.
