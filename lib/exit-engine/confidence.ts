@@ -73,8 +73,9 @@ function scoreRecency(sources: ParcelFieldSource[]): number {
   let majorStaleCount = 0
 
   for (const source of sources) {
-    const ttlDays = source.ttlDays ?? DEFAULT_TTL_DAYS
-    const ageDays = (now - source.observedAt.getTime()) / MS_PER_DAY
+    const observedAt = source.observedAt ?? source.retrievedAt
+    const ttlDays = source.ttlDays ?? (source.ttlHours == null ? DEFAULT_TTL_DAYS : source.ttlHours / 24)
+    const ageDays = (now - observedAt.getTime()) / MS_PER_DAY
     if (ageDays > ttlDays * 2) majorStaleCount += 1
     else if (ageDays > ttlDays) staleCount += 1
   }
