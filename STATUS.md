@@ -22,6 +22,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| Jurisdictions: replace tile grid with filterable table + US tile map + multi-strategy New Deal | Merged — PR #267 |
+| Fix: new-deal form filtered by isAvailable; switched to investmentType (all FL counties now visible) | Merged — PR #264 |
 | #229-P5 Exit evaluators — all 30 exits across 8 strategy families | Merged — PR #268 |
 | #229-P3 Zoning data layer + PostGIS spatial join service | Merged — PR #266 |
 | #229-P2 Parcel data sourcing pipeline + ParcelDataCache schema | Merged — PR #265 |
@@ -36,7 +38,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Action | Blocking? | Added | Notes |
 |---|---|---|---|
 | ~~Add `ANTHROPIC_API_KEY` (platform key) to Vercel env vars~~ | ~~No~~ | 2026-06-15 | ✅ Done 2026-06-15 |
-| Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | `source /home/xovox/.nvm/nvm.sh && npx tsx prisma/seeds/seed-netronline.ts` — seeds FL county profile data from NETROnline scrape. Ready to run. |
+| Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | Requires Playwright + browser session (uses JS rendering). Run manually in user session once Playwright is configured. |
 
 ---
 
