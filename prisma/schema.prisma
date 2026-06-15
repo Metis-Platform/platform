@@ -353,29 +353,47 @@ model ParcelDataCache {
 }
 
 model Contact {
-  id        String      @id @default(cuid())
-  tenantId  String
-  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  type      ContactType
-  firstName String?
-  lastName  String?
-  company   String?
-  email     String?
-  phone     String?
-  address   String?
-  city      String?
-  state     String?
-  zip       String?
-  notes     String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            String               @id @default(cuid())
+  tenantId      String
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type          ContactType
+  pipelineStage ContactPipelineStage @default(LEAD)
+  firstName     String?
+  lastName      String?
+  company       String?
+  email         String?
+  phone         String?
+  address       String?
+  city          String?
+  state         String?
+  zip           String?
+  notes         String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   properties      Property[]       @relation("PropertyContacts")
   deals           Deal[]
   buyerProfile    BuyerProfile?
   wholesaleDeals  DealWholesale[]  @relation("WholesaleBuyer")
   buyerBlastSends BuyerBlastSend[]
+  activities      ContactActivity[]
 
+  @@index([tenantId])
+  @@index([tenantId, type])
+  @@index([tenantId, pipelineStage])
+}
+
+model ContactActivity {
+  id         String              @id @default(cuid())
+  contactId  String
+  contact    Contact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tenantId   String
+  type       ContactActivityType
+  notes      String?
+  occurredAt DateTime            @default(now())
+  createdAt  DateTime            @default(now())
+
+  @@index([contactId])
   @@index([tenantId])
 }
 
@@ -1105,5 +1123,28 @@ enum ContactType {
   BUYER
   SELLER
   AGENCY
+  CONTRACTOR
+  TENANT
+  VENDOR
+  OTHER
+}
+
+enum ContactPipelineStage {
+  LEAD
+  CONTACTED
+  NEGOTIATING
+  UNDER_CONTRACT
+  CLOSED
+  DEAD
+}
+
+enum ContactActivityType {
+  NOTE
+  CALL
+  EMAIL
+  TEXT
+  MEETING
+  OFFER_SENT
+  CONTRACT_SENT
   OTHER
 }
