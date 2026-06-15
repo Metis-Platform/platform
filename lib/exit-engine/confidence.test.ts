@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { scoreConfidence } from './confidence'
 import { evaluateExits } from './engine'
 import { EXIT_REGISTRY } from './registry'
@@ -64,8 +64,15 @@ describe('scoreConfidence', () => {
 })
 
 describe('evaluateExits confidence wrapper', () => {
+  const originalRegistry = [...EXIT_REGISTRY]
+
+  beforeEach(() => {
+    EXIT_REGISTRY.length = 0
+  })
+
   afterEach(() => {
     EXIT_REGISTRY.length = 0
+    EXIT_REGISTRY.push(...originalRegistry)
   })
 
   it('downgrades VIABLE to CONDITIONAL when confidence is below 0.75', () => {
