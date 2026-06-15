@@ -22,6 +22,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| Fix: state summary bar text wrapping on jurisdiction map page | Pushed — c55b1c4 |
+| Fix: `.npmrc` legacy-peer-deps — resolved Vercel build failure (react-simple-maps + React 19) | Pushed — 53ae726 |
 | #229-P9 Admin parcel research service — research-on-demand for investors | Merged — PR #273 |
 | Jurisdictions: geographic SVG state map + zoom | Merged — PR #272 |
 | #229-P8 ExitEvaluation cache table + InvestorProfile persistence | Merged — PR #271 |
