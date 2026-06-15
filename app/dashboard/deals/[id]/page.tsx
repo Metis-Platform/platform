@@ -13,7 +13,6 @@ import DealEventsSection, { type DealEvent } from './DealEventsSection'
 import DealPnlCard, { type PnlCardTx, type PnlCardLien } from './DealPnlCard'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
-import { hasTemplate } from '@/lib/checklists/registry'
 import { hasTier } from '@/lib/entitlements'
 import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
@@ -32,6 +31,7 @@ import BusinessPlanSection from './BusinessPlanSection'
 import SensitivitySection from './SensitivitySection'
 import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema } from '@/lib/multifamily-schemas'
 import { buildResearchProfile, type ResearchStrategy } from '@/lib/jurisdiction-research'
+import { hasJurisdictionChecklistTemplate } from '@/lib/jurisdiction-checklist'
 import JurisdictionContextPanel from './JurisdictionContextPanel'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
@@ -760,7 +760,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         <DealTaskSection
           dealId={deal.id}
           initialTasks={dealTasks}
-          hasChecklist={hasTemplate(deal.strategyType)}
+          hasChecklist={hasJurisdictionChecklistTemplate(deal.strategyType)}
         />
       </div>
     </div>
