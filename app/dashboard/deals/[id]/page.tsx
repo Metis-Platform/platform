@@ -24,6 +24,7 @@ import RehabBudgetSection from './RehabBudgetSection'
 import BuyHoldSection, { type BuyHoldData } from './BuyHoldSection'
 import RentalExpensesSection from './RentalExpensesSection'
 import MultifamilySection, { type MultifamilyData } from './MultifamilySection'
+import MfLpSection, { type LpInvestorRow, type WaterfallRow } from './MfLpSection'
 import Section8Section, { type Section8Data } from './Section8Section'
 import RentRollSection from './RentRollSection'
 import T12Section from './T12Section'
@@ -58,6 +59,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { include: { buyerContact: true }, orderBy: { createdAt: 'desc' } },
+        mfLpInvestors: { include: { contact: true }, orderBy: { createdAt: 'asc' } },
+        mfWaterfall: true,
       },
     }),
     db.document.findMany({
@@ -657,6 +660,35 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       {isSection8 && hasBuyHoldPremium && section8Data && (
         <div className="mb-6">
           <Section8Section data={section8Data} />
+        </div>
+      )}
+
+      {/* LP Waterfall + Capital Raise — multifamily only */}
+      {isMultifamily && (
+        <div className="mb-6">
+          <MfLpSection
+            dealId={deal.id}
+            investors={deal.mfLpInvestors.map((inv): LpInvestorRow => ({
+              id:              inv.id,
+              name:            inv.name,
+              email:           inv.email,
+              phone:           inv.phone,
+              committedAmount: inv.committedAmount.toString(),
+              fundedAmount:    inv.fundedAmount.toString(),
+              equityPct:       inv.equityPct?.toString() ?? null,
+              notes:           inv.notes,
+              contact:         inv.contact ?? null,
+            }))}
+            waterfall={deal.mfWaterfall ? ((): WaterfallRow => ({
+              id:                  deal.mfWaterfall!.id,
+              preferredReturnRate: deal.mfWaterfall!.preferredReturnRate.toString(),
+              lpSplit:             deal.mfWaterfall!.lpSplit.toString(),
+              gpSplit:             deal.mfWaterfall!.gpSplit.toString(),
+              promoteHurdle:       deal.mfWaterfall!.promoteHurdle?.toString() ?? null,
+              promoteCarry:        deal.mfWaterfall!.promoteCarry?.toString() ?? null,
+              raisedDate:          deal.mfWaterfall!.raisedDate?.toISOString() ?? null,
+            }))() : null}
+          />
         </div>
       )}
 
