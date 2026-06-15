@@ -44,6 +44,8 @@ model Tenant {
   modules          TenantModule[]
   workflowRules    TenantWorkflowRule[]
   parcelDataCaches ParcelDataCache[]
+  exitEvaluations  ExitEvaluation[]
+  investorProfile  InvestorProfile?
 }
 
 model TenantWorkflowRule {
@@ -101,6 +103,21 @@ model FmrRate {
 
   @@unique([state, county, year, bedrooms])
   @@index([state, county])
+}
+
+model InvestorProfile {
+  id                  String   @id @default(cuid())
+  tenantId            String   @unique
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  maxPurchasePrice    Float?
+  improvementCapital  Float?
+  holdMonthsTolerance Int?
+  targetRoi           Float?
+  financing           String
+  licenseTypes        String[] @default([])
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model User {
@@ -416,10 +433,28 @@ model Deal {
   auditLogs       AuditLog[]
   landNotes       LandNote[]
   buyerBlastSends BuyerBlastSend[]
+  exitEvaluations ExitEvaluation[]
 
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, strategyType])
+}
+
+model ExitEvaluation {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dealId          String
+  deal            Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  investorProfile Json
+  results         Json
+  parcelSnapshot  Json
+  evaluatedAt     DateTime
+  expiresAt       DateTime
+  version         String
+
+  @@index([tenantId, dealId])
+  @@index([expiresAt])
 }
 
 // Extension table — Tax Deed strategy

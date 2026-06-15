@@ -8,6 +8,18 @@ type ExitOptionsResponse = {
   results: ExitResult[]
   parcelCompleteness: number
   parcelLastUpdated: string
+  cached?: boolean
+}
+
+type InvestorProfileResponse = {
+  profile: {
+    maxPurchasePrice: number | null
+    improvementCapital: number | null
+    holdMonthsTolerance: number | null
+    targetRoi: number | null
+    financing: InvestorConstraints['financing']
+    licenseTypes: string[]
+  } | null
 }
 
 type Props = {
@@ -26,6 +38,7 @@ export default function ExitOptionsPanel({ dealId, strategyType, defaultMaxPurch
   const [data, setData] = useState<ExitOptionsResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [enrichMessage, setEnrichMessage] = useState<string | null>(null)
+  const [saveDefaults, setSaveDefaults] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const query = useMemo(() => {
@@ -38,9 +51,10 @@ export default function ExitOptionsPanel({ dealId, strategyType, defaultMaxPurch
     return params.toString()
   }, [constraints])
 
-  const load = useCallback(() => {
+  const load = useCallback((force = false) => {
     startTransition(async () => {
-      const response = await fetch(`/api/deals/${dealId}/exit-options?${query}`, { cache: 'no-store' })
+      if (saveDefaults) await saveInvestorProfile(constraints)
+      const response = await fetch(`/api/deals/${dealId}/exit-options?${query}${force ? '&force=true' : ''}`, { cache: 'no-store' })
       if (!response.ok) {
         const body = await response.json().catch(() => null) as { error?: string } | null
         setError(body?.error ?? 'Exit analysis is unavailable.')
@@ -50,7 +64,30 @@ export default function ExitOptionsPanel({ dealId, strategyType, defaultMaxPurch
       setError(null)
       setData(await response.json() as ExitOptionsResponse)
     })
-  }, [dealId, query])
+  }, [constraints, dealId, query, saveDefaults])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadProfile() {
+      const response = await fetch('/api/tenants/investor-profile', { cache: 'no-store' })
+      if (!response.ok) return
+      const body = await response.json() as InvestorProfileResponse
+      if (cancelled || !body.profile) return
+      setConstraints(current => ({
+        ...current,
+        maxPurchasePrice: body.profile?.maxPurchasePrice ?? current.maxPurchasePrice,
+        improvementCapital: body.profile?.improvementCapital ?? current.improvementCapital,
+        holdMonthsTolerance: body.profile?.holdMonthsTolerance ?? current.holdMonthsTolerance,
+        targetRoi: body.profile?.targetRoi ?? current.targetRoi,
+        financing: body.profile?.financing ?? current.financing,
+        licenseTypes: body.profile?.licenseTypes ?? current.licenseTypes,
+      }))
+    }
+    void loadProfile()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     load()
@@ -99,6 +136,14 @@ export default function ExitOptionsPanel({ dealId, strategyType, defaultMaxPurch
         >
           {isPending ? 'Working…' : 'Enrich Parcel'}
         </button>
+        <button
+          type="button"
+          onClick={() => load(true)}
+          disabled={isPending}
+          className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50"
+        >
+          Re-run Analysis
+        </button>
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -131,11 +176,22 @@ export default function ExitOptionsPanel({ dealId, strategyType, defaultMaxPurch
         </label>
       </div>
 
+      <label className="mb-4 flex items-center gap-2 text-xs font-medium text-zinc-600">
+        <input
+          type="checkbox"
+          checked={saveDefaults}
+          onChange={event => setSaveDefaults(event.target.checked)}
+          className="h-4 w-4 rounded border-zinc-300"
+        />
+        Save these investor constraints as my tenant defaults when analysis runs
+      </label>
+
       <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
         {data && (
           <>
             <span>Parcel completeness {Math.round(data.parcelCompleteness * 100)}%</span>
             <span>Updated {new Date(data.parcelLastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            {data.cached && <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-medium text-zinc-600">Cached</span>}
           </>
         )}
         {enrichMessage && <span className={enrichMessage.includes('failed') ? 'text-red-600' : 'text-emerald-700'}>{enrichMessage}</span>}
@@ -171,6 +227,21 @@ function NumberField({ label, value, onChange }: { label: string; value: number 
 
 function setNumberParam(params: URLSearchParams, key: string, value: number | undefined) {
   if (value != null && Number.isFinite(value)) params.set(key, String(value))
+}
+
+async function saveInvestorProfile(constraints: InvestorConstraints) {
+  await fetch('/api/tenants/investor-profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      maxPurchasePrice: constraints.maxPurchasePrice,
+      improvementCapital: constraints.improvementCapital,
+      holdMonthsTolerance: constraints.holdMonthsTolerance,
+      targetRoi: constraints.targetRoi,
+      financing: constraints.financing,
+      licenseTypes: constraints.licenseTypes ?? [],
+    }),
+  })
 }
 
 function strategyLabel(strategy: StrategyType) {
