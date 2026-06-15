@@ -19,7 +19,7 @@
 > AI extraction pipeline spec, and technology decisions.
 > Tier 1 priority: all 67 FL counties → anchor counties in TX/GA/AZ/IL/OH/TN/MD/NC/CO
 
-- [ ] **#131-P1** JurisdictionProfile schema — provenance-rich field model (issue #219)
+- [x] **#131-P1** JurisdictionProfile schema — provenance-rich field model (issue #219)
 - [ ] **#131-P2** Seed: all 3,141 counties + 50-state statutory baseline (issue #220)
 - [ ] **#131-P3** Admin: AI extraction pipeline — NETROnline → Playwright → Jina → Claude Haiku → review queue (issue #221)
 - [ ] **#131-P4** Admin: auction platform feeds — GovEase, RealAuction, Tax Sale Resources (issue #222)

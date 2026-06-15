@@ -15,6 +15,14 @@
 
 ---
 
+## Latest Implementation Work (2026-06-15)
+
+| Issue | Description | Status |
+|-------|-------------|--------|
+| #219 / METIS-44 | #131-P1 JurisdictionProfile schema, typed profile helpers, admin GET/PATCH/publish APIs | Implemented in current PR |
+
+---
+
 ## Latest Repo/Tracker Cleanup (2026-06-15)
 
 | Item | Result |
@@ -43,11 +51,11 @@
 
 | Priority | GitHub | Linear | Title | Notes |
 |----------|--------|--------|-------|-------|
-| 1 | #219 | METIS-44 | #131-P1 JurisdictionProfile schema | Foundation for jurisdiction intelligence |
-| 2 | #230 | METIS-53 | #229-P1 ParcelProfile + APN normalization | Independent from #219; can run in parallel |
-| 3 | #231 | METIS-54 | #229-P4 exit-engine core | Pure TS module; can run in parallel with #230 |
+| 1 | #220 | METIS-45 | #131-P2 Seed counties + statutory baseline | Next #131 data foundation after #219 |
+| 2 | #230 | METIS-53 | #229-P1 ParcelProfile + APN normalization | Independent parcel/exit foundation |
+| 3 | #231 | METIS-54 | #229-P4 exit-engine core | Do after or coordinated with #230 because both touch exit-engine types |
 
-Recommended next agent wave: assign **#219** to one builder, **#230/#231** to a second builder or Codex/Hermes lane after checking schema/type overlap.
+Recommended next agent wave: start **#230** while #131 data seeding is scoped, then do **#231** after #230 lands to avoid type-file conflicts.
 
 ---
 
