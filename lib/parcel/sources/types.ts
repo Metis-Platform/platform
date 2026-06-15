@@ -8,6 +8,7 @@ export type ParcelSourceName =
   | 'census_acs'
   | 'walk_score'
   | 'hifld'
+  | 'postgis_zoning'
 
 export interface ParcelSourcePayload {
   source: ParcelSourceName
@@ -25,6 +26,7 @@ export const SOURCE_TTL_HOURS: Record<ParcelSourceName, number> = {
   census_acs: 24 * 365,
   walk_score: 24 * 90,
   hifld: 24 * 365,
+  postgis_zoning: 24 * 365,
 }
 
 export async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
