@@ -22,6 +22,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| #229-P7 Deal-page "What are my exits?" UI | Merged — PR #270 |
 | #229-P6 JurisdictionFacts accessor + Prisma adapter | Merged — PR #269 |
 | Jurisdictions: replace tile grid with filterable table + US tile map + multi-strategy New Deal | Merged — PR #267 |
 | Fix: new-deal form filtered by isAvailable; switched to investmentType (all FL counties now visible) | Merged — PR #264 |
@@ -47,9 +48,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | #236 | #229-P7 Deal-page "What are my exits?" UI |
-| 2 | #237 | #229-P8 ExitEvaluation cache table + InvestorProfile persistence |
-| 3 | #238 | #229-P9 Admin parcel research service — research-on-demand for investors |
+| 1 | #237 | #229-P8 ExitEvaluation cache table + InvestorProfile persistence |
+| 2 | #238 | #229-P9 Admin parcel research service — research-on-demand for investors |
+| 3 | — | Initiative 3 Module Depth after #229 completes |
 
 ---
 

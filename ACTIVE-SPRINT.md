@@ -41,7 +41,7 @@
 - [x] **#229-P3** Zoning data layer + PostGIS spatial join service (issue #233) ⚠️ Build as reusable `GeoService` — Land module and Tax Sale DD depend on this layer
 - [x] **#229-P5** Exit evaluators — all 30 exits across 8 strategy families (issue #234)
 - [x] **#229-P6** JurisdictionFacts accessor + Prisma adapter — bridge to #131 (issue #235)
-- [ ] **#229-P7** Deal-page "What are my exits?" UI — Exit Options panel + data-gap chips (issue #236)
+- [x] **#229-P7** Deal-page "What are my exits?" UI — Exit Options panel + data-gap chips (issue #236)
 - [ ] **#229-P8** ExitEvaluation cache table + InvestorProfile persistence (issue #237)
 - [ ] **#229-P9** Admin parcel research service — research-on-demand for investors (issue #238)
 
