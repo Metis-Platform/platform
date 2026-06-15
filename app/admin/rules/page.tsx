@@ -27,8 +27,22 @@ export default async function AdminRulesPage() {
           _count: { select: { rules: true } },
         },
       },
+      profile: {
+        select: {
+          marketSignals: true,
+        },
+      },
     },
   })
+
+  function scoreFromMarketSignals(marketSignals: unknown, key: 'opportunityScore' | 'saturationScore'): number | null {
+    if (typeof marketSignals !== 'object' || marketSignals === null || !(key in marketSignals)) return null
+    const fields = marketSignals as Record<string, unknown>
+    const field = fields[key]
+    if (typeof field !== 'object' || field === null || !('value' in field)) return null
+    const value = Number((field as { value: unknown }).value)
+    return Number.isFinite(value) ? value : null
+  }
 
   const rows = jurisdictions.map((j) => {
     const active = j.ruleSets.find((r) => r.isActive) ?? null
@@ -43,6 +57,8 @@ export default async function AdminRulesPage() {
         ? { id: active.id, name: active.name, ruleCount: active._count.rules }
         : null,
       totalRuleSets: j.ruleSets.length,
+      opportunityScore: scoreFromMarketSignals(j.profile?.marketSignals, 'opportunityScore'),
+      saturationScore: scoreFromMarketSignals(j.profile?.marketSignals, 'saturationScore'),
     }
   })
 

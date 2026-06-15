@@ -13,6 +13,8 @@ type JurisdictionRow = {
   isAvailable: boolean
   activeRuleSet: { id: string; name: string; ruleCount: number } | null
   totalRuleSets: number
+  opportunityScore: number | null
+  saturationScore: number | null
 }
 
 const INVESTMENT_LABELS: Record<string, string> = {
@@ -21,12 +23,27 @@ const INVESTMENT_LABELS: Record<string, string> = {
   REDEEMABLE_DEED: 'Red. Deed',
 }
 
-type SortCol = 'state' | 'county' | 'available' | 'rules'
+type SortCol = 'state' | 'county' | 'available' | 'rules' | 'opportunity' | 'saturation'
 type FilterMode = 'all' | 'available' | 'unavailable' | 'missing'
 
-function SortIcon({ col, active, dir }: { col: string; active: boolean; dir: 'asc' | 'desc' }) {
+function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   if (!active) return <span className="ml-1 text-zinc-300">↕</span>
   return <span className="ml-1 text-zinc-700">{dir === 'asc' ? '↑' : '↓'}</span>
+}
+
+function ScoreBadge({ score, tone }: { score: number | null; tone: 'opportunity' | 'saturation' }) {
+  if (score === null) return <span className="text-zinc-300">—</span>
+
+  const color =
+    tone === 'opportunity'
+      ? score >= 70 ? 'bg-emerald-50 text-emerald-700' : score >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-zinc-100 text-zinc-500'
+      : score >= 70 ? 'bg-red-50 text-red-700' : score >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+
+  return (
+    <span className={`inline-flex min-w-10 justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${color}`}>
+      {score}
+    </span>
+  )
 }
 
 export default function JurisdictionSearch({ jurisdictions }: { jurisdictions: JurisdictionRow[] }) {
@@ -80,6 +97,8 @@ export default function JurisdictionSearch({ jurisdictions }: { jurisdictions: J
       if (sortCol === 'county')    cmp = a.county.localeCompare(b.county)
       if (sortCol === 'available') cmp = (b.isAvailable ? 1 : 0) - (a.isAvailable ? 1 : 0)
       if (sortCol === 'rules')     cmp = (b.activeRuleSet?.ruleCount ?? 0) - (a.activeRuleSet?.ruleCount ?? 0)
+      if (sortCol === 'opportunity') cmp = (b.opportunityScore ?? -1) - (a.opportunityScore ?? -1)
+      if (sortCol === 'saturation')  cmp = (b.saturationScore ?? -1) - (a.saturationScore ?? -1)
       return sortDir === 'asc' ? cmp : -cmp
     })
 
@@ -140,6 +159,8 @@ export default function JurisdictionSearch({ jurisdictions }: { jurisdictions: J
                 [null,        'Type',     'text-left'],
                 [null,        'Coverage', 'text-left'],
                 ['rules',     'Rules',    'text-left'],
+                ['opportunity', 'Opp.',   'text-left'],
+                ['saturation',  'Sat.',   'text-left'],
                 ['available', 'Status',   'text-left'],
                 [null,        '',         'text-right'],
               ] as [SortCol | null, string, string][]).map(([col, label, align], i) => (
@@ -150,7 +171,7 @@ export default function JurisdictionSearch({ jurisdictions }: { jurisdictions: J
                       className="flex items-center gap-0.5 hover:text-zinc-800 transition-colors"
                     >
                       {label}
-                      <SortIcon col={col} active={sortCol === col} dir={sortDir} />
+                      <SortIcon active={sortCol === col} dir={sortDir} />
                     </button>
                   ) : label}
                 </th>
@@ -160,7 +181,7 @@ export default function JurisdictionSearch({ jurisdictions }: { jurisdictions: J
           <tbody className="divide-y divide-zinc-100">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-zinc-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-zinc-400">
                   No jurisdictions match your search.
                 </td>
               </tr>
@@ -186,6 +207,8 @@ export default function JurisdictionSearch({ jurisdictions }: { jurisdictions: J
                       ? `${j.totalRuleSets} inactive`
                       : '—'}
                 </td>
+                <td className="px-4 py-3"><ScoreBadge score={j.opportunityScore} tone="opportunity" /></td>
+                <td className="px-4 py-3"><ScoreBadge score={j.saturationScore} tone="saturation" /></td>
                 <td className="px-4 py-3">
                   {j.isAvailable ? (
                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
