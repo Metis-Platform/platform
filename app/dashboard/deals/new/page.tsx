@@ -9,9 +9,9 @@ export const dynamic = 'force-dynamic'
 export default async function NewLienPage({
   searchParams,
 }: {
-  searchParams: Promise<{ strategy?: string }>
+  searchParams: Promise<{ strategy?: string; jid?: string }>
 }) {
-  const { strategy: strategyParam } = await searchParams
+  const { strategy: strategyParam, jid } = await searchParams
   const strategyKey = parseStrategyParam(strategyParam)
   const meta = getStrategyMeta(strategyKey)
 
@@ -28,10 +28,18 @@ export default async function NewLienPage({
       ? { investmentType: { in: [InvestmentType.DEED, InvestmentType.REDEEMABLE_DEED] } }
       : {}
 
-  const jurisdictions = await db.jurisdiction.findMany({
-    where: investmentTypeWhere,
-    orderBy: [{ stateName: 'asc' }, { county: 'asc' }],
-  })
+  const [jurisdictions, preselected] = await Promise.all([
+    db.jurisdiction.findMany({
+      where: investmentTypeWhere,
+      orderBy: [{ stateName: 'asc' }, { county: 'asc' }],
+    }),
+    jid
+      ? db.jurisdiction.findUnique({
+          where: { id: jid },
+          select: { id: true, county: true, stateName: true, state: true },
+        })
+      : null,
+  ])
 
   return (
     <div className="max-w-2xl">
@@ -39,7 +47,7 @@ export default async function NewLienPage({
         <h1 className="text-2xl font-semibold text-zinc-900">{meta.newTitle}</h1>
         <p className="text-sm text-zinc-500 mt-0.5">{meta.newSubtitle}</p>
       </div>
-      <NewLienForm jurisdictions={jurisdictions} strategy={strategyKey} />
+      <NewLienForm jurisdictions={jurisdictions} strategy={strategyKey} preselected={preselected ?? null} />
     </div>
   )
 }

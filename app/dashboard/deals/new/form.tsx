@@ -23,28 +23,34 @@ const initialFixFlipState: FixFlipFormState = {}
 const initialBuyHoldState: BuyHoldFormState = {}
 const initialMultifamilyState: MultifamilyFormState = {}
 
+type Preselected = { id: string; county: string; stateName: string; state: string } | null
+
 /** Dispatcher — renders strategy-specific form without calling lien hooks for other strategies. */
 export function NewLienForm({
   jurisdictions,
   strategy = 'TAX_LIEN',
+  preselected = null,
 }: {
   jurisdictions: Jurisdiction[]
   strategy?: string
+  preselected?: Preselected
 }) {
   if (strategy === 'LAND') return <NewLandForm jurisdictions={jurisdictions} />
   if (strategy === 'WHOLESALE') return <NewWholesaleForm jurisdictions={jurisdictions} />
   if (strategy === 'FIX_FLIP') return <NewFixFlipForm jurisdictions={jurisdictions} />
   if (strategy === 'BUY_HOLD') return <NewBuyHoldForm jurisdictions={jurisdictions} />
   if (strategy === 'MULTIFAMILY') return <NewMultifamilyForm jurisdictions={jurisdictions} />
-  return <NewLienFormInner jurisdictions={jurisdictions} strategy={strategy} />
+  return <NewLienFormInner jurisdictions={jurisdictions} strategy={strategy} preselected={preselected} />
 }
 
 function NewLienFormInner({
   jurisdictions,
   strategy,
+  preselected = null,
 }: {
   jurisdictions: Jurisdiction[]
   strategy: string
+  preselected?: Preselected
 }) {
   const isTaxDeed = strategy === 'TAX_DEED'
   const isForeclosure = strategy === 'FORECLOSURE'
@@ -75,24 +81,40 @@ function NewLienFormInner({
       {/* Jurisdiction */}
       <section className="px-6 py-5 space-y-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Jurisdiction</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="State" error={state.errors?.jurisdictionId}>
-            <select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="input-base">
-              <option value="">Select state…</option>
-              {states.map(([abbr, name]) => <option key={abbr} value={abbr}>{name}</option>)}
-            </select>
-          </Field>
-          <Field label="County" error={state.errors?.jurisdictionId}>
-            <select name="jurisdictionId" disabled={!selectedState} className="input-base disabled:opacity-50 disabled:cursor-not-allowed">
-              <option value="">{selectedState ? 'Select county…' : '← Select state first'}</option>
-              {counties.map(j => (
-                <option key={j.id} value={j.id}>
-                  {j.county} County ({j.investmentType === 'LIEN' ? 'Lien' : j.investmentType === 'REDEEMABLE_DEED' ? 'Redeemable Deed' : 'Deed'})
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+        {preselected ? (
+          <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+            <input type="hidden" name="jurisdictionId" value={preselected.id} />
+            <div>
+              <p className="font-medium text-zinc-900">{preselected.county} County</p>
+              <p className="text-sm text-zinc-500">{preselected.stateName}</p>
+            </div>
+            <Link
+              href={`/dashboard/deals/new?strategy=${strategy}`}
+              className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Change
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="State" error={state.errors?.jurisdictionId}>
+              <select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="input-base">
+                <option value="">Select state…</option>
+                {states.map(([abbr, name]) => <option key={abbr} value={abbr}>{name}</option>)}
+              </select>
+            </Field>
+            <Field label="County" error={state.errors?.jurisdictionId}>
+              <select name="jurisdictionId" disabled={!selectedState} className="input-base disabled:opacity-50 disabled:cursor-not-allowed">
+                <option value="">{selectedState ? 'Select county…' : '← Select state first'}</option>
+                {counties.map(j => (
+                  <option key={j.id} value={j.id}>
+                    {j.county} County ({j.investmentType === 'LIEN' ? 'Lien' : j.investmentType === 'REDEEMABLE_DEED' ? 'Redeemable Deed' : 'Deed'})
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        )}
       </section>
 
       {/* Property */}
