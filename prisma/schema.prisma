@@ -146,6 +146,7 @@ model Jurisdiction {
   profile              JurisdictionProfile?
   sourceUrls           JurisdictionSourceUrl[]
   extractionCandidates ExtractionCandidate[]
+  auctionSaleFeeds     AuctionSaleFeed[]
 
   @@unique([state, county])
 }
@@ -225,6 +226,26 @@ model ExtractionCandidate {
   @@index([jurisdictionId])
   @@index([status])
   @@index([jurisdictionId, section, fieldKey])
+}
+
+model AuctionSaleFeed {
+  id                      String             @id @default(cuid())
+  jurisdictionId          String
+  jurisdiction            Jurisdiction       @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  source                  AuctionFeedSource
+  saleDate                DateTime
+  registrationDeadline    DateTime?
+  depositRequirementCents Int?
+  platformUrl             String?
+  notes                   String?
+  syncedAt                DateTime           @default(now())
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@unique([jurisdictionId, source, saleDate])
+  @@index([jurisdictionId])
+  @@index([saleDate])
+  @@index([source])
 }
 
 model RuleSet {
@@ -899,6 +920,12 @@ enum LandAccess {
   UNKNOWN
 }
 
+enum AuctionFeedSource {
+  GOVEASE
+  REALAUCTION_FL
+  TAX_SALE_RESOURCES
+}
+
 enum EventType {
   REDEMPTION_DEADLINE
   NOTICE_MAIL_BY
@@ -918,6 +945,7 @@ enum EventType {
   UNIT_LEASE_END
   HQS_INSPECTION
   RENT_INCREASE_WINDOW
+  TAX_SALE
   CUSTOM
 }
 

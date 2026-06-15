@@ -5,6 +5,7 @@ import Link from 'next/link'
 import RulesClient from './RulesClient'
 import StrategyDataClient from './StrategyDataClient'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
+import { AuctionFeedSource } from '@/app/generated/prisma'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ export default async function JurisdictionRulesPage({
 
   const { jurisdictionId } = await params
 
-  const [jurisdiction, strategyDataRows] = await Promise.all([
+  const [jurisdiction, strategyDataRows, upcomingSales] = await Promise.all([
     db.jurisdiction.findUnique({
       where: { id: jurisdictionId },
       include: {
@@ -37,6 +38,11 @@ export default async function JurisdictionRulesPage({
       },
     }),
     db.jurisdictionStrategyData.findMany({ where: { jurisdictionId } }),
+    db.auctionSaleFeed.findMany({
+      where: { jurisdictionId, saleDate: { gte: new Date() } },
+      orderBy: { saleDate: 'asc' },
+      take: 12,
+    }),
   ])
 
   if (!jurisdiction) notFound()
@@ -201,6 +207,84 @@ export default async function JurisdictionRulesPage({
           }))}
         />
       </div>
+
+      {/* Auction Calendar */}
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-sm font-semibold text-zinc-900">Auction Calendar</h2>
+          <span className="text-xs text-zinc-400">Synced weekly · upcoming sales only</span>
+        </div>
+        <p className="text-xs text-zinc-500 mb-4">
+          Upcoming tax sale dates from GovEase, RealAuction (FL), and Tax Sale Resources feeds.
+        </p>
+        {upcomingSales.length === 0 ? (
+          <p className="text-sm text-zinc-400">No upcoming sales in feed. Feeds sync weekly — check back after the next cron run.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-100">
+                  <th className="text-left py-2 pr-4 text-xs font-medium text-zinc-500 uppercase tracking-wide">Sale Date</th>
+                  <th className="text-left py-2 pr-4 text-xs font-medium text-zinc-500 uppercase tracking-wide">Source</th>
+                  <th className="text-left py-2 pr-4 text-xs font-medium text-zinc-500 uppercase tracking-wide">Registration Deadline</th>
+                  <th className="text-left py-2 pr-4 text-xs font-medium text-zinc-500 uppercase tracking-wide">Deposit</th>
+                  <th className="text-left py-2 text-xs font-medium text-zinc-500 uppercase tracking-wide">Last Synced</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-50">
+                {upcomingSales.map((sale) => (
+                  <tr key={sale.id} className="hover:bg-zinc-50">
+                    <td className="py-2.5 pr-4 font-medium text-zinc-900">
+                      {sale.platformUrl ? (
+                        <a
+                          href={sale.platformUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {sale.saleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </a>
+                      ) : (
+                        sale.saleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      )}
+                    </td>
+                    <td className="py-2.5 pr-4">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${SOURCE_BADGE[sale.source]}`}>
+                        {SOURCE_LABEL[sale.source]}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-4 text-zinc-600">
+                      {sale.registrationDeadline
+                        ? sale.registrationDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : <span className="text-zinc-300">—</span>}
+                    </td>
+                    <td className="py-2.5 pr-4 text-zinc-600">
+                      {sale.depositRequirementCents != null
+                        ? `$${(sale.depositRequirementCents / 100).toLocaleString()}`
+                        : <span className="text-zinc-300">—</span>}
+                    </td>
+                    <td className="py-2.5 text-zinc-400 text-xs">
+                      {sale.syncedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
+}
+
+const SOURCE_LABEL: Record<AuctionFeedSource, string> = {
+  GOVEASE: 'GovEase',
+  REALAUCTION_FL: 'RealAuction FL',
+  TAX_SALE_RESOURCES: 'Tax Sale Resources',
+}
+
+const SOURCE_BADGE: Record<AuctionFeedSource, string> = {
+  GOVEASE: 'bg-blue-50 text-blue-700',
+  REALAUCTION_FL: 'bg-emerald-50 text-emerald-700',
+  TAX_SALE_RESOURCES: 'bg-amber-50 text-amber-700',
 }

@@ -15,6 +15,18 @@
     {
       "path": "/api/cron/extract-jurisdiction",
       "schedule": "0 2 * * 0"
+    },
+    {
+      "path": "/api/cron/sync-govease",
+      "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/sync-realauction-fl",
+      "schedule": "0 4 * * 1"
+    },
+    {
+      "path": "/api/cron/sync-tax-sale-resources",
+      "schedule": "0 5 * * 1"
     }
   ]
 }
