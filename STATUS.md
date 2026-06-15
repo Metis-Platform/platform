@@ -22,6 +22,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| #229-P5 Exit evaluators — all 30 exits across 8 strategy families | Merged — PR #268 |
 | #229-P3 Zoning data layer + PostGIS spatial join service | Merged — PR #266 |
 | #229-P2 Parcel data sourcing pipeline + ParcelDataCache schema | Merged — PR #265 |
 | #229-P1 Parcel profile data model + APN normalization | Merged — PR #262 |
@@ -43,9 +44,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | #234 | #229-P5 Exit evaluators — all 30 exits across 8 strategy families |
-| 2 | #235 | #229-P6 JurisdictionFacts accessor + Prisma adapter |
-| 3 | #236 | #229-P7 Deal-page "What are my exits?" UI |
+| 1 | #235 | #229-P6 JurisdictionFacts accessor + Prisma adapter |
+| 2 | #236 | #229-P7 Deal-page "What are my exits?" UI |
+| 3 | #237 | #229-P8 ExitEvaluation cache table + InvestorProfile persistence |
 
 ---
 
