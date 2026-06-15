@@ -45,6 +45,8 @@ before premium pricing, always. In practice:
 - Tick any completed items in `ACTIVE-SPRINT.md`
 - Update STATUS.md Last Session and Next Up rows
 
+**If STATUS.md has a `## Pending Actions` table with rows**, surface them to the user immediately as a callout — list each action and whether it's blocking. Only halt sprint progress if the next ACTIVE-SPRINT.md item literally cannot start without the pending action. Non-blocking actions are informational only — note them and continue.
+
 Read on demand only (not every session):
 - `STRATEGY.md` — product vision, north star, module specs
 - `ARCHITECTURE.md` — infra decisions, data model, ADRs
@@ -81,6 +83,11 @@ Do this after every merge (not just at session end — protects against abrupt s
 - Update "Last session completed" with PR numbers
 - Update "Next up" with the top 3 remaining issues
 - Memory auto-loads before the first user message next session — keeping it current means instant orientation
+
+**D) If the PR created any required human action** (env var to add, manual seed to run, DNS record, external service setup):
+- Add a row to the `## Pending Actions` table in STATUS.md
+- Send a Telegram notification: `curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" -d "chat_id=$TELEGRAM_CHAT_ID" -d "text=⚠️ Metis — action needed: <description>"`
+- `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are in `.env.local`. If not set, log the pending action to console and skip curl.
 
 **Information contract — one home per content type, no duplication:**
 
