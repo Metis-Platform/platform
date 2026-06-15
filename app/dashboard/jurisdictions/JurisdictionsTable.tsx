@@ -77,13 +77,13 @@ export function JurisdictionsTable({
           {/* State summary + search */}
           <div className="flex items-center gap-4 rounded-lg border border-zinc-200 bg-white px-4 py-3">
             <div className="flex-1 min-w-0">
-              <span className="font-semibold text-zinc-900">{selectedInfo?.stateName ?? selectedState}</span>
+              <p className="font-semibold text-zinc-900 truncate">{selectedInfo?.stateName ?? selectedState}</p>
               {selectedInfo && (
-                <span className="ml-3 text-sm text-zinc-500">
+                <p className="text-sm text-zinc-500 truncate">
                   {selectedInfo.investmentLabel}
                   {selectedInfo.interestRate && ` · ${selectedInfo.interestRate}`}
                   {selectedInfo.redemptionPeriod && ` · ${selectedInfo.redemptionPeriod} redemption`}
-                </span>
+                </p>
               )}
             </div>
             <input
