@@ -25,7 +25,7 @@ export type StateInfo = {
   summary: string | null  // 1-2 sentence overview
 }
 
-const STATE_INFO: Record<string, StateInfo> = {
+export const STATE_INFO: Record<string, StateInfo> = {
   AL: {
     state: 'AL', stateName: 'Alabama',
     investmentType: 'TAX_LIEN', investmentLabel: 'Tax Lien',

@@ -13,7 +13,7 @@ import DealEventsSection, { type DealEvent } from './DealEventsSection'
 import DealPnlCard, { type PnlCardTx, type PnlCardLien } from './DealPnlCard'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { buildResearchLinkGroups } from '@/lib/research-links'
-import { hasTier } from '@/lib/entitlements'
+import { hasStrategy, hasTier } from '@/lib/entitlements'
 import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
 import LandDispositionSection from './LandDispositionSection'
@@ -33,6 +33,7 @@ import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema } from '@/lib/m
 import { buildResearchProfile, type ResearchStrategy } from '@/lib/jurisdiction-research'
 import { hasJurisdictionChecklistTemplate } from '@/lib/jurisdiction-checklist'
 import JurisdictionContextPanel from './JurisdictionContextPanel'
+import ExitOptionsPanel from './ExitOptionsPanel'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
@@ -191,6 +192,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
   const hasLandPremium = isLand ? await hasTier(tenant.id, 'LAND', 'PREMIUM') : false
   const hasWholesalePremium = isWholesale ? await hasTier(tenant.id, 'WHOLESALE', 'PREMIUM') : false
+  const hasExitEngine = await hasStrategy(tenant.id, deal.strategyType)
 
   const fixFlipData: FixFlipData | null = isFixFlip
     ? {
@@ -716,6 +718,14 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         events={dealEvents}
         section8InPlay={isSection8}
       />
+
+      {hasExitEngine && (
+        <ExitOptionsPanel
+          dealId={deal.id}
+          strategyType={deal.strategyType}
+          defaultMaxPurchasePrice={deal.purchasePrice == null ? null : Number(deal.purchasePrice)}
+        />
+      )}
 
       {/* Research Links */}
       <div className="bg-white rounded-xl border border-zinc-200 p-6 mb-6">
