@@ -53,9 +53,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | — | Contact CRM primitive — platform-wide contact record |
-| 2 | #39 | Land module depth — GIS overlays, water/well lookup, raw land comps, AI parcel summary |
-| 3 | #40 | Wholesale module depth — seller pipeline, buyer matching, assignment fee calc |
+| 1 | #274 | Contact CRM primitive — PR #275 merged (pending CI) |
+| — | — | All sprint initiatives complete — awaiting next initiative direction |
 
 ---
 

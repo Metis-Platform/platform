@@ -51,12 +51,12 @@
 
 > Specs: `STRATEGY.md` — Platform Primitives + Module Depth Specs
 
-- [ ] **Contact CRM primitive** — platform-wide contact record (Wholesale, Fix & Flip, Buy & Hold, Land)
-- [ ] **Land module (#39)** — GIS overlays, water/well lookup, raw land comps, AI parcel summary
-- [ ] **Wholesale module (#40)** — seller pipeline, buyer matching, assignment fee calc
-- [ ] **Fix & Flip depth (#41)** — cost database, multi-bid comparison, draw schedule
-- [ ] **Buy & Hold depth (#42)** — tenant records, lease tracking, maintenance log, rent roll
-- [ ] **Multifamily depth (#43)** — LP waterfall modeling, capital raise tracking
+- [x] **Contact CRM primitive** — platform-wide contact record (Wholesale, Fix & Flip, Buy & Hold, Land) (issue #274, PR #275)
+- [x] **Land module (#39)** — all 4 phases merged (P1–P4): create flow, DD checklist, option expiry, note tracking, payment ledger, disposition funnel, note servicing automation, county data pack (PRs #144, #146, #148, #175)
+- [x] **Wholesale module (#40)** — all 4 phases merged: create flow, buyer CRM, MAO calculator, pipeline board, buyer blast, assignment packet (PRs #150, #152, #154, #177)
+- [x] **Fix & Flip depth (#41)** — all 4 phases merged: create flow, rehab budget, economics, AI SOW extraction + draw package (PRs #156, #157, #159, #216)
+- [x] **Buy & Hold depth (#42)** — all 3 phases merged: create flow, rental economics, Section 8 compliance engine (PRs #161, #162, #174)
+- [x] **Multifamily depth (#43)** — all 4 phases merged: underwriting, rent roll/T12, value-add plan, AI OM extraction + sensitivity grid (PRs #167, #169, #171, #217)
 
 ---
 
