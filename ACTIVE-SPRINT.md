@@ -21,7 +21,7 @@
 
 - [x] **#131-P1** JurisdictionProfile schema — provenance-rich field model (issue #219)
 - [x] **#131-P2** Seed: all 3,141 counties + 50-state statutory baseline (issue #220)
-- [ ] **#131-P3** Admin: AI extraction pipeline — NETROnline → Playwright → Jina → Claude Haiku → review queue (issue #221)
+- [x] **#131-P3** Admin: AI extraction pipeline — NETROnline → Playwright → Jina → Claude Haiku → review queue (issue #221)
 - [ ] **#131-P4** Admin: auction platform feeds — GovEase, RealAuction, Tax Sale Resources (issue #222)
 - [ ] **#131-P5** Admin: market signals ingestion + opportunity/saturation scoring (issue #223)
 - [ ] **#131-P6** Investor: jurisdiction research hub — per-strategy tabs + provenance display (issue #224)
