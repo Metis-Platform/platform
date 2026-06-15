@@ -22,8 +22,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
-| #131-P1 JurisdictionProfile schema + admin APIs | Merged — PR #241 |
-| Doc/structure cleanup | Committed in 995a18a |
+| #131-P2 Seed 3,143 counties + 50-state statutory baseline | Merged — PR #244 (6 bugs fixed post-review) |
+| Doc/process cleanup (PR template, issue standard, archive BETA/ADMIN-PLAN) | PRs #242 #243 #245 |
 
 ---
 
@@ -31,7 +31,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | #220 | #131-P2 Seed counties + statutory baseline |
+| 1 | #221 | #131-P3 Admin AI extraction pipeline |
 | 2 | #230 | #229-P1 ParcelProfile + APN normalization |
 | 3 | #231 | #229-P4 exit-engine core |
 
