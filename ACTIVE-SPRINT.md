@@ -36,7 +36,7 @@
 > Build order: P1 + P4 parallel → P2/P3 after P1 → P5/P6 after P4 → P7 after P5+P6 → P8+P9 after P7
 
 - [ ] **#229-P1** Parcel profile data model + APN normalization (issue #230)
-- [ ] **#229-P4** `lib/exit-engine` core — types, registry, projections, confidence scoring (issue #231)
+- [x] **#229-P4** `lib/exit-engine` core — types, registry, projections, confidence scoring (issue #231)
 - [ ] **#229-P2** Parcel data sourcing pipeline + ParcelDataCache schema (issue #232)
 - [ ] **#229-P3** Zoning data layer + PostGIS spatial join service (issue #233) ⚠️ Build as reusable `GeoService` — Land module and Tax Sale DD depend on this layer
 - [ ] **#229-P5** Exit evaluators — all 30 exits across 8 strategy families (issue #234)

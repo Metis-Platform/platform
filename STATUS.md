@@ -22,9 +22,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| #229-P4 `lib/exit-engine` core | Merged — PR #248 |
 | #131-P3 Admin AI extraction pipeline | Merged — PR #246 |
 | #131-P2 Seed 3,143 counties + 50-state statutory baseline | Merged — PR #244 (6 bugs fixed post-review) |
-| Doc/process cleanup (PR template, issue standard, archive BETA/ADMIN-PLAN) | PRs #242 #243 #245 |
 
 ---
 
@@ -34,7 +34,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 |---|---|---|
 | 1 | #222 | #131-P4 Auction platform feeds — GovEase, RealAuction, Tax Sale Resources |
 | 2 | #230 | #229-P1 ParcelProfile + APN normalization |
-| 3 | #231 | #229-P4 exit-engine core |
+| 3 | #234 | #229-P5 Exit evaluators — all 30 exits across 8 strategy families |
 
 ---
 
