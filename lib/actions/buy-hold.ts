@@ -132,9 +132,11 @@ export async function updateBuyHold(
   const securityDeposit    = parseDec(fd(formData, 'securityDeposit'))
   const leaseStartDate     = parseDate(fd(formData, 'leaseStartDate'))
   const leaseEndDate       = parseDate(fd(formData, 'leaseEndDate'))
+  const tenantContactId    = fd(formData, 'tenantContactId') || null
   const tenantName         = fd(formData, 'tenantName')
   const tenantPhone        = fd(formData, 'tenantPhone')
   const tenantEmail        = fd(formData, 'tenantEmail')
+  const propertyManagerContactId = fd(formData, 'propertyManagerContactId') || null
   const propertyManagerName  = fd(formData, 'propertyManagerName')
   const propertyManagerPhone = fd(formData, 'propertyManagerPhone')
   const propertyManagerEmail = fd(formData, 'propertyManagerEmail')
@@ -157,9 +159,11 @@ export async function updateBuyHold(
         securityDeposit,
         leaseStartDate,
         leaseEndDate,
+        tenantContactId,
         tenantName,
         tenantPhone,
         tenantEmail,
+        propertyManagerContactId,
         propertyManagerName,
         propertyManagerPhone,
         propertyManagerEmail,
@@ -173,9 +177,11 @@ export async function updateBuyHold(
         securityDeposit,
         leaseStartDate,
         leaseEndDate,
+        tenantContactId,
         tenantName,
         tenantPhone,
         tenantEmail,
+        propertyManagerContactId,
         propertyManagerName,
         propertyManagerPhone,
         propertyManagerEmail,

@@ -54,12 +54,14 @@ export async function createLandNote(
   if (!deal) return { message: 'Deal not found.' }
 
   const d = parsed.data
+  const buyerContactId = (formData.get('buyerContactId') as string)?.trim() || null
 
   try {
     await db.landNote.create({
       data: {
         dealId,
         tenantId:        tenant.id,
+        buyerContactId,
         buyerName:       d.buyerName ?? null,
         buyerEmail:      d.buyerEmail ?? null,
         buyerPhone:      d.buyerPhone ?? null,

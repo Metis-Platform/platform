@@ -171,6 +171,7 @@ export async function updateMultifamily(
   const interestRate      = interestRatePct != null ? interestRatePct / 100 : null
   const amortizationYears = parseInt2(fd(formData, 'amortizationYears'))
   const loanMaturityDate  = parseDate(fd(formData, 'loanMaturityDate'))
+  const propertyManagerContactId = fd(formData, 'propertyManagerContactId') || null
   const propertyManagerName  = fd(formData, 'propertyManagerName')
   const propertyManagerPhone = fd(formData, 'propertyManagerPhone')
   const propertyManagerEmail = fd(formData, 'propertyManagerEmail')
@@ -204,6 +205,7 @@ export async function updateMultifamily(
         interestRate,
         amortizationYears,
         loanMaturityDate,
+        propertyManagerContactId,
         propertyManagerName,
         propertyManagerPhone,
         propertyManagerEmail,
@@ -223,6 +225,7 @@ export async function updateMultifamily(
         interestRate,
         amortizationYears,
         loanMaturityDate,
+        propertyManagerContactId,
         propertyManagerName,
         propertyManagerPhone,
         propertyManagerEmail,
