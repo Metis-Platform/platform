@@ -1,4 +1,4 @@
-import type { JurisdictionProfileSection, ProfileField } from './jurisdiction-profile'
+import { JURISDICTION_PROFILE_SECTIONS, type JurisdictionProfileSection, type ProfileField } from './jurisdiction-profile'
 
 export type ResearchStrategy =
   | 'TAX_LIEN'
@@ -134,3 +134,15 @@ export const CONTACT_FIELDS: ResearchFieldDef[] = [
   { section: 'contacts', key: 'section8', label: 'Section 8 / PHA' },
 ]
 
+function profileSection(value: unknown): Record<string, ResearchProfileField> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as Record<string, ResearchProfileField>
+}
+
+export function buildResearchProfile(profile: {
+  [K in JurisdictionProfileSection]?: unknown
+} | null | undefined): ResearchProfile {
+  return Object.fromEntries(
+    JURISDICTION_PROFILE_SECTIONS.map((section) => [section, profileSection(profile?.[section])])
+  ) as ResearchProfile
+}
