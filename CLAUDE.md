@@ -52,10 +52,12 @@ Read on demand only (not every session):
 
 **Step 2 — Sync to main and check open PRs:**
 ```bash
-wsl bash -c "cd /home/xovox/dev/metis-platform && git fetch origin && git reset --hard origin/main"
-wsl bash -c "cd /home/xovox/dev/metis-platform && gh pr list --state open"
+git fetch origin && git reset --hard origin/main
+gh pr list --state open
 ```
 Use `git reset --hard origin/main` (not `git pull`) — local branch tracking gets corrupted across sessions when feature branches are squash-merged.
+
+> **Windows Claude app only:** prefix these with `wsl bash -c "cd /home/xovox/dev/metis-platform && ..."` since it runs in Git Bash, not WSL.
 
 **Step 3 — After every `gh pr create`, immediately queue auto-merge:**
 ```bash
@@ -91,16 +93,16 @@ Do this after every merge (not just at session end — protects against abrupt s
 
 **Never duplicate content across files — link instead. Backlog items live only in GitHub Issues.**
 
-**File writing — use UNC path to write directly to WSL:**
-`\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
+**File writing — use Linux paths (VS Code extension and WSL CLI):**
+```
+Read/Write/Edit → /home/xovox/dev/metis-platform/<path/to/file>
+```
 
-⚠️ **Exception — migration SQL files must NOT be written via UNC path.**
-UNC-written files get Windows/root ownership in WSL and break `git reset --hard`.
-Always use the temp-copy method for `prisma/migrations/*/migration.sql`:
+**Windows Claude app:** tools are Windows-native and cannot use Linux paths directly.
 ```
-Write  → C:\Users\aswit\AppData\Local\Temp\migration.sql
-wsl bash -c "mkdir -p /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name> && cp /mnt/c/Users/aswit/AppData/Local/Temp/migration.sql /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name>/migration.sql"
+Read/Write/Edit → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<path\to\file>
 ```
+⚠️ **Migration SQL files must never be written via UNC path** — UNC-written files get Windows/root ownership in WSL and break `git reset --hard`. Use the temp-copy method instead (see Schema Migrations section).
 
 ---
 
@@ -216,22 +218,15 @@ These will break Vercel builds silently. Don't repeat them.
 **Turbopack (if dev server is ever run locally):**
 - After renaming a directory (e.g. `liens/` → `deals/`), Turbopack cache holds stale route references. Run `rm -rf .next` before `npm run dev` or it will FATAL crash on the old path.
 
-### File Writing in WSL — CRITICAL
+### File Paths by Agent Context
 
-The `Write` and `Edit` tools are Windows-native. They **cannot** use Linux paths.
+| Context | Read / Write / Edit paths | Bash commands |
+|---|---|---|
+| VS Code extension (WSL) | Linux: `/home/xovox/dev/metis-platform/…` | Direct |
+| WSL CLI | Linux: `/home/xovox/dev/metis-platform/…` | Direct |
+| Windows Claude app | UNC: `\\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\…` | `wsl bash -c "…"` |
 
-**The correct pattern:**
-```
-Write  → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
-Edit   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
-Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\to\file.tsx>
-```
-
-**Fallback for complex content (heredocs, escaping issues):**
-1. Write a Python script to: `C:\Users\aswit\AppData\Local\Temp\script.py`
-2. Execute: `wsl bash -c "cp '/mnt/c/Users/aswit/AppData/Local/Temp/script.py' /tmp/s.py && python3 /tmp/s.py"`
-
-**PR bodies with special characters:** Write to a temp `.md` file and pass `--body-file /mnt/c/Users/aswit/AppData/Local/Temp/pr-body.md` to `gh pr create`. Heredocs in `wsl bash -c` are unreliable.
+**Windows app — PR bodies with special characters:** write body to `C:\Users\aswit\AppData\Local\Temp\pr-body.md` and pass `--body-file /mnt/c/Users/aswit/AppData/Local/Temp/pr-body.md` to `gh pr create`. Heredocs in `wsl bash -c` are unreliable.
 
 ### Git & GitHub
 - Branch naming: `feature/<issue-number>-short-description`, `fix/<issue-number>-short-description`
@@ -264,11 +259,7 @@ Read   → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<relative\path\t
 | Email | Resend — `metisplatforms.com` verified, sends from `noreply@metisplatforms.com` |
 | Storage | Cloudflare R2 bucket `metis-documents` |
 
-**Clerk has two completely separate instances:**
-- **Development** (`pk_test_` keys) — used by `localhost:3000`, `.env.local`
-- **Production** (`pk_live_` keys) — used by `metisplatforms.com`, Vercel env vars
-
-Dev accounts do not exist in production and vice versa. To access the production app, sign up fresh at `metisplatforms.com/sign-up`.
+**Clerk is production-only** (`pk_live_` keys in both `.env.local` and Vercel). There is no separate dev Clerk instance. All local testing uses the production Clerk instance and production database.
 
 **Clerk production requires 5 CNAME records in Cloudflare DNS** (all DNS only, not proxied):
 | Name | Points to |
