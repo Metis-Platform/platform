@@ -25,7 +25,7 @@
 - [x] **#131-P4** Admin: auction platform feeds — GovEase, RealAuction, Tax Sale Resources (issue #222)
 - [x] **#131-P5** Admin: market signals ingestion + opportunity/saturation scoring (issue #223)
 - [x] **#131-P6** Investor: jurisdiction research hub — per-strategy tabs + provenance display (issue #224)
-- [ ] **#131-P7** Investor: in-deal jurisdiction surfacing — stage-aware context on deal pages (issue #225)
+- [x] **#131-P7** Investor: in-deal jurisdiction surfacing — stage-aware context on deal pages (issue #225)
 - [ ] **#131-P8** Investor: per-deal DD checklist generation from strategy × jurisdiction matrix (issue #226)
 
 ---
