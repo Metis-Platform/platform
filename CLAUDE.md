@@ -258,6 +258,10 @@ The shape varies by issue: a schema change leads with the model; a spatial query
 ## Verification
 [How to confirm it works — Vercel preview URL, specific page/action to check, expected outcome.]
 
+## Review
+[How this was reviewed: "none — autonomous build", "inline during authoring",
+"/code-review — N findings, all fixed", etc. Autonomous agents must always fill this in.]
+
 ## Sprint notes
 [Forward context for the next PR in this initiative. Decisions this PR locked in, dependencies
 it creates, gotchas the next agent should know before starting. Omit if nothing carries forward.]
@@ -265,7 +269,7 @@ it creates, gotchas the next agent should know before starting. Omit if nothing 
 Closes #<number>
 ```
 
-The **Sprint notes** field is the most important — it turns each PR into an instruction for whatever picks up the next piece, whether that's a future Claude session, Hermes, or Codex. Write it assuming the next agent has no memory of this session.
+The **Review** field makes unreviewed autonomous builds visible before merge — if it says "none — autonomous build", run `/code-review` before approving. The **Sprint notes** field turns each PR into an instruction for whatever picks up the next piece; write it assuming the next agent has no memory of this session.
 - **After every `gh pr create`, immediately queue auto-merge:**
   ```bash
   gh pr merge <number> --auto --squash
