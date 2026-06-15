@@ -47,6 +47,8 @@ model Tenant {
   exitEvaluations  ExitEvaluation[]
   investorProfile  InvestorProfile?
   parcelResearchRequests ParcelResearchRequest[]
+  mfLpInvestors    DealMfLpInvestor[]
+  mfWaterfalls     DealMfWaterfall[]
 }
 
 model TenantWorkflowRule {
@@ -371,12 +373,18 @@ model Contact {
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
-  properties      Property[]       @relation("PropertyContacts")
-  deals           Deal[]
-  buyerProfile    BuyerProfile?
-  wholesaleDeals  DealWholesale[]  @relation("WholesaleBuyer")
-  buyerBlastSends BuyerBlastSend[]
-  activities      ContactActivity[]
+  properties        Property[]       @relation("PropertyContacts")
+  deals             Deal[]
+  buyerProfile      BuyerProfile?
+  wholesaleDeals    DealWholesale[]  @relation("WholesaleBuyer")
+  buyerBlastSends   BuyerBlastSend[]
+  activities        ContactActivity[]
+  fixFlipContracts  DealFixFlip[]
+  buyHoldTenancies  DealBuyHold[]    @relation("BuyHoldTenant")
+  buyHoldManagedProps DealBuyHold[]  @relation("BuyHoldPM")
+  multifamilyManaged DealMultifamily[] @relation("MultifamilyPM")
+  landNotesBuyer    LandNote[]       @relation("LandNoteBuyer")
+  mfLpInvestments   DealMfLpInvestor[] @relation("MfLpInvestor")
 
   @@index([tenantId])
   @@index([tenantId, type])
@@ -454,6 +462,8 @@ model Deal {
   buyerBlastSends BuyerBlastSend[]
   exitEvaluations ExitEvaluation[]
   parcelResearchRequests ParcelResearchRequest[]
+  mfLpInvestors   DealMfLpInvestor[]
+  mfWaterfall     DealMfWaterfall?
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -552,6 +562,8 @@ model DealFixFlip {
   arv                   Decimal?  @db.Decimal(14, 2) // after-repair value
   rehabBudget           Decimal?  @db.Decimal(14, 2)
   rehabActualCost       Decimal?  @db.Decimal(14, 2)
+  contractorContactId   String?
+  contractorContact     Contact?  @relation(fields: [contractorContactId], references: [id], onDelete: SetNull)
   contractorName        String?
   contractorPhone       String?
   contractorEmail       String?
@@ -600,6 +612,8 @@ model LandNote {
   dealId           String
   deal             Deal           @relation(fields: [dealId], references: [id], onDelete: Cascade)
   tenantId         String
+  buyerContactId   String?
+  buyerContact     Contact?       @relation("LandNoteBuyer", fields: [buyerContactId], references: [id], onDelete: SetNull)
   buyerName        String?
   buyerEmail       String?
   buyerPhone       String?
@@ -669,9 +683,13 @@ model DealBuyHold {
   securityDeposit        Decimal?  @db.Decimal(14, 2)
   leaseStartDate         DateTime?
   leaseEndDate           DateTime?
+  tenantContactId        String?
+  tenantContact          Contact?  @relation("BuyHoldTenant", fields: [tenantContactId], references: [id], onDelete: SetNull)
   tenantName             String?
   tenantPhone            String?
   tenantEmail            String?
+  propertyManagerContactId String?
+  propertyManagerContact Contact?  @relation("BuyHoldPM", fields: [propertyManagerContactId], references: [id], onDelete: SetNull)
   propertyManagerName    String?
   propertyManagerPhone   String?
   propertyManagerEmail   String?
@@ -716,12 +734,56 @@ model DealMultifamily {
   rentRoll             Json?
   t12Financials        Json?
   businessPlan         Json?
+  propertyManagerContactId String?
+  propertyManagerContact   Contact?  @relation("MultifamilyPM", fields: [propertyManagerContactId], references: [id], onDelete: SetNull)
   propertyManagerName  String?
   propertyManagerPhone String?
   propertyManagerEmail String?
   notes                String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+}
+
+// LP investor record for a multifamily syndication deal
+model DealMfLpInvestor {
+  id              String   @id @default(cuid())
+  dealId          String
+  deal            Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contactId       String?
+  contact         Contact? @relation("MfLpInvestor", fields: [contactId], references: [id], onDelete: SetNull)
+  name            String
+  email           String?
+  phone           String?
+  committedAmount Decimal  @db.Decimal(14, 2)
+  fundedAmount    Decimal  @default(0) @db.Decimal(14, 2)
+  equityPct       Decimal? @db.Decimal(6, 4) // manual override; null = auto from funded/total
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([dealId])
+  @@index([tenantId])
+}
+
+// Waterfall parameters for a multifamily syndication deal
+model DealMfWaterfall {
+  id                  String    @id @default(cuid())
+  dealId              String    @unique
+  deal                Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  tenantId            String
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  preferredReturnRate Decimal   @db.Decimal(6, 4) // e.g. 0.08 for 8% annual
+  lpSplit             Decimal   @db.Decimal(5, 4) // LP equity share above pref, e.g. 0.80
+  gpSplit             Decimal   @db.Decimal(5, 4) // GP equity share above pref, e.g. 0.20
+  promoteHurdle       Decimal?  @db.Decimal(6, 4) // IRR hurdle for promote, e.g. 0.12
+  promoteCarry        Decimal?  @db.Decimal(5, 4) // GP carry above hurdle, e.g. 0.30
+  raisedDate          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([tenantId])
 }
 
 // Extension table — Tax Lien strategy
