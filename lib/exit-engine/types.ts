@@ -122,11 +122,16 @@ export interface InvestorConstraints {
 export interface JurisdictionFacts {
   minLotSizeSqFt(zoning?: string): number | undefined
   setbackFeet(zoning?: string): { front?: number; side?: number; rear?: number } | undefined
+  allowedUses?(zoning?: string): string[] | undefined
   strAllowed?: boolean
   rentControlZone?: boolean
   wholesaleLicenseRequired?: boolean
   taxDeedRedemptionDays?: number
   taxLienInterestRate?: number
+  taxLienRedemptionPeriodDays?: number
+  subdivisionAllowed?: boolean
+  quietTitleRequirements?: string[]
+  deedQualityPostTaxSale?: 'warranty' | 'special_warranty' | 'quit_claim'
   fmr(bedrooms: number): number | undefined
 }
 
