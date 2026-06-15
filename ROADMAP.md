@@ -1,11 +1,22 @@
 # Metis Platform — Build Roadmap
 
-> **Last Updated:** 2026-05-31
-> **Status:** Phase 1 ✅ Complete · Phase 3 ✅ Complete · Phase 4-partial ✅ Complete — Phase 2 (AI Layer) next
-> **Phase Sequence:** 1 → 3 → 4-partial (Deed/Foreclosure) → 2 (AI) → 4-full
-> **Source of Truth:** This file (phase-level) + GitHub Issues (task-level backlog and bugs)
-> **Backlog:** https://github.com/Metis-Platform/platform/issues
-> **Milestones:** Phase 1 (#1) · Phase 2 (#2)
+> **Last Updated:** 2026-06-15
+> **Status:** Beta/Admin/AI/strategy modules complete — post-beta initiatives #131 and #229 active
+> **Current execution:** `ACTIVE-PLAN.md` + Linear METIS project
+> **Product/project source of truth:** Linear (METIS / Metis Platforms)
+> **Engineering proof:** GitHub PRs, CI, deployments, merged code
+> **Historical trackers:** `BETA-PLAN.md` and `ADMIN-PLAN.md` are complete/archive docs
+
+---
+
+## Active Post-Beta Initiatives
+
+The historical phase roadmap below remains useful for context, but active execution has moved to:
+
+1. **#131 Jurisdiction Intelligence Layer** — county/statutory/data moat, provenance-rich profiles, admin extraction/review, investor jurisdiction surfaces, checklist generation.
+2. **#229 Parcel Intelligence + Exit Strategy Engine** — parcel profile, APN normalization, zoning/parcel data, exit evaluators, data-gap chips, and investor-facing exit-option guidance.
+
+Use `ACTIVE-PLAN.md` for the ordered PR-sized queue. Use Linear for product status and GitHub for implementation evidence.
 
 ---
 
