@@ -12,9 +12,9 @@ Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) wor
 
 - **Stack:** Next.js 16 (TypeScript), Prisma 7, Neon (PostgreSQL), Clerk v7 (auth), Anthropic Claude API, Cloudflare R2, Resend, Stripe, Vercel
 - **Repo:** Metis Platform GitHub org → `platform` repository
-- **Roadmap:** See `ROADMAP.md` in this repo root
-- **Current Phase:** Phase 2 (AI Layer) — Phase 3 and Phase 4-partial are complete
-- **System of Record:** GitHub Issues — every task is an Issue with acceptance criteria
+- **Roadmap:** See `ROADMAP.md` for vision; `ACTIVE-PLAN.md` for current PR-sized queue
+- **Current Phase:** Post-beta initiatives — #131 Jurisdiction Intelligence and #229 Parcel Intelligence / Exit Strategy Engine
+- **System of Record:** Linear METIS is product/project command center; GitHub PRs/CI/merged code are engineering proof
 
 ### North Star (test every feature decision against this — full goalposts in ROADMAP.md)
 
@@ -35,14 +35,16 @@ before premium pricing, always. In practice:
 
 > ⚠️ STOP — READ THIS FIRST BEFORE DOING ANYTHING ELSE
 
-**Step 1 — Read these three files via WSL. Not Windows. WSL.**
+**Step 1 — Read these files via WSL. Not Windows. WSL.**
 ```bash
 wsl bash -c "cat /home/xovox/dev/metis-platform/CLAUDE.md"
 wsl bash -c "cat /home/xovox/dev/metis-platform/STATUS.md"
+wsl bash -c "cat /home/xovox/dev/metis-platform/ACTIVE-PLAN.md"
 wsl bash -c "cd /home/xovox/dev/metis-platform && git log --oneline -5"
 ```
-- `STATUS.md` is the lean session reference: last session summary, next-up issues, data model, ADRs. (~2KB vs 17KB for ROADMAP.md)
-- `ROADMAP.md` has full vision, phase history, and architecture — read it only when the task requires that context.
+- `STATUS.md` is the lean session reference: last session summary, next-up issues, data model, ADRs.
+- `ACTIVE-PLAN.md` is the active post-beta implementation tracker.
+- `ROADMAP.md` has full vision and historical phase context — read it only when the task requires that context.
 - Do NOT attempt to read these as Windows paths. The repo is in WSL, not on the Windows filesystem.
 
 **Critical environment facts (do not rediscover these):**
