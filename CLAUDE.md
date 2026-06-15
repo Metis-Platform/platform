@@ -237,8 +237,25 @@ These will break Vercel builds silently. Don't repeat them.
 
 ### Git & GitHub
 - Branch naming: `feature/<issue-number>-short-description`, `fix/<issue-number>-short-description`
-- Every PR references the GitHub Issue it closes (`Closes #<number>` in the PR body).
 - Never force-push to `main`.
+
+**PR body template** — use this structure for every non-trivial PR:
+
+```markdown
+## What shipped
+[2–3 sentences. What the PR does and any non-obvious decisions made.]
+
+## Verification
+[How to confirm it works — Vercel preview URL, specific page/action to check, expected outcome.]
+
+## Sprint notes
+[Forward context for the next PR in this initiative. Decisions this PR locked in, dependencies
+it creates, gotchas the next agent should know before starting. Omit if nothing carries forward.]
+
+Closes #<number>
+```
+
+The **Sprint notes** field is the most important — it turns each PR into an instruction for whatever picks up the next piece, whether that's a future Claude session, Hermes, or Codex. Write it assuming the next agent has no memory of this session.
 - **After every `gh pr create`, immediately queue auto-merge:**
   ```bash
   gh pr merge <number> --auto --squash
