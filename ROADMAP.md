@@ -202,49 +202,45 @@ Extension table pattern — each strategy adds its own table extending the core 
 - #61 Feature: Lead-first creation — enforce lifecycle, remove Active toggle from new form
 - #62 Feature: NOT_WON status — track auction losses for future revisit
 - #63 Feature: Import error download report — CSV of failed rows
-- #64 Feature: XLS/XLSX import support (SheetJS)
-- #65 Feature: Import accepts optional status column
+- #64 ✅ Feature: XLS/XLSX import support (SheetJS) — verified in `app/api/liens/import/route.ts`
+- #65 ✅ Feature: Import accepts optional status column — verified (`validateStatusFields`)
 
 **Deliverable:** ✅ Fully usable tax lien tracker. Manage a real portfolio with it.
 
 ---
 
 ### Phase 2 — AI Layer
-**Target: After Phase 4-partial | Status: Deliberately deferred — now unblocked**
-
-**Why deferred:** AI features require paying users and real portfolio data to deliver value.
-Billing now exists (Phase 3). Phase 4-partial is complete. This is the next major phase.
+**Status: ✅ Complete — PRs #213 (document extraction #25), #214 (Deal Copilot #26), checklist engine (#133)**
 
 **GitHub Issues:** #25 (document extraction), #26 (Deal Copilot)
 
-#### 2A — Document Extraction
-- [ ] Upload certificate → Claude API extracts cert #, parcel, amounts, dates, jurisdiction, owner
-- [ ] Auto-populates deal fields with review + confirm step
-- [ ] Extend to: purchase contracts, redemption notices, deeds, title reports, leases
-- [ ] Confidence scoring per field; user can override
+#### 2A — Document Extraction ✅
+- [x] Upload certificate → Claude API extracts cert #, parcel, amounts, dates, jurisdiction, owner
+- [x] Auto-populates deal fields with review + confirm step
+- [x] Extend to: purchase contracts, redemption notices, deeds, title reports, leases
+- [ ] Confidence scoring per field; user can override *(deferred — not shipped)*
 
-#### 2B — Due Diligence + Deadline Intelligence
-- [ ] Due Diligence Engine MVP defined in [docs/due-diligence-engine-mvp.md](docs/due-diligence-engine-mvp.md)
-- [ ] Knowledge Library MVP defined in [docs/knowledge-library-mvp.md](docs/knowledge-library-mvp.md)
-- [ ] Strategy-aware checklist templates for tax lien, tax deed, foreclosure, and land deals
-- [ ] Deal-scoped checklist instances with required gaps, concerns, blockers, and task generation
-- [ ] Source-backed guidance surfaced from the knowledge library on deals, jurisdictions, and diligence items
-- [ ] Plain-English summaries of upcoming obligations per deal
-- [ ] "At-risk" deal flagging with natural language reasoning
-- [ ] Draft generation: AI generates required notice letters pre-populated with deal data
+#### 2B — Due Diligence + Deadline Intelligence ✅
+- [x] Due Diligence Engine MVP defined in [docs/due-diligence-engine-mvp.md](docs/due-diligence-engine-mvp.md)
+- [x] Knowledge Library MVP defined in [docs/knowledge-library-mvp.md](docs/knowledge-library-mvp.md)
+- [x] Strategy-aware checklist templates for tax lien, tax deed, foreclosure, and land deals
+- [x] Deal-scoped checklist instances with required gaps, concerns, blockers, and task generation
+- [ ] Source-backed guidance surfaced from the knowledge library *(deferred)*
+- [ ] "At-risk" deal flagging with natural language reasoning *(deferred)*
+- [ ] Draft generation: AI generates required notice letters *(deferred)*
 
-#### 2C — Deal Copilot (In-App Chat)
-- [ ] Chat interface scoped to tenant's live data (RAG over deals + documents)
-- [ ] Answers: "What's my most urgent deadline?", "Draft the foreclosure letter for deal #4521", "What's my portfolio ROI this quarter?"
-- [ ] Claude API + structured deal data context
+#### 2C — Deal Copilot (In-App Chat) ✅
+- [x] Chat interface scoped to tenant's live data (RAG over deals + documents)
+- [x] Answers: "What's my most urgent deadline?", "Draft the foreclosure letter for deal #4521", "What's my portfolio ROI this quarter?"
+- [x] Claude API + structured deal data context
 
-#### 2D — Automated Reports
+#### 2D — Automated Reports *(deferred — not yet shipped)*
 - [ ] Portfolio summary PDF (branded, Metis header)
 - [ ] Per-deal due diligence report
 - [ ] ROI analysis: cost basis vs redemption vs projected
 - [ ] Export-ready for attorneys, partners, lenders
 
-**Deliverable:** Premium upsell to existing paying customers. Upload a certificate, have it auto-parsed. Chat with an assistant that knows your portfolio.
+**Deliverable:** ✅ Shipped. Document extraction, Deal Copilot, and checklist engine are live.
 
 ---
 
@@ -310,20 +306,85 @@ Billing now exists (Phase 3). Phase 4-partial is complete. This is the next majo
 
 #### Phase 4-full (After Phase 2)
 
-| Priority | Module | Issue | Key Differentiator | Effort |
-|----------|--------|-------|-------------------|--------|
-| 3 | **Land Investing** | #39 | Underserved market, no dedicated tools | Low-Med |
-| 4 | **Wholesale** | #40 | High deal velocity, CRM-like pipeline | Medium |
-| 5 | **Fix & Flip** | #41 | Rehab budget, contractor mgmt, ARV calc | High |
-| 6 | **Buy & Hold + Section 8** | #42 | Section 8 HAP/HQS tracking | High |
-| 7 | **Multifamily** | #43 | T12 importer, DSCR modeling | High |
+Each module ships when it passes the **spreadsheet-retirement test**: an investor using that strategy can stop managing it in a spreadsheet and move entirely to Metis. Feature depth per module is defined below. See `PLATFORM-THOUGHTS.md` for the full product vision context behind these specs.
+
+---
+
+#### Platform Primitives (build before or alongside Phase 4-full)
+
+Two shared services underpin multiple Phase 4-full modules. Build them as first-class primitives — not module one-offs.
+
+**Contact CRM**
+- Platform-wide contact record: name, role, contact info, outreach history, linked deals, pipeline stage
+- Required by: Wholesale (seller pipeline), Fix & Flip (contractor bids), Buy & Hold (tenant + vendor records), Land (seller outreach)
+- Build once; every strategy module references it
+
+**GIS / Maps Service (`GeoService`)**
+- Reusable geospatial lookup layer: flood zone (FEMA), zoning, utility proximity, road frontage, soil type, comparable parcel sales
+- Foundation for: Land module, Tax Sale due diligence, Parcel Intelligence (#229), future rural/agricultural analysis
+- ⚠️ **`#229-P3` (PostGIS spatial join) must be designed as this reusable `GeoService` from day one.** Scoping it as a one-off zoning lookup will require full refactoring when Land needs flood zone + utility overlays.
+
+---
+
+#### Module Depth Specs
+
+**Land Investing (#39) — Recommended: first Phase 4-full module after #229 ships**
+*Spreadsheet-retirement test: investor stops using county GIS + Google Earth + soil maps + FEMA flood map service*
+- GIS overlays: flood zone, utility proximity, road frontage, soil type (depends on `GeoService`)
+- Water/well availability lookup
+- Raw land comparable sales (not residential comps)
+- AI parcel summary synthesizing all data sources (depends on #229 parcel pipeline)
+- Builds directly on `#229-P2` (parcel data sourcing) and `#229-P3` (GeoService) — schedule Land immediately after #229 lands
+
+**Wholesale (#40)**
+*Spreadsheet-retirement test: investor runs full acquisition funnel (lead → offer → under contract → assigned) without a CRM spreadsheet*
+- Full seller pipeline with stage tracking (lead → contacted → offer sent → under contract → assigned/dead)
+- Mailing/outreach log per contact
+- Buyer matching — surface `BuyerProfile` records matching a deal's criteria
+- Assignment fee + double-close profit calc
+- Depends on: Contact CRM platform primitive
+
+**Fix & Flip (#41)**
+*Spreadsheet-retirement test: investor estimates rehab costs, compares contractor bids, and tracks draws without a budget spreadsheet*
+- Line-item scope-of-work builder with unit costs (regionalized by market)
+- Multi-contractor bid comparison for the same SOW
+- Draw schedule tied to construction milestones
+- ARV sourced from market data (not typed)
+- AI SOW extraction from contractor bids: ✅ shipped (Phase 4 AI, PR #216)
+- Depends on: Contact CRM for contractor management
+
+**Buy & Hold + Section 8 (#42)**
+*Spreadsheet-retirement test: landlord manages entire rental portfolio (tenants, leases, maintenance, rent roll) without a spreadsheet*
+- Per-unit tenant records (not just a property record)
+- Lease start/end/renewal tracking + rent amount per unit
+- Maintenance request log with vendor assignment and status
+- Section 8 HAP contract + HQS inspection tracking
+- Rent roll view across all properties
+- Depends on: Contact CRM for tenant + vendor records
+
+**Multifamily (#43)**
+*Spreadsheet-retirement test: GP manages deal underwriting and LP relationships without a spreadsheet*
+- T12 importer + DSCR modeling: ✅ shipped (Phase 4 AI, PR #217)
+- AI offering memorandum extraction: ✅ shipped
+- Investor waterfall modeling (LP/GP split, preferred return, promote)
+- Capital raise tracking (committed vs. funded per LP)
+
+---
+
+| Priority | Module | Issue | Effort | Dependency |
+|----------|--------|-------|--------|-----------|
+| 1 | **Land Investing** | #39 | Med | #229 + GeoService |
+| 2 | **Wholesale** | #40 | Med | Contact CRM |
+| 3 | **Fix & Flip** | #41 | High | Contact CRM |
+| 4 | **Buy & Hold + Section 8** | #42 | High | Contact CRM |
+| 5 | **Multifamily** | #43 | Med (core done) | — |
 
 **Remaining backlog issues:**
 - #33 Edit jurisdiction/APN on existing deal
-- #29 Calendar month/year picker
-- #30 Calendar sync (Google Calendar, Outlook, iCal)
-- #31 Tasks on calendar with distinct color
+- #29 ✅ Calendar month/year picker — verified in `app/dashboard/calendar/page.tsx`
+- #31 ✅ Tasks on calendar with distinct color — verified (`TaskChip` in calendar)
 - #44 Research links framework — tiered system
+- ~~#30 Calendar sync (Google Calendar, Outlook, iCal)~~ — **won't do:** significant OAuth complexity for low investor demand; the Metis deadline calendar already is the calendar
 
 ---
 
@@ -360,17 +421,10 @@ Billing now exists (Phase 3). Phase 4-partial is complete. This is the next majo
 
 ## Operating Model
 
-### Roles
-- **You (Product Owner):** Define what the system should do. Prioritize features. Validate workflows. Own the vision.
-- **FleetView (Claude):** Strategic orchestration, architectural decisions, cross-file analysis, roadmap updates, WSL commands.
-- **Claude Code for VS Code:** In-context coding, terminal commands, editing while actively developing.
-- **GitHub Issues:** Every feature, bug, and task tracked as an issue. System of record.
-
-### Workflow
-1. Break phases into GitHub Issues (one feature per issue, clear acceptance criteria)
-2. FleetView or Claude Code implements per issue
-3. Review, test, merge
-4. Close the issue, open the next one
+- **GitHub Issues** — every feature and bug tracked as an issue; system of engineering record
+- **Linear (METIS)** — product/project command center: priority, status, blockers
+- **Claude Code** — primary implementation and review agent; works directly in the repo
+- **Vercel** — auto-deploys on every merge to `main`; production at metisplatforms.com is the test environment
 
 ### Principles
 1. **Think before coding** — surface assumptions and tradeoffs before implementing
@@ -382,13 +436,17 @@ Billing now exists (Phase 3). Phase 4-partial is complete. This is the next majo
 
 ## Key Decisions (ADRs)
 
+*Canonical list. STATUS.md ADRs are a condensed subset of these.*
+
 | ADR | Decision | Rationale |
 |-----|---------|-----------|
-| 001 | Local WSL as primary dev environment | Faster feedback, zero cost, full control |
-| 002 | GitHub as system of record | Protects against tool/platform churn |
+| 001 | WSL as primary dev environment | Faster feedback, zero cost, full control |
+| 002 | Linear = product command center; GitHub = engineering proof | Linear for priority/planning; GitHub PRs/CI/merged code are engineering source of truth |
 | 003 | Free-tier services only until customer scale demands upgrade | Keep burn at $0 until MRR justifies it |
-| 004 | Next.js + Prisma + Neon + Clerk (not .NET/Azure) | WSL-native, Claude Code optimized, faster to ship |
+| 004 | Next.js + Prisma + Neon + Clerk | WSL-native, Claude Code optimized, fastest path to ship |
 | 005 | Extension table pattern for strategy modules | Clean domain model, no bloat, easy to add modules |
 | 006 | Claude API for all AI features | Best-in-class extraction + reasoning, pay-per-use cost model |
-| 007 | `/dashboard/deals` as strategy-agnostic deal route | Tax Liens, Deeds, and Foreclosures are all "deals" — path reflects this |
-| 008 | Stripe client lazy-initialized via `getStripe()` | Module-level `new Stripe()` crashes Vercel build when env var is absent |
+| 007 | Vercel Cron routes for scheduled jobs (not pg-boss as npm package) | pg-boss not installed; Vercel cron + API routes cover all current job needs |
+| 008 | BYOK for AI — tenant supplies Anthropic key; platform key never used | Cost isolation per tenant; no metering complexity until platform-hosted AI is justified |
+| 009 | `/dashboard/deals` as strategy-agnostic deal route | Tax Liens, Deeds, Foreclosures are all "deals"; `?strategy=` param drives the view |
+| 010 | Stripe client lazy-initialized via `getStripe()` | Module-level `new Stripe()` crashes Vercel build when env var is absent |

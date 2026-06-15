@@ -11,25 +11,4 @@ APIs, conventions, and file structure differ from Next.js 13/14. Before writing 
 
 # AGENTS.md
 
-## Project rule
-
-Agents may assist with implementation, review, documentation, and testing, but the repository remains the source of truth.
-
-## Before changing files
-
-1. Read CLAUDE.md for project-specific rules and domain glossary.
-2. Read README.md.
-3. Inspect existing project structure.
-4. Confirm the task has clear acceptance criteria.
-
-## Change discipline
-
-- Make minimal changes. Keep commits logically grouped.
-- Do not create new architecture without approval.
-- Do not overwrite existing work unless explicitly instructed.
-- Do not touch secrets or .env files.
-- Every database query MUST be scoped to tenantId — no exceptions.
-
-## Required final report
-
-Every agent task should end with: Summary, Files changed, Verification performed, Risks, Recommended next step.
+All behavioral guidelines, architectural rules, code conventions, domain glossary, and session protocol are in [`CLAUDE.md`](CLAUDE.md). Read that first.

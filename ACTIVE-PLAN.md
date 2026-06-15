@@ -40,12 +40,25 @@
 - [ ] **#229-P1** Parcel profile data model + APN normalization (issue #230)
 - [ ] **#229-P4** `lib/exit-engine` core — types, registry, projections, confidence scoring (issue #231)
 - [ ] **#229-P2** Parcel data sourcing pipeline + ParcelDataCache schema (issue #232)
-- [ ] **#229-P3** Zoning data layer + PostGIS spatial join service (issue #233)
+- [ ] **#229-P3** Zoning data layer + PostGIS spatial join service (issue #233) ⚠️ **Design as reusable `GeoService`** — Land module, Tax Sale DD, and future rural analysis all depend on this layer. Do not scope as a one-off zoning lookup.
 - [ ] **#229-P5** Exit evaluators — all 30 exits across 8 strategy families (issue #234)
 - [ ] **#229-P6** JurisdictionFacts accessor + Prisma adapter — bridge to #131 (issue #235)
 - [ ] **#229-P7** Deal-page "What are my exits?" UI — Exit Options panel + data-gap chips (issue #236)
 - [ ] **#229-P8** ExitEvaluation cache table + InvestorProfile persistence (issue #237)
 - [ ] **#229-P9** Admin parcel research service — research-on-demand for investors (issue #238)
+
+## Initiative 3 — Module Depth (after #131 + #229 land)
+
+> Full specs per module: `ROADMAP.md` → Phase 4-full Module Depth Specs
+> Product vision context: `PLATFORM-THOUGHTS.md`
+> Two platform primitives must be built before or alongside module expansion.
+
+- [ ] **Contact CRM primitive** — platform-wide contact record reused by Wholesale, Fix & Flip, Buy & Hold, Land
+- [ ] **Land Investing module (#39)** — GIS overlays, water/well lookup, raw land comps, AI parcel summary; depends on #229-P2 + GeoService
+- [ ] **Wholesale module (#40)** — seller pipeline, buyer matching, assignment fee calc; depends on Contact CRM
+- [ ] **Fix & Flip depth (#41)** — cost database, multi-bid comparison, draw schedule; depends on Contact CRM
+- [ ] **Buy & Hold depth (#42)** — tenant records, lease tracking, maintenance log, rent roll; depends on Contact CRM
+- [ ] **Multifamily depth (#43)** — LP waterfall modeling, capital raise tracking (core AI already shipped)
 
 ## Standing rules (unchanged from BETA-PLAN)
 

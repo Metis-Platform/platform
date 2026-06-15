@@ -1,6 +1,6 @@
 # CLAUDE.md — Metis Platform
 
-Behavioral guidelines for all AI agents (FleetView, Claude Code for VS Code) working in this repository. Merge these rules with any task-specific instructions.
+Behavioral guidelines for Claude Code and any AI agent working in this repository. Merge these rules with any task-specific instructions.
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
@@ -70,16 +70,7 @@ Use `git reset --hard origin/main` (not `git pull`) — local branch tracking ge
 gh pr merge <number> --auto --squash
 ```
 
-**Step 4 — After any PR that includes a schema migration, end your response with this exact callout:**
-
-> ⚠️ **WSL required:** After this PR merges, run in your WSL terminal:
-> ```bash
-> npx prisma generate
-> ```
-
-Put it at the END of your response when creating the PR — not buried in a sentence. Do not run it yourself. The GitHub Action handles `migrate deploy` automatically; this only regenerates the local TypeScript client so the dev server picks up new enum values and model types.
-
-**Step 5 — End of every session: update STATUS.md AND the memory file.**
+**Step 4 — End of every session: update STATUS.md AND the memory file.**
 This is the mechanism for consistent cross-session behavior. Do both:
 
 **A) Update `STATUS.md`** (in repo):
@@ -88,7 +79,7 @@ This is the mechanism for consistent cross-session behavior. Do both:
 - Note any gotchas or decisions made this session
 
 **B) Update the memory file** at:
-`C:\Users\aswit\.claude\projects\C--Users-aswit-OneDrive-Documents-Projects-Metis-Platform\memory\project_metis_platform.md`
+`/home/xovox/.claude/projects/-home-xovox-dev-metis-platform/memory/project-metis-platform.md`
 - Update "Last session completed" with PR numbers and descriptions
 - Update "Next up" with the highest-priority remaining issues
 - The memory file loads automatically in every new session — keeping it current means the next session starts oriented from the first message, before any files are read.
@@ -174,7 +165,7 @@ For multi-step tasks, state a brief plan before starting:
 
 ### Architecture
 - Follow the **extension table pattern**: core `Deal` table + `DealTaxLien`, `DealTaxDeed`, `DealForeclosure`, etc. Never add strategy-specific columns to the core `Deal` table.
-- Background jobs run via **pg-boss** inside the existing Neon PostgreSQL instance. No Redis, no separate job service.
+- Background jobs run via **Vercel Cron routes** (API routes called on schedule). No Redis, no separate job service, no pg-boss.
 - AI features use the **Anthropic Claude API** only. No OpenAI, no other LLM providers.
 - File uploads go to **Cloudflare R2**. Never store binary files in the database.
 - Strategy switching is done via `?strategy=TAX_LIEN|TAX_DEED|FORECLOSURE` URL param. The `StrategyNav` client component handles this. All deal pages live at `/dashboard/deals/`.
@@ -207,8 +198,7 @@ These will break Vercel builds silently. Don't repeat them.
 - Import path for the generated client is `@/app/generated/prisma`. Do NOT import from `@prisma/client`.
 - `app/generated/` is gitignored — build script MUST run `prisma generate` before `next build`.
 - CLI configuration lives in `prisma.config.ts`. The `datasource.url` for migrations is set there.
-- `prisma migrate dev` requires an interactive terminal and cannot be run from FleetView. See **Schema Migrations** section below for the correct FleetView workflow.
-- After any migration PR merges, the user must run `npx prisma generate` in their WSL terminal (migration deploy is handled automatically by the GitHub Action).
+- `prisma migrate dev` requires an interactive terminal — run it manually in WSL if needed. See **Schema Migrations** section below for the agent workflow.
 
 **Clerk v7 + Next.js 16:**
 - Middleware file is `proxy.ts` at the project root, NOT `middleware.ts`.
@@ -291,17 +281,16 @@ Get exact values from Clerk Dashboard → Production → Configure → Domains �
 ### Dev → Production Workflow
 
 ```
-Local WSL (localhost:3000)
-  → git push → open PR on GitHub
+git push → open PR on GitHub
   → Vercel creates a Preview deployment (uses production env vars, production Clerk)
   → Merge PR to main
   → GitHub Action runs prisma migrate deploy (if schema changed)
   → Vercel auto-deploys to metisplatforms.com (~2 min)
 ```
 
-**Never manually deploy.** Every merge to `main` is automatic.
+**Never manually deploy.** Every merge to `main` is automatic. **Vercel preview deployments are the test environment** — there is no separate local dev site. Test against the preview URL or production.
 
-**Preview deployments** use the production Clerk instance and production DB — they are real tests, not sandboxes. Don't create test data on a preview URL.
+**Preview deployments** use the production Clerk instance and production DB — they are real, not sandboxes. Don't create test data on a preview URL.
 
 ### Schema Migrations — Fully Automated
 
@@ -311,30 +300,14 @@ A GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` a
 - It runs **before** Vercel picks up the deploy, so the schema is always updated first
 - **You never need to remember to run migrations manually** — just merge the PR
 
-**FleetView workflow for schema changes (FleetView cannot run interactive commands):**
-1. FleetView updates `prisma/schema.prisma` via UNC path (normal)
-2. FleetView writes the migration SQL via **Windows temp + WSL copy** — NOT directly via UNC path.
-   Writing directly via UNC path gives the file Windows/root ownership in WSL, which makes
-   `git reset --hard` fail with "Permission denied" (even sudo chmod cannot fix it).
-   Use this pattern:
+**Agent workflow for schema changes:**
+1. Update `prisma/schema.prisma`
+2. Write the migration SQL to a temp file, then copy into WSL — do NOT write directly via UNC path. UNC-written files get Windows/root ownership in WSL, which breaks `git reset --hard`.
    ```
-   # Write SQL to Windows temp first
    Write → C:\Users\aswit\AppData\Local\Temp\migration.sql
-   # Copy into WSL via wsl bash (creates file as xovox with correct ownership)
-   wsl bash -c "mkdir -p /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name> && cp /mnt/c/Users/aswit/AppData/Local/Temp/migration.sql /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name>/migration.sql"
+   wsl bash -c "mkdir -p /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name> && cp /mnt/c/Users/aswit/AppData\Local\Temp\migration.sql /home/xovox/dev/metis-platform/prisma/migrations/<timestamp>_<name>/migration.sql"
    ```
-3. FleetView commits both files in the PR
-4. After the PR merges, tell the user to run ONE command in their WSL terminal:
-   ```bash
-   npx prisma generate
-   ```
-   The GitHub Action handles `migrate deploy` automatically. With correct file ownership,
-   `git reset --hard origin/main` at session start works with no extra steps.
-
-**User-initiated migrations (when running in your own WSL terminal):**
-1. Run `npx prisma migrate dev --name <description>` — this creates the migration file with proper checksums
-2. Commit the generated file in `prisma/migrations/`
-3. Open and merge a PR — the Action handles the rest
+3. Commit both files in the PR — the GitHub Action handles `migrate deploy` on merge
 
 **The `DATABASE_URL` GitHub secret** must be kept in sync with `.env.local` if the Neon connection string ever rotates.
 

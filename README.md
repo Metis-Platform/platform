@@ -1,41 +1,59 @@
-# platform
-AI-assisted operational platform for real estate, analytics, automation, and workflow management.
+# Metis Platform
 
-# Metis Platform (REI SaaS App) — Project Handoff Package
+AI-powered, multi-tenant SaaS for real estate investors. Starts as a tax lien lifecycle management tool and expands to cover all major REI strategies — wholesale, fix & flip, buy & hold, land, multifamily.
 
-This package is intended to restart the REI SaaS App with a clean delivery structure.
+**Live at:** [metisplatforms.com](https://metisplatforms.com)
 
-## Recommended operating model
+---
 
-Use a conventional repository and issue/PR workflow as the system of record. Use coding agents to execute scoped work, not to replace source control, planning, testing, or deployment discipline.
+## What it does
 
-Recommended stack:
+- **Lifecycle tracking** — rule-based deadline enforcement per jurisdiction; nightly sweep flags overdue events
+- **Strategy modules** — Tax Lien, Tax Deed, Foreclosure, Land, Wholesale, Fix & Flip, Buy & Hold, Multifamily
+- **AI layer** — document extraction (certificates, deeds, SOW, offering memoranda), Deal Copilot chat, exit strategy engine
+- **Due diligence** — strategy-aware checklist templates, deal-scoped instances, task generation from gaps
+- **Jurisdiction intelligence** — county-level statutory data, auction feeds, provenance-rich profiles
+- **Parcel intelligence** — APN normalization, parcel data pipeline, GIS/zoning, exit evaluators
 
-- Primary IDE: Cursor or VS Code
-- Main coding agent: Claude Code
-- Secondary coding/review agent: OpenAI Codex
-- Source control: GitHub
-- Work management: GitHub Issues + GitHub Projects
-- Local runtime: personal workstation first
-- Cloud runtime: VPS only for staging/demo/deployment, not day-to-day development
+---
 
-## Package contents
+## Stack
 
-- `docs/PROJECT_STATUS.md` — current state and working assumptions
-- `docs/PRODUCT_PLAN.md` — product direction and functional scope
-- `docs/ARCHITECTURE.md` — target architecture and repo layout
-- `docs/LOCAL_SETUP.md` — recommended local workstation setup
-- `docs/VPS_SETUP.md` — when and how to use an Ubuntu VPS
-- `docs/AGENT_WORKFLOW.md` — how to use Claude Code, Codex, Cursor, and VS Code without losing control
-- `docs/SECURITY.md` — key handling, secrets, and operational boundaries
-- `docs/DECISIONS.md` — architecture decision record starter
-- `tasks/BACKLOG.md` — initial backlog
-- `prompts/AGENT_SYSTEM_PROMPT.md` — reusable project instructions for AI coding agents
-- `.github/copilot-instructions.md` — GitHub Copilot/Codex project instructions
-- `AGENTS.md` — agent-facing repo instructions
-- `.env.example` — environment variable template
-- `.gitignore` — baseline ignores
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (TypeScript, App Router) |
+| Database | Neon (PostgreSQL serverless) via Prisma 7 |
+| Auth | Clerk v7 (multi-tenant, org-based) |
+| AI | Anthropic Claude API (BYOK per tenant) |
+| Storage | Cloudflare R2 |
+| Email | Resend |
+| Payments | Stripe |
+| Deployment | Vercel (auto-deploy on merge to `main`) |
 
-## Immediate next step
+---
 
-Create or update the actual app repo, copy these files into the repo root, then use `tasks/BACKLOG.md` to create GitHub Issues.
+## Deploy model
+
+Every merge to `main` triggers:
+1. GitHub Action runs `prisma migrate deploy` (schema changes only)
+2. Vercel builds and deploys to `metisplatforms.com`
+
+No manual deploys. Vercel preview deployments are the test environment.
+
+---
+
+## Agent / AI developer notes
+
+See [`CLAUDE.md`](CLAUDE.md) for full behavioral guidelines, architectural rules, code conventions, and session protocol.
+
+See [`ACTIVE-PLAN.md`](ACTIVE-PLAN.md) for the current implementation queue.
+
+See [`ROADMAP.md`](ROADMAP.md) for full product vision and phase history.
+
+---
+
+## Environment variables
+
+Copy `.env.example` to `.env.local` and fill in values. Required variables are documented there — never commit real values.
+
+All runtime env vars must also be set in Vercel Dashboard → Project → Settings → Environment Variables.
