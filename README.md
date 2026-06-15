@@ -46,9 +46,9 @@ No manual deploys. Vercel preview deployments are the test environment.
 
 See [`CLAUDE.md`](CLAUDE.md) for full behavioral guidelines, architectural rules, code conventions, and session protocol.
 
-See [`ACTIVE-PLAN.md`](ACTIVE-PLAN.md) for the current implementation queue.
+See [`ACTIVE-SPRINT.md`](ACTIVE-SPRINT.md) for the current implementation queue.
 
-See [`ROADMAP.md`](ROADMAP.md) for full product vision and phase history.
+See [`PHASE-HISTORY.md`](PHASE-HISTORY.md) for full product vision and phase history.
 
 ---
 

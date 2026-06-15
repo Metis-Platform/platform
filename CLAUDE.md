@@ -12,11 +12,11 @@ Behavioral guidelines for Claude Code and any AI agent working in this repositor
 
 - **Stack:** Next.js 16 (TypeScript), Prisma 7, Neon (PostgreSQL), Clerk v7 (auth), Anthropic Claude API, Cloudflare R2, Resend, Stripe, Vercel
 - **Repo:** Metis Platform GitHub org → `platform` repository
-- **Roadmap:** See `ROADMAP.md` for vision; `ACTIVE-PLAN.md` for current PR-sized queue
+- **Strategy:** `STRATEGY.md` (vision, module specs) | **Sprint:** `ACTIVE-SPRINT.md` (current queue) | **History:** `PHASE-HISTORY.md` (completed phases)
 - **Current Phase:** Post-beta initiatives — #131 Jurisdiction Intelligence and #229 Parcel Intelligence / Exit Strategy Engine
 - **System of Record:** Linear METIS is product/project command center; GitHub PRs/CI/merged code are engineering proof
 
-### North Star (test every feature decision against this — full goalposts in ROADMAP.md)
+### North Star (test every feature decision against this — full goalposts in STRATEGY.md)
 
 **Become THE definitive main hub for real estate investors: replace their spreadsheets,
 drastically simplify their process.** Revenue follows capability — legitimate products
@@ -35,30 +35,22 @@ before premium pricing, always. In practice:
 
 > ⚠️ STOP — READ THIS FIRST BEFORE DOING ANYTHING ELSE
 
-**Step 1 — Read these files via WSL. Not Windows. WSL.**
-```bash
-wsl bash -c "cat /home/xovox/dev/metis-platform/CLAUDE.md"
-wsl bash -c "cat /home/xovox/dev/metis-platform/STATUS.md"
-wsl bash -c "cat /home/xovox/dev/metis-platform/ACTIVE-PLAN.md"
-wsl bash -c "cd /home/xovox/dev/metis-platform && git log --oneline -5"
-```
-- `STATUS.md` is the lean session reference: last session summary, next-up issues, data model, ADRs.
-- `ACTIVE-PLAN.md` is the active post-beta implementation tracker.
-- `ROADMAP.md` has full vision and historical phase context — read it only when the task requires that context.
-- Do NOT attempt to read these as Windows paths. The repo is in WSL, not on the Windows filesystem.
+**Step 1 — Orient from these files:**
+- `STATUS.md` — current state snapshot: last session, next up, key facts
+- `ACTIVE-SPRINT.md` — current sprint queue (read when implementing)
+- `git log --oneline -5` — recent commits
 
-**Critical environment facts (do not rediscover these):**
-- Repo is in WSL at: `/home/xovox/dev/metis-platform/`
-- This is NOT a Windows path — do not look for it under C:\ or OneDrive
-- The ONLY way to reach it from FleetView is via `wsl bash -c "..."`
-- FleetView runs in Git Bash (MSYS2) on Windows — NOT in WSL. Every `wsl bash -c` call is a one-shot subprocess; processes started this way die when the call ends. Never try to keep a dev server running from FleetView.
-- Always source nvm before any Node/npm/npx command: `source /home/xovox/.nvm/nvm.sh && <your command>`
-- Write/Edit files via UNC path: `\\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<file>`
-- Windows machine username: `aswit` | WSL username: `xovox`
-- Windows temp path: `C:\Users\aswit\AppData\Local\Temp\`
-- WSL sees Windows C: drive at: `/mnt/c/`
+Read on demand only (not every session):
+- `STRATEGY.md` — product vision, north star, module specs
+- `ARCHITECTURE.md` — infra decisions, data model, ADRs
+- `PHASE-HISTORY.md` — completed phase archive
 
-**Step 2 — After reading ROADMAP.md, sync to main and check open PRs:**
+**Environment:**
+- Repo: `/home/xovox/dev/metis-platform/` (WSL, Ubuntu)
+- Node: source nvm before any npm/npx command: `source /home/xovox/.nvm/nvm.sh && <command>`
+- Windows temp (for migration SQL): `C:\Users\aswit\AppData\Local\Temp\` (WSL path: `/mnt/c/Users/aswit/AppData/Local/Temp/`)
+
+**Step 2 — Sync to main and check open PRs:**
 ```bash
 wsl bash -c "cd /home/xovox/dev/metis-platform && git fetch origin && git reset --hard origin/main"
 wsl bash -c "cd /home/xovox/dev/metis-platform && gh pr list --state open"
@@ -70,19 +62,34 @@ Use `git reset --hard origin/main` (not `git pull`) — local branch tracking ge
 gh pr merge <number> --auto --squash
 ```
 
-**Step 4 — End of every session: update STATUS.md AND the memory file.**
-This is the mechanism for consistent cross-session behavior. Do both:
+**Step 4 — After every PR merge AND at session end: checkpoint state.**
 
-**A) Update `STATUS.md`** (in repo):
-- Move completed PRs into the Last Session table
-- Update Next Up to reflect remaining issues in priority order
-- Note any gotchas or decisions made this session
+Do this after every merge (not just at session end — protects against abrupt session loss):
 
-**B) Update the memory file** at:
-`/home/xovox/.claude/projects/-home-xovox-dev-metis-platform/memory/project-metis-platform.md`
-- Update "Last session completed" with PR numbers and descriptions
-- Update "Next up" with the highest-priority remaining issues
-- The memory file loads automatically in every new session — keeping it current means the next session starts oriented from the first message, before any files are read.
+**A) Tick `ACTIVE-SPRINT.md`** — mark the completed item
+
+**B) Update `STATUS.md`** — update Last Session row + Next Up table
+
+**C) Update memory** at `/home/xovox/.claude/projects/-home-xovox-dev-metis-platform/memory/project-metis-platform.md`:
+- Update "Last session completed" with PR numbers
+- Update "Next up" with the top 3 remaining issues
+- Memory auto-loads before the first user message next session — keeping it current means instant orientation
+
+**Information contract — one home per content type, no duplication:**
+
+| Content | Single home | Updated when |
+|---|---|---|
+| Individual bugs and features | GitHub Issues | Created per issue, closed on merge |
+| Current sprint queue | `ACTIVE-SPRINT.md` | After every PR merge (tick item) |
+| Session snapshot (last work, next up) | `STATUS.md` | After every PR merge |
+| Cross-session fast orient | memory `project-metis-platform.md` | After every PR merge |
+| Behavior/workflow rules | memory `feedback-session-rules.md` | When a preference changes |
+| Product vision + module specs | `STRATEGY.md` | When strategy changes |
+| Architecture decisions + ADRs | `ARCHITECTURE.md` | When architecture changes |
+| Completed phase history | `PHASE-HISTORY.md` | Append-only as phases complete |
+| Coding rules + constraints | `CLAUDE.md` | When rules change |
+
+**Never duplicate content across files — link instead. Backlog items live only in GitHub Issues.**
 
 **File writing — use UNC path to write directly to WSL:**
 `\\\\wsl.localhost\\Ubuntu\\home\\xovox\\dev\\metis-platform\\<file>`
@@ -206,9 +213,8 @@ These will break Vercel builds silently. Don't repeat them.
 - `clerkClient()` is async — always `const client = await clerkClient()`.
 - `<UserButton>` no longer accepts `afterSignOutUrl` prop.
 
-**Turbopack (dev server):**
-- After renaming a directory (e.g. `liens/` → `deals/`), Turbopack's cache holds stale route references. Run `rm -rf .next` before `npm run dev` or the server will FATAL crash referencing the old path.
-- The dev server must be run by the user in their own WSL terminal — not started from FleetView. Any process FleetView starts dies when the command ends.
+**Turbopack (if dev server is ever run locally):**
+- After renaming a directory (e.g. `liens/` → `deals/`), Turbopack cache holds stale route references. Run `rm -rf .next` before `npm run dev` or it will FATAL crash on the old path.
 
 ### File Writing in WSL — CRITICAL
 
