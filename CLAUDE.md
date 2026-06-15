@@ -93,6 +93,8 @@ Do this after every merge (not just at session end — protects against abrupt s
 
 **Never duplicate content across files — link instead. Backlog items live only in GitHub Issues.**
 
+**Rot prevention:** When you encounter a stale reference, wrong filename, or inaccurate content in any project doc, fix it in-place as part of your current work — don't note it for later. At the end of each initiative (when all ACTIVE-SPRINT.md items for an initiative check off), do a quick read of the file map to catch anything missed opportunistically.
+
 **File writing — use Linux paths (VS Code extension and WSL CLI):**
 ```
 Read/Write/Edit → /home/xovox/dev/metis-platform/<path/to/file>
