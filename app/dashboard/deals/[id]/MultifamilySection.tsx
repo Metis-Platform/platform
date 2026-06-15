@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 
+type ContactSummary = { id: string; firstName: string | null; lastName: string | null; company: string | null }
+
 export type MultifamilyData = {
   dealId: string
   purchasePrice: string | null
@@ -19,6 +21,7 @@ export type MultifamilyData = {
   annualDebtService: string | null
   dscr: string | null
   loanMaturityDate: string | null
+  propertyManagerContact: ContactSummary | null
   propertyManagerName: string | null
   propertyManagerPhone: string | null
   propertyManagerEmail: string | null
@@ -54,12 +57,16 @@ function fmtPct(v: string | null, storedAsDecimal = true) {
   return `${pct.toFixed(1)}%`
 }
 
+function contactLabel(c: ContactSummary) {
+  return [c.firstName, c.lastName].filter(Boolean).join(' ') || c.company || 'Contact'
+}
+
 export default function MultifamilySection({ data }: { data: MultifamilyData }) {
   const {
     dealId, unitCount, occupiedUnits, averageMonthlyRent, vacancyRate,
     grossScheduledIncome, netOperatingIncome, capRate,
     loanAmount, interestRate, amortizationYears, annualDebtService, dscr,
-    loanMaturityDate, propertyManagerName, propertyManagerPhone, propertyManagerEmail,
+    loanMaturityDate, propertyManagerContact, propertyManagerName, propertyManagerPhone, propertyManagerEmail,
   } = data
 
   const noiNum  = netOperatingIncome ? Number(netOperatingIncome) : null
@@ -169,11 +176,21 @@ export default function MultifamilySection({ data }: { data: MultifamilyData }) 
         </div>
       )}
 
-      {propertyManagerName && (
+      {(propertyManagerContact || propertyManagerName) && (
         <dl className="space-y-2.5 text-sm mt-4">
-          <Row label="Prop. Manager" value={propertyManagerName} />
-          {propertyManagerPhone && <Row label="PM Phone" value={propertyManagerPhone} />}
-          {propertyManagerEmail && <Row label="PM Email" value={propertyManagerEmail} />}
+          {propertyManagerContact ? (
+            <Row label="Prop. Manager" value={
+              <Link href={`/dashboard/contacts/${propertyManagerContact.id}`} className="text-blue-600 hover:underline">
+                {contactLabel(propertyManagerContact)}
+              </Link>
+            } />
+          ) : (
+            <>
+              <Row label="Prop. Manager" value={propertyManagerName} />
+              {propertyManagerPhone && <Row label="PM Phone" value={propertyManagerPhone} />}
+              {propertyManagerEmail && <Row label="PM Email" value={propertyManagerEmail} />}
+            </>
+          )}
         </dl>
       )}
     </div>

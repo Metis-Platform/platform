@@ -51,10 +51,13 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       where: { id, tenantId: tenant.id },
       include: {
         property: { include: { jurisdiction: { include: { profile: true } } } },
-        taxLien: true, taxDeed: true, foreclosure: true, land: true, fixFlip: true, buyHold: true, multifamily: true,
+        taxLien: true, taxDeed: true, foreclosure: true, land: true,
+        fixFlip: { include: { contractorContact: true } },
+        buyHold: { include: { tenantContact: true, propertyManagerContact: true } },
+        multifamily: { include: { propertyManagerContact: true } },
         wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
-        landNotes: { orderBy: { createdAt: 'desc' } },
+        landNotes: { include: { buyerContact: true }, orderBy: { createdAt: 'desc' } },
       },
     }),
     db.document.findMany({
@@ -128,6 +131,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
   // Land notes
   const noteRows: NoteData[] = landNotes.map(n => ({
     id:               n.id,
+    buyerContact:     n.buyerContact ?? null,
     buyerName:        n.buyerName,
     buyerEmail:       n.buyerEmail,
     buyerPhone:       n.buyerPhone,
@@ -212,6 +216,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         acceptedOfferDate:     fixFlip?.acceptedOfferDate?.toISOString() ?? null,
         acceptedOfferPrice:    fixFlip?.acceptedOfferPrice?.toString() ?? null,
         closingDate:           fixFlip?.closingDate?.toISOString() ?? null,
+        contractorContact:     fixFlip?.contractorContact ?? null,
         contractorName:        fixFlip?.contractorName ?? null,
         contractorPhone:       fixFlip?.contractorPhone ?? null,
         contractorEmail:       fixFlip?.contractorEmail ?? null,
@@ -232,9 +237,11 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         securityDeposit:      buyHold?.securityDeposit?.toString() ?? null,
         leaseStartDate:       buyHold?.leaseStartDate?.toISOString() ?? null,
         leaseEndDate:         buyHold?.leaseEndDate?.toISOString() ?? null,
+        tenantContact:        buyHold?.tenantContact ?? null,
         tenantName:           buyHold?.tenantName ?? null,
         tenantPhone:          buyHold?.tenantPhone ?? null,
         tenantEmail:          buyHold?.tenantEmail ?? null,
+        propertyManagerContact: buyHold?.propertyManagerContact ?? null,
         propertyManagerName:  buyHold?.propertyManagerName ?? null,
         propertyManagerPhone: buyHold?.propertyManagerPhone ?? null,
         propertyManagerEmail: buyHold?.propertyManagerEmail ?? null,
@@ -276,11 +283,12 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         amortizationYears:    multifamily?.amortizationYears ?? null,
         annualDebtService:    multifamily?.annualDebtService?.toString() ?? null,
         dscr:                 multifamily?.dscr?.toString() ?? null,
-        loanMaturityDate:     multifamily?.loanMaturityDate?.toISOString() ?? null,
-        propertyManagerName:  multifamily?.propertyManagerName ?? null,
-        propertyManagerPhone: multifamily?.propertyManagerPhone ?? null,
-        propertyManagerEmail: multifamily?.propertyManagerEmail ?? null,
-        notes:                deal.notes ?? null,
+        loanMaturityDate:       multifamily?.loanMaturityDate?.toISOString() ?? null,
+        propertyManagerContact: multifamily?.propertyManagerContact ?? null,
+        propertyManagerName:    multifamily?.propertyManagerName ?? null,
+        propertyManagerPhone:   multifamily?.propertyManagerPhone ?? null,
+        propertyManagerEmail:   multifamily?.propertyManagerEmail ?? null,
+        notes:                  deal.notes ?? null,
       }
     : null
 

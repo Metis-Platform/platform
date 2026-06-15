@@ -2,13 +2,18 @@
 
 import { useState, useTransition } from 'react'
 import { useActionState } from 'react'
+import Link from 'next/link'
 import { createLandNote, recordPayment } from '@/lib/actions/land-note'
 import { sendLateNotice, computePayoffQuote } from '@/lib/actions/note-servicing'
 import type { LandNoteFormState } from '@/lib/actions/land-note'
 import { amortizationSchedule } from '@/lib/land-note-servicing'
+import ContactPicker from '@/app/components/ContactPicker'
+
+type ContactSummary = { id: string; firstName: string | null; lastName: string | null; company: string | null }
 
 export type NoteData = {
   id: string
+  buyerContact: ContactSummary | null
   buyerName: string | null
   buyerEmail: string | null
   buyerPhone: string | null
@@ -49,6 +54,14 @@ function CreateNoteForm({ dealId, onClose }: { dealId: string; onClose: () => vo
       {/* Buyer info */}
       <div>
         <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Buyer</p>
+        <div className="mb-3">
+          <ContactPicker
+            name="buyerContactId"
+            initial={null}
+            label="Link buyer from contacts"
+          />
+        </div>
+        <p className="text-xs text-zinc-400 mb-2">Or enter free-text:</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="Buyer Name" error={state.errors?.buyerName}>
             <input type="text" name="buyerName" placeholder="John Smith" className="input-base" />
@@ -366,9 +379,19 @@ export default function LandNoteSection({
       {activeNote && (
         <>
           <dl className="space-y-2 text-sm">
-            {activeNote.buyerName && <NoteRow label="Buyer" value={activeNote.buyerName} />}
-            {activeNote.buyerPhone && <NoteRow label="Phone" value={activeNote.buyerPhone} />}
-            {activeNote.buyerEmail && <NoteRow label="Email" value={activeNote.buyerEmail} />}
+            {activeNote.buyerContact ? (
+              <NoteRow label="Buyer" value={
+                <Link href={`/dashboard/contacts/${activeNote.buyerContact.id}`} className="text-blue-600 hover:underline">
+                  {[activeNote.buyerContact.firstName, activeNote.buyerContact.lastName].filter(Boolean).join(' ') || activeNote.buyerContact.company || 'Contact'}
+                </Link>
+              } />
+            ) : (
+              <>
+                {activeNote.buyerName && <NoteRow label="Buyer" value={activeNote.buyerName} />}
+                {activeNote.buyerPhone && <NoteRow label="Phone" value={activeNote.buyerPhone} />}
+                {activeNote.buyerEmail && <NoteRow label="Email" value={activeNote.buyerEmail} />}
+              </>
+            )}
             <NoteRow label="Principal" value={`$${Number(activeNote.principal).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
             <NoteRow label="Rate" value={`${(Number(activeNote.interestRate) * 100).toFixed(2)}% / yr`} />
             <NoteRow label="Term" value={`${activeNote.termMonths} months`} />

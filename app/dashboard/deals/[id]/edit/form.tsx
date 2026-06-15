@@ -14,7 +14,18 @@ import type { WholesaleFormState } from '@/lib/actions/wholesale'
 import type { FixFlipFormState } from '@/lib/actions/fix-flip'
 import type { BuyHoldFormState } from '@/lib/actions/buy-hold'
 import type { MultifamilyFormState } from '@/lib/actions/multifamily'
-import type { Jurisdiction, LandAccess } from '@/app/generated/prisma'
+import type { Jurisdiction, LandAccess, ContactType } from '@/app/generated/prisma'
+import ContactPicker from '@/app/components/ContactPicker'
+
+type ContactSummary = {
+  id: string
+  firstName: string | null
+  lastName: string | null
+  company: string | null
+  email: string | null
+  phone: string | null
+  type: ContactType
+}
 
 type DealWithLien = {
   id: string
@@ -478,6 +489,7 @@ type DealWithFixFlip = {
     acceptedOfferDate: Date | null
     acceptedOfferPrice: { toString(): string } | null
     closingDate: Date | null
+    contractorContact: ContactSummary | null
     contractorName: string | null
     contractorPhone: string | null
     contractorEmail: string | null
@@ -551,6 +563,13 @@ export function EditFixFlipForm({ deal }: { deal: DealWithFixFlip }) {
 
       <section className="px-6 py-5 space-y-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Contractor</h2>
+        <ContactPicker
+          name="contractorContactId"
+          initial={f?.contractorContact ?? null}
+          filterType="CONTRACTOR"
+          label="Linked contractor contact"
+        />
+        <p className="text-xs text-zinc-400">Or enter free-text fallback:</p>
         <div className="grid grid-cols-3 gap-4">
           <Field label="Name">
             <input type="text" name="contractorName" defaultValue={f?.contractorName ?? ''} className="input-base" />
@@ -613,9 +632,11 @@ type DealWithBuyHold = {
     securityDeposit: { toString(): string } | null
     leaseStartDate: Date | null
     leaseEndDate: Date | null
+    tenantContact: ContactSummary | null
     tenantName: string | null
     tenantPhone: string | null
     tenantEmail: string | null
+    propertyManagerContact: ContactSummary | null
     propertyManagerName: string | null
     propertyManagerPhone: string | null
     propertyManagerEmail: string | null
@@ -697,15 +718,6 @@ export function EditBuyHoldForm({ deal }: { deal: DealWithBuyHold }) {
             <input type="date" name="leaseEndDate"
               defaultValue={fmtDateInput(bh?.leaseEndDate)} className="input-base" />
           </Field>
-          <Field label="Tenant Name">
-            <input type="text" name="tenantName" defaultValue={bh?.tenantName ?? ''} className="input-base" />
-          </Field>
-          <Field label="Tenant Phone">
-            <input type="tel" name="tenantPhone" defaultValue={bh?.tenantPhone ?? ''} className="input-base" />
-          </Field>
-          <Field label="Tenant Email">
-            <input type="email" name="tenantEmail" defaultValue={bh?.tenantEmail ?? ''} className="input-base" />
-          </Field>
           <Field label="Inspection Status">
             <select name="inspectionStatus" defaultValue={bh?.inspectionStatus ?? ''} className="input-base">
               <option value="">— not set —</option>
@@ -716,12 +728,36 @@ export function EditBuyHoldForm({ deal }: { deal: DealWithBuyHold }) {
             </select>
           </Field>
         </div>
+        <ContactPicker
+          name="tenantContactId"
+          initial={bh?.tenantContact ?? null}
+          filterType="TENANT"
+          label="Linked tenant contact"
+        />
+        <p className="text-xs text-zinc-400">Or enter free-text fallback:</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Field label="Tenant Name">
+            <input type="text" name="tenantName" defaultValue={bh?.tenantName ?? ''} className="input-base" />
+          </Field>
+          <Field label="Tenant Phone">
+            <input type="tel" name="tenantPhone" defaultValue={bh?.tenantPhone ?? ''} className="input-base" />
+          </Field>
+          <Field label="Tenant Email">
+            <input type="email" name="tenantEmail" defaultValue={bh?.tenantEmail ?? ''} className="input-base" />
+          </Field>
+        </div>
       </section>
 
       {/* Property Manager */}
       <section className="px-6 py-5 space-y-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Property Manager</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <ContactPicker
+          name="propertyManagerContactId"
+          initial={bh?.propertyManagerContact ?? null}
+          label="Linked property manager contact"
+        />
+        <p className="text-xs text-zinc-400">Or enter free-text fallback:</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="Manager Name">
             <input type="text" name="propertyManagerName"
               defaultValue={bh?.propertyManagerName ?? ''} className="input-base" />
@@ -769,6 +805,7 @@ type DealWithMultifamily = {
     interestRate: { toString(): string } | null
     amortizationYears: number | null
     loanMaturityDate: Date | null
+    propertyManagerContact: ContactSummary | null
     propertyManagerName: string | null
     propertyManagerPhone: string | null
     propertyManagerEmail: string | null
@@ -848,6 +885,12 @@ export function EditMultifamilyForm({ deal }: { deal: DealWithMultifamily }) {
 
       <section className="px-6 py-5 space-y-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Property Manager</h2>
+        <ContactPicker
+          name="propertyManagerContactId"
+          initial={mf?.propertyManagerContact ?? null}
+          label="Linked property manager contact"
+        />
+        <p className="text-xs text-zinc-400">Or enter free-text fallback:</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="Name">
             <input type="text" name="propertyManagerName" defaultValue={mf?.propertyManagerName ?? ''} className="input-base" />

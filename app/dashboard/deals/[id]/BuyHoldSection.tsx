@@ -17,6 +17,8 @@ const INSPECTION_LABELS: Record<string, string> = {
   NA:       'Not required',
 }
 
+type ContactSummary = { id: string; firstName: string | null; lastName: string | null; company: string | null }
+
 export type BuyHoldData = {
   dealId: string
   dealStatus: string
@@ -28,9 +30,11 @@ export type BuyHoldData = {
   securityDeposit: string | null
   leaseStartDate: string | null
   leaseEndDate: string | null
+  tenantContact: ContactSummary | null
   tenantName: string | null
   tenantPhone: string | null
   tenantEmail: string | null
+  propertyManagerContact: ContactSummary | null
   propertyManagerName: string | null
   propertyManagerPhone: string | null
   propertyManagerEmail: string | null
@@ -59,11 +63,15 @@ function fmtDate(v: string | null) {
   return new Date(v).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+function contactLabel(c: ContactSummary) {
+  return [c.firstName, c.lastName].filter(Boolean).join(' ') || c.company || 'Contact'
+}
+
 export default function BuyHoldSection({ data }: { data: BuyHoldData }) {
   const {
     dealId, rentalStrategy, targetMonthlyRent, actualMonthlyRent, securityDeposit,
-    leaseStartDate, leaseEndDate, tenantName, tenantPhone, tenantEmail,
-    propertyManagerName, propertyManagerPhone, propertyManagerEmail,
+    leaseStartDate, leaseEndDate, tenantContact, tenantName, tenantPhone, tenantEmail,
+    propertyManagerContact, propertyManagerName, propertyManagerPhone, propertyManagerEmail,
     inspectionStatus, maintenanceReserve, purchasePrice, operatingExpenses,
   } = data
 
@@ -184,9 +192,19 @@ export default function BuyHoldSection({ data }: { data: BuyHoldData }) {
         )}
 
         {/* Tenant info */}
-        {tenantName && <Row label="Tenant" value={tenantName} />}
-        {tenantPhone && <Row label="Tenant Phone" value={tenantPhone} />}
-        {tenantEmail && <Row label="Tenant Email" value={tenantEmail} />}
+        {tenantContact ? (
+          <Row label="Tenant" value={
+            <Link href={`/dashboard/contacts/${tenantContact.id}`} className="text-blue-600 hover:underline">
+              {contactLabel(tenantContact)}
+            </Link>
+          } />
+        ) : (
+          <>
+            {tenantName && <Row label="Tenant" value={tenantName} />}
+            {tenantPhone && <Row label="Tenant Phone" value={tenantPhone} />}
+            {tenantEmail && <Row label="Tenant Email" value={tenantEmail} />}
+          </>
+        )}
 
         {/* Inspection */}
         {inspectionStatus && (
@@ -201,9 +219,19 @@ export default function BuyHoldSection({ data }: { data: BuyHoldData }) {
         )}
 
         {/* Property manager */}
-        {propertyManagerName && <Row label="Prop. Manager" value={propertyManagerName} />}
-        {propertyManagerPhone && <Row label="PM Phone" value={propertyManagerPhone} />}
-        {propertyManagerEmail && <Row label="PM Email" value={propertyManagerEmail} />}
+        {propertyManagerContact ? (
+          <Row label="Prop. Manager" value={
+            <Link href={`/dashboard/contacts/${propertyManagerContact.id}`} className="text-blue-600 hover:underline">
+              {contactLabel(propertyManagerContact)}
+            </Link>
+          } />
+        ) : (
+          <>
+            {propertyManagerName && <Row label="Prop. Manager" value={propertyManagerName} />}
+            {propertyManagerPhone && <Row label="PM Phone" value={propertyManagerPhone} />}
+            {propertyManagerEmail && <Row label="PM Email" value={propertyManagerEmail} />}
+          </>
+        )}
       </dl>
     </div>
   )

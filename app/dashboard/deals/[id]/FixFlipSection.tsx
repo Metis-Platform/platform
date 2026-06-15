@@ -12,6 +12,8 @@ const PERMIT_LABELS: Record<string, string> = {
   CLOSED:       'Closed out',
 }
 
+type ContactSummary = { id: string; firstName: string | null; lastName: string | null; company: string | null }
+
 export type FixFlipData = {
   dealId: string
   dealStatus: string
@@ -29,6 +31,7 @@ export type FixFlipData = {
   acceptedOfferDate: string | null
   acceptedOfferPrice: string | null
   closingDate: string | null
+  contractorContact: ContactSummary | null
   contractorName: string | null
   contractorPhone: string | null
   contractorEmail: string | null
@@ -65,12 +68,16 @@ function fmtHold(days: number) {
   return months === 1 ? '1 mo' : `${months} mo`
 }
 
+function contactLabel(c: ContactSummary) {
+  return [c.firstName, c.lastName].filter(Boolean).join(' ') || c.company || 'Contact'
+}
+
 export default function FixFlipSection({ data }: { data: FixFlipData }) {
   const {
     dealId, arv, rehabBudget, rehabActualCost, holdingCostEstimate,
     rehabStartDate, rehabTargetCompletion, rehabCompletedDate,
     listingDate, listingPrice, acceptedOfferDate, acceptedOfferPrice, closingDate,
-    contractorName, contractorPhone, contractorEmail, permitStatus,
+    contractorContact, contractorName, contractorPhone, contractorEmail, permitStatus,
   } = data
 
   const arvNum        = arv ? Number(arv) : null
@@ -244,9 +251,19 @@ export default function FixFlipSection({ data }: { data: FixFlipData }) {
           } />
         )}
 
-        {contractorName && <Row label="Contractor" value={contractorName} />}
-        {contractorPhone && <Row label="Contractor Phone" value={contractorPhone} />}
-        {contractorEmail && <Row label="Contractor Email" value={contractorEmail} />}
+        {contractorContact ? (
+          <Row label="Contractor" value={
+            <Link href={`/dashboard/contacts/${contractorContact.id}`} className="text-blue-600 hover:underline">
+              {contactLabel(contractorContact)}
+            </Link>
+          } />
+        ) : (
+          <>
+            {contractorName && <Row label="Contractor" value={contractorName} />}
+            {contractorPhone && <Row label="Contractor Phone" value={contractorPhone} />}
+            {contractorEmail && <Row label="Contractor Email" value={contractorEmail} />}
+          </>
+        )}
 
         {listingDate && <Row label="Target Listing" value={fmtDate(listingDate)} />}
         {listingPrice && <Row label="Listing Price" value={fmt$(listingPrice)} />}

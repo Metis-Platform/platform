@@ -59,6 +59,7 @@ export async function createFixFlip(
   const listingDate   = parseDate(fd(formData, 'listingDate'))
   const listingPrice  = parseDec(fd(formData, 'listingPrice'))
   const closingDate   = parseDate(fd(formData, 'closingDate'))
+  const contractorContactId = fd(formData, 'contractorContactId') || null
   const contractorName = fd(formData, 'contractorName')
   const contractorPhone = fd(formData, 'contractorPhone')
   const contractorEmail = fd(formData, 'contractorEmail')
@@ -98,6 +99,7 @@ export async function createFixFlip(
           listingDate,
           listingPrice,
           closingDate,
+          contractorContactId,
           contractorName,
           contractorPhone,
           contractorEmail,
@@ -141,6 +143,7 @@ export async function updateFixFlip(
   const acceptedOfferDate = parseDate(fd(formData, 'acceptedOfferDate'))
   const acceptedOfferPrice = parseDec(fd(formData, 'acceptedOfferPrice'))
   const closingDate   = parseDate(fd(formData, 'closingDate'))
+  const contractorContactId = fd(formData, 'contractorContactId') || null
   const contractorName = fd(formData, 'contractorName')
   const contractorPhone = fd(formData, 'contractorPhone')
   const contractorEmail = fd(formData, 'contractorEmail')
@@ -168,6 +171,7 @@ export async function updateFixFlip(
         acceptedOfferDate,
         acceptedOfferPrice,
         closingDate,
+        contractorContactId,
         contractorName,
         contractorPhone,
         contractorEmail,
@@ -186,6 +190,7 @@ export async function updateFixFlip(
         acceptedOfferDate,
         acceptedOfferPrice,
         closingDate,
+        contractorContactId,
         contractorName,
         contractorPhone,
         contractorEmail,
