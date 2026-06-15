@@ -22,9 +22,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| #229-P1 Parcel profile data model + APN normalization | Merged — PR #262 |
 | #131-P8 Per-deal DD checklist generation from strategy × jurisdiction matrix | Merged — PR #260 |
 | #131-P7 In-deal jurisdiction surfacing — stage-aware context on deal pages | Merged — PR #258 |
-| #131-P6 Jurisdiction research hub — per-strategy tabs + provenance display | Merged — PR #256 |
 
 ---
 
@@ -43,9 +43,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | #230 | #229-P1 ParcelProfile + APN normalization |
-| 2 | #234 | #229-P5 Exit evaluators — all 30 exits across 8 strategy families |
-| 3 | #232 | #229-P2 Parcel data sourcing pipeline + ParcelDataCache schema |
+| 1 | #232 | #229-P2 Parcel data sourcing pipeline + ParcelDataCache schema |
+| 2 | #233 | #229-P3 Zoning data layer + PostGIS spatial join service |
+| 3 | #234 | #229-P5 Exit evaluators — all 30 exits across 8 strategy families |
 
 ---
 
