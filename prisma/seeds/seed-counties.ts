@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { pathToFileURL } from 'url'
 import { createSeedPrismaClient } from './db'
-import type { PrismaClient } from '../../app/generated/prisma'
+import type { Prisma, PrismaClient } from '../../app/generated/prisma'
 import { InvestmentType } from '../../app/generated/prisma'
 
 type CountyRow = {
@@ -21,20 +21,23 @@ export async function seedCounties(prisma: PrismaClient) {
 
   assertCountyRows(counties)
 
+  // Load all existing jurisdictions once — avoids N×3 round-trips and OR-match ambiguity.
+  // Match priority: FIPS first (stable Census identifier), then state+county name.
+  const allExisting = await prisma.jurisdiction.findMany({
+    select: { id: true, fips: true, state: true, county: true, stateName: true, timezone: true, investmentType: true },
+  })
+  const byFips = new Map(allExisting.filter(j => j.fips).map(j => [j.fips!, j]))
+  const byStateCounty = new Map(allExisting.map(j => [`${j.state}:${j.county}`, j]))
+
   let created = 0
   let updated = 0
   let unchanged = 0
 
-  for (const row of counties) {
-    const existing = await prisma.jurisdiction.findFirst({
-      where: {
-        OR: [
-          { fips: row.fips },
-          { state: row.state, county: row.county },
-        ],
-      },
-    })
+  const createOps: Prisma.PrismaPromise<unknown>[] = []
+  const updateOps: Prisma.PrismaPromise<unknown>[] = []
 
+  for (const row of counties) {
+    const existing = byFips.get(row.fips) ?? byStateCounty.get(`${row.state}:${row.county}`)
     const data = {
       state: row.state,
       stateName: row.stateName,
@@ -45,33 +48,41 @@ export async function seedCounties(prisma: PrismaClient) {
     }
 
     if (!existing) {
-      await prisma.jurisdiction.create({ data })
+      createOps.push(prisma.jurisdiction.create({ data }))
       created++
       continue
     }
 
     const needsUpdate =
       existing.fips !== row.fips ||
-      existing.state !== row.state ||
       existing.stateName !== row.stateName ||
-      existing.county !== row.county ||
       existing.timezone !== row.timezone ||
       existing.investmentType !== InvestmentType[row.type]
 
     if (needsUpdate) {
-      await prisma.jurisdiction.update({ where: { id: existing.id }, data })
+      updateOps.push(prisma.jurisdiction.update({ where: { id: existing.id }, data }))
       updated++
     } else {
       unchanged++
     }
   }
 
-  const total = await prisma.jurisdiction.count()
-  const missingFips = await prisma.jurisdiction.count({ where: { fips: null } })
-  if (total !== counties.length || missingFips !== 0) {
-    throw new Error(`County seed verification failed: expected ${counties.length} jurisdictions and 0 missing FIPS; got ${total} jurisdictions and ${missingFips} missing FIPS`)
+  for (let i = 0; i < createOps.length; i += 50) {
+    await prisma.$transaction(createOps.slice(i, i + 50))
   }
-  console.log(`Jurisdictions: ${created} created, ${updated} updated, ${unchanged} unchanged (${total} total, ${missingFips} missing FIPS)`)
+  for (let i = 0; i < updateOps.length; i += 50) {
+    await prisma.$transaction(updateOps.slice(i, i + 50))
+  }
+
+  // Verify all seeded counties are present — scoped to seed FIPS only so extra
+  // rows (manual admin entries, test data) don't cause false failures.
+  const seededCount = await prisma.jurisdiction.count({
+    where: { fips: { in: counties.map(c => c.fips) } },
+  })
+  if (seededCount !== counties.length) {
+    throw new Error(`County seed verification failed: expected ${counties.length} FIPS-tagged jurisdictions; got ${seededCount}`)
+  }
+  console.log(`Jurisdictions: ${created} created, ${updated} updated, ${unchanged} unchanged (${seededCount} total with FIPS)`)
 }
 
 function assertCountyRows(counties: CountyRow[]) {

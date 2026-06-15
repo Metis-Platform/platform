@@ -62,8 +62,9 @@ async function seedRuleSets(prisma: PrismaClient) {
   ])
 
   await seedRuleSet(prisma, tx.id, 'Harris County TX — Standard Tax Deed Rules', [
-    { eventType: EventType.FORECLOSURE_ELIGIBLE, label: 'Non-Homestead Redemption Expires (6 Mo)',  anchorField: 'issueDate', offsetDays: 180,  sortOrder: 1, description: 'Non-homestead right of redemption expires 6 months after deed sale. Tex. Tax Code § 34.21(b).' },
+    { eventType: EventType.REDEMPTION_DEADLINE,  label: 'Non-Homestead Redemption Expires (6 Mo)',  anchorField: 'issueDate', offsetDays: 180,  sortOrder: 1, description: 'Non-homestead right of redemption expires 6 months after deed sale. Tex. Tax Code § 34.21(b).' },
     { eventType: EventType.REDEMPTION_DEADLINE,  label: 'Homestead Redemption Expires (2 Years)',   anchorField: 'issueDate', offsetDays: 730,  sortOrder: 2, description: 'Homestead/agricultural right of redemption expires 2 years after deed sale. Tex. Tax Code § 34.21(a).' },
+    { eventType: EventType.FORECLOSURE_ELIGIBLE, label: 'Eligible to Foreclose (After Homestead Window)', anchorField: 'issueDate', offsetDays: 730,  sortOrder: 3, description: 'Investor may initiate foreclosure after all redemption periods have expired. Tex. Tax Code § 34.21.' },
   ])
 
   const gaRules = [

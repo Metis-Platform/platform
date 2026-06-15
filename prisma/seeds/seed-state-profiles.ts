@@ -20,7 +20,7 @@ function mergeSection(existing: unknown, baseline: JsonObject): JsonObject {
       : null
 
     const humanVerified = isObject(existingField) && existingField.verifiedById && existingField.verifiedById !== 'system'
-    if ((existingConfidence !== null && existingConfidence > 1) || humanVerified) {
+    if ((existingConfidence !== null && existingConfidence >= 1) || humanVerified) {
       continue
     }
 
@@ -52,12 +52,20 @@ export async function seedStateProfiles(prisma: PrismaClient) {
     orderBy: [{ state: 'asc' }, { county: 'asc' }],
   })
 
+  // Pre-compute once per state — 50 calls instead of 3,143.
+  const baselineByState = new Map<string, StateProfileBaseline>()
+  for (const j of jurisdictions) {
+    if (!baselineByState.has(j.state)) {
+      baselineByState.set(j.state, buildStateProfileBaseline(j.state))
+    }
+  }
+
   let created = 0
   let updated = 0
   const operations: Prisma.PrismaPromise<unknown>[] = []
 
   for (const jurisdiction of jurisdictions) {
-    const baseline = buildStateProfileBaseline(jurisdiction.state)
+    const baseline = baselineByState.get(jurisdiction.state)!
     const existing = jurisdiction.profile
 
     const data = {
