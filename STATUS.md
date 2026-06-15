@@ -8,7 +8,7 @@
 
 ## Current Phase
 
-Post-beta sprint: **#131 Jurisdiction Intelligence** + **#229 Parcel Intelligence / Exit Engine** in parallel. See `ACTIVE-SPRINT.md` for ordered queue.
+Post-beta sprint: **#131 Jurisdiction Intelligence** + **#229 Parcel Intelligence / Exit Engine** complete. Next queue is **Initiative 3 — Module Depth** in `ACTIVE-SPRINT.md`.
 
 ---
 
@@ -22,6 +22,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
+| #229-P9 Admin parcel research service — research-on-demand for investors | Merged — PR #273 |
+| Jurisdictions: geographic SVG state map + zoom | Merged — PR #272 |
 | #229-P8 ExitEvaluation cache table + InvestorProfile persistence | Merged — PR #271 |
 | #229-P7 Deal-page "What are my exits?" UI | Merged — PR #270 |
 | #229-P6 JurisdictionFacts accessor + Prisma adapter | Merged — PR #269 |
@@ -49,9 +51,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | #238 | #229-P9 Admin parcel research service — research-on-demand for investors |
-| 2 | — | Initiative 3 Module Depth after #229 completes |
-| 3 | — | — |
+| 1 | — | Contact CRM primitive — platform-wide contact record |
+| 2 | #39 | Land module depth — GIS overlays, water/well lookup, raw land comps, AI parcel summary |
+| 3 | #40 | Wholesale module depth — seller pipeline, buyer matching, assignment fee calc |
 
 ---
 
