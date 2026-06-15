@@ -48,7 +48,7 @@ See [`CLAUDE.md`](CLAUDE.md) for full behavioral guidelines, architectural rules
 
 See [`ACTIVE-SPRINT.md`](ACTIVE-SPRINT.md) for the current implementation queue.
 
-See [`PHASE-HISTORY.md`](PHASE-HISTORY.md) for full product vision and phase history.
+See [`STRATEGY.md`](STRATEGY.md) for product vision and [`PHASE-HISTORY.md`](PHASE-HISTORY.md) for phase history.
 
 ---
 

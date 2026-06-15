@@ -22,7 +22,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Work | Result |
 |---|---|
-| #131-P1 JurisdictionProfile schema + admin APIs | Implemented, PR in flight |
+| #131-P1 JurisdictionProfile schema + admin APIs | Merged — PR #241 |
 | Doc/structure cleanup | Committed in 995a18a |
 
 ---

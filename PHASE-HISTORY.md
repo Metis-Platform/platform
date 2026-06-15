@@ -20,8 +20,8 @@ Multi-tenant hardening, role enforcement, Stripe subscriptions (Starter/Pro/Team
 ## Phase 4-partial — Module Expansion ✅ (PRs #67, #68, #69, #73, #216, #217)
 Tax Deed module, Foreclosure module, full task management, strategy-agnostic `/dashboard/deals` route, Fix & Flip AI (SOW extraction + draw package), Multifamily AI (T12, DSCR, sensitivity model, offering memorandum extraction).
 
-## Phase 4-full — Remaining Modules (active/planned)
-Land, Wholesale, Fix & Flip depth, Buy & Hold, Multifamily depth. Specs in `STRATEGY.md`.
+## Phase 4-full — Module Depth (Initiative 3, planned after #131 + #229)
+Module MVPs shipped in BETA-PLAN tracker (Land PRs #144–175, Wholesale #150–177, Fix & Flip #156–216, Buy & Hold #161–174, Multifamily #167–217). Depth features (Contact CRM, GIS overlays, LP waterfall, unit-level tenant records) are Initiative 3 in `ACTIVE-SPRINT.md`. Specs in `STRATEGY.md`.
 
 ## Post-Beta Initiatives (active)
 #131 Jurisdiction Intelligence Layer, #229 Parcel Intelligence + Exit Strategy Engine. Queue in `ACTIVE-SPRINT.md`.

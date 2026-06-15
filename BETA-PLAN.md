@@ -43,11 +43,11 @@ shipped (PRs #111–121); full module UIs are post-beta.
 - [x] #17 Task comments — `TaskComment` model + API + thread UI verified
 - [x] #18 Jurisdiction detail page — verified at `app/dashboard/jurisdictions/[id]` (#10 closed as duplicate)
 
-### Sprint 6 — Phase 2 AI — ⏸ ON HOLD (user decision 2026-06-12)
-- [ ] #25 AI document extraction — upload cert PDF/image → Claude extracts fields → review/confirm UI with per-field confidence
-- [ ] #26 Deal Copilot — chat at `/dashboard/copilot`, Claude API over structured tenant deal data
+### Sprint 6 — Phase 2 AI — ✅ done (PRs #213, #214 — hold lifted, implemented post-MF Phase 3)
+- [x] #25 AI document extraction — upload cert PDF/image → Claude extracts fields → review/confirm UI with per-field confidence
+- [x] #26 Deal Copilot — chat at `/dashboard/copilot`, Claude API over structured tenant deal data
 
-### Post-beta program (spec'd 2026-06-12, ready to implement — goalposts in ROADMAP.md "North Star")
+### Post-beta program (spec'd 2026-06-12, implemented — goalposts in STRATEGY.md "North Star")
 All issues below are implementation-grade 3-phase plans. Build order honors shared primitives:
 
 1. **#132 Financial core** — unified ledger + computed-economics library + realized/unrealized
@@ -58,7 +58,7 @@ All issues below are implementation-grade 3-phase plans. Build order honors shar
 4. **#130 Entitlements** — per-strategy purchase + in-module tiers (Stripe products per (strategy, tier))
 5. **#131 Jurisdiction data program** — county-depth moat; feeds #42 FMR, #43 market data, #133 templates
 
-Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near MF Phase 3.
+Sprint 6 AI (#25/#26) shipped via PRs #213, #214 before #43-P4. All items above complete.
 
 ### IMPLEMENTATION TRACKER (auto-mode started 2026-06-12) — tick as PRs merge
 > **Resume protocol:** this list is the single source of truth for implementation progress.

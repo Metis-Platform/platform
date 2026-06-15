@@ -1,5 +1,7 @@
 # ADMIN-PLAN.md — Admin Portal Rollout
 
+> ✅ ALL PHASES COMPLETE (P1–P5 merged, 2026-06-13). Retained as historical record.
+
 > Structured rollout plan for the Metis admin portal, building from foundation fixes
 > to a full founder-grade business management tool. Every sprint ships as merged PRs.
 > Created 2026-06-13. Tick checkboxes as PRs merge.

@@ -90,7 +90,7 @@ GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` aut
 
 - Middleware: `proxy.ts` at project root (not `middleware.ts`)
 - `auth()` and `clerkClient()` are both async — always `await` them
-- Two separate instances: `pk_test_` for dev, `pk_live_` for production — accounts do not cross over
+- Production-only instance (`pk_live_` keys in both `.env.local` and Vercel) — no separate dev Clerk instance; local dev uses the production Clerk instance and production database
 - Requires 5 Cloudflare DNS CNAMEs pointing to Clerk services (see CLAUDE.md for values)
 
 ---
