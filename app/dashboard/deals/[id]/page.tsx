@@ -31,7 +31,8 @@ import T12Section from './T12Section'
 import BusinessPlanSection from './BusinessPlanSection'
 import SensitivitySection from './SensitivitySection'
 import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema } from '@/lib/multifamily-schemas'
-import JurisdictionGuide from './JurisdictionGuide'
+import { buildResearchProfile, type ResearchStrategy } from '@/lib/jurisdiction-research'
+import JurisdictionContextPanel from './JurisdictionContextPanel'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
 
@@ -48,7 +49,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
       include: {
-        property: { include: { jurisdiction: true } },
+        property: { include: { jurisdiction: { include: { profile: true } } } },
         taxLien: true, taxDeed: true, foreclosure: true, land: true, fixFlip: true, buyHold: true, multifamily: true,
         wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
@@ -70,12 +71,6 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     }),
   ])
   if (!deal) notFound()
-
-  const jurStrategyRow = await db.jurisdictionStrategyData.findUnique({
-    where: { jurisdictionId_strategy: { jurisdictionId: deal.property.jurisdictionId, strategy: deal.strategyType } },
-    select: { data: true },
-  })
-  const jurStrategyData = jurStrategyRow ? (jurStrategyRow.data as Record<string, unknown>) : null
 
   const docs: DocRow[] = rawDocs.map(d => ({
     id:         d.id,
@@ -712,12 +707,14 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>
       )}
 
-      {/* Jurisdiction Guide */}
-      <JurisdictionGuide
-        strategy={deal.strategyType}
-        jurisdictionName={`${jur.county} County, ${jur.stateName}`}
-        strategyData={jurStrategyData}
-        stateInfo={stateInfo}
+      {/* Jurisdiction context */}
+      <JurisdictionContextPanel
+        strategy={deal.strategyType as ResearchStrategy}
+        status={deal.status}
+        jurisdiction={{ id: jur.id, county: jur.county, stateName: jur.stateName }}
+        profile={buildResearchProfile(jur.profile)}
+        events={dealEvents}
+        section8InPlay={isSection8}
       />
 
       {/* Research Links */}

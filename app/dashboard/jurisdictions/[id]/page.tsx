@@ -2,11 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import {
-  JURISDICTION_PROFILE_SECTIONS,
-  type JurisdictionProfileSection,
-} from '@/lib/jurisdiction-profile'
-import type { ResearchProfile, ResearchProfileField } from '@/lib/jurisdiction-research'
+import { buildResearchProfile } from '@/lib/jurisdiction-research'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import JurisdictionResearchHub from './JurisdictionResearchHub'
@@ -49,19 +45,6 @@ function linkEntries(links: unknown) {
       isSafeExternalUrl(entry[1])
     )
     .map(([key, value]) => ({ label: LINK_LABELS[key] ?? key.replace(/Url$/, '').replace(/([A-Z])/g, ' $1'), url: value }))
-}
-
-function profileSection(value: unknown): Record<string, ResearchProfileField> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
-  return value as Record<string, ResearchProfileField>
-}
-
-function buildResearchProfile(profile: {
-  [K in JurisdictionProfileSection]?: unknown
-} | null): ResearchProfile {
-  return Object.fromEntries(
-    JURISDICTION_PROFILE_SECTIONS.map((section) => [section, profileSection(profile?.[section])])
-  ) as ResearchProfile
 }
 
 function formatDate(date: Date) {
@@ -197,4 +180,3 @@ function ResourceLink({ label, url }: { label: string; url: string }) {
     </a>
   )
 }
-
