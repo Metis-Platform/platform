@@ -22,9 +22,11 @@
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-simple-maps": "^3.0.0",
     "resend": "^6.12.4",
     "stripe": "^22.2.0",
     "svix": "^1.95.2",
+    "us-atlas": "^3.0.1",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
