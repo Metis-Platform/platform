@@ -131,6 +131,7 @@ model Jurisdiction {
   state          String
   stateName      String
   county         String
+  fips           String?        @unique
   timezone       String         @default("America/New_York")
   investmentType InvestmentType
   notes          String?
