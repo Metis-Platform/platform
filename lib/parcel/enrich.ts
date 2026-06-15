@@ -9,6 +9,8 @@ import { fetchElectricUtility } from './sources/hifld-electric'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { fetchWalkScore } from './sources/walk-score'
+import { decodeZoning } from './zoning/decode'
+import { lookupZoning } from './zoning/lookup'
 
 export interface EnrichResult {
   profile: Partial<ParcelProfile>
@@ -155,10 +157,26 @@ function buildSourcePlans(
         fields: ['utilityName', 'serviceAreaType', 'electricAvailable'],
         fetch: async () => fetchElectricUtility(lat, lon),
       },
+      {
+        source: 'postgis_zoning',
+        fields: ['zoning', 'zoningDescription'],
+        fetch: async () => fetchZoningProfile(lat, lon, fipsCounty),
+      },
     )
   }
 
   return plans
+}
+
+async function fetchZoningProfile(lat: number, lon: number, fipsCounty: string): Promise<Record<string, unknown>> {
+  const zoning = await lookupZoning(lat, lon, fipsCounty)
+  if (!zoning.zoneCode) return {}
+
+  const decoded = await decodeZoning(fipsCounty, zoning.zoneCode)
+  return {
+    zoning: zoning.zoneCode,
+    zoningDescription: decoded?.description ?? zoning.zoneName ?? undefined,
+  }
 }
 
 function freshRowsForPlan(cacheRows: ParcelDataCache[], plan: SourcePlan, now: Date): ParcelDataCache[] {
@@ -208,6 +226,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     ...PARCEL_FACT_FIELDS,
     'floodZone',
     'floodPanel',
+    'zoning',
+    'zoningDescription',
     'brownfieldFlag',
     'undergroundTankFlag',
     'electricAvailable',

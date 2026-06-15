@@ -194,6 +194,8 @@ function isProfileField(field: string): field is keyof ParcelProfile {
     'landUseCode',
     'improved',
     'marketValueEstimate',
+    'zoning',
+    'zoningDescription',
     'floodZone',
     'floodPanel',
     'brownfieldFlag',
