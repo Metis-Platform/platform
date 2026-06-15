@@ -40,6 +40,11 @@ before premium pricing, always. In practice:
 - `ACTIVE-SPRINT.md` — current sprint queue (read when implementing)
 - `git log --oneline -5` — recent commits
 
+**If `git log` shows merges not reflected in memory or STATUS.md** (i.e. another agent ran since last session), reconcile before doing anything else:
+- Update memory "Last session completed" and "Next up" to match git state
+- Tick any completed items in `ACTIVE-SPRINT.md`
+- Update STATUS.md Last Session and Next Up rows
+
 Read on demand only (not every session):
 - `STRATEGY.md` — product vision, north star, module specs
 - `ARCHITECTURE.md` — infra decisions, data model, ADRs
