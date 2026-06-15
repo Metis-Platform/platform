@@ -93,14 +93,7 @@ Sprint 6 AI (#25/#26) is load-bearing for #43 Phase 4 — revisit the hold near 
 - [x] **#40-P4** Wholesale premium: buyer-blast campaigns (Resend matched buyers), pipeline analytics, assignment packet export (gated on #130 PREMIUM) (PR #177)
 - [x] **#41-P4** Fix & Flip AI — contractor bid/invoice extraction + draw package (PR #216)
 - [x] **#43-P4** Multifamily AI — OM extraction, sensitivity grid, lender package (PR #217)
-- [ ] **#131-P1** JurisdictionProfile schema — provenance-rich field model (issue #219)
-- [ ] **#131-P2** Seed: all 3,141 counties + 50-state statutory baseline (issue #220)
-- [ ] **#131-P3** Admin: AI extraction pipeline — NETROnline → Playwright → Jina → Claude Haiku → review queue (issue #221)
-- [ ] **#131-P4** Admin: auction platform feeds — GovEase, RealAuction, Tax Sale Resources API (issue #222)
-- [ ] **#131-P5** Admin: market signals ingestion + opportunity/saturation scoring (issue #223)
-- [ ] **#131-P6** Investor: jurisdiction research hub — per-strategy tabs + provenance display (issue #224)
-- [ ] **#131-P7** Investor: in-deal jurisdiction surfacing — stage-aware context on deal pages (issue #225)
-- [ ] **#131-P8** Investor: per-deal DD checklist generation from strategy × jurisdiction matrix (issue #226)
+- [x] **#131** jurisdiction data program — plan agreed: comprehensive data dictionary, AI extraction pipeline, 3,141-county coverage; 8 implementation issues filed (#219–#226)
 
 ## Standing rules for every sprint
 
