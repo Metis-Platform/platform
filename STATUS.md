@@ -28,6 +28,17 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ---
 
+## Pending Actions
+
+> Items requiring human input. Agents: add a row here when a PR ships something that needs a human step. Clear the row when done.
+
+| Action | Blocking? | Added | Notes |
+|---|---|---|---|
+| Add `ANTHROPIC_API_KEY` (platform key) to Vercel env vars | No — extraction cron runs but produces no AI output | 2026-06-15 | Vercel Dashboard → Project → Settings → Env Vars. Needed for #131-P3 AI extraction cron to function. |
+| Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | `source /home/xovox/.nvm/nvm.sh && npx tsx prisma/seeds/seed-netroline.ts` — seeds FL county profile data from NETROnline scrape. |
+
+---
+
 ## Next Up
 
 | Priority | Issue | Title |
