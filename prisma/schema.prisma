@@ -140,10 +140,12 @@ model Jurisdiction {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  ruleSets      RuleSet[]
-  properties    Property[]
-  strategyData  JurisdictionStrategyData[]
-  profile       JurisdictionProfile?
+  ruleSets             RuleSet[]
+  properties           Property[]
+  strategyData         JurisdictionStrategyData[]
+  profile              JurisdictionProfile?
+  sourceUrls           JurisdictionSourceUrl[]
+  extractionCandidates ExtractionCandidate[]
 
   @@unique([state, county])
 }
@@ -184,6 +186,45 @@ model JurisdictionProfile {
   updatedAt         DateTime     @updatedAt
 
   @@index([jurisdictionId])
+}
+
+model JurisdictionSourceUrl {
+  id              String       @id @default(cuid())
+  jurisdictionId  String
+  jurisdiction    Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  officeType      String // assessor | tax_collector | recorder | gis | planning_zoning | building
+  url             String
+  lastFetchedAt   DateTime?
+  lastContentHash String?
+  createdAt       DateTime     @default(now())
+
+  candidates ExtractionCandidate[]
+
+  @@unique([jurisdictionId, officeType, url])
+  @@index([jurisdictionId])
+}
+
+model ExtractionCandidate {
+  id             String            @id @default(cuid())
+  jurisdictionId String
+  jurisdiction   Jurisdiction      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  sourceUrlId    String?
+  sourceUrl      JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  section        String
+  fieldKey       String
+  extractedValue Json
+  confidence     Float
+  sourceSnippet  String?
+  modelUsed      String
+  status         ExtractionStatus  @default(PENDING)
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([jurisdictionId])
+  @@index([status])
+  @@index([jurisdictionId, section, fieldKey])
 }
 
 model RuleSet {
@@ -779,6 +820,12 @@ model EmailEvent {
 // ============================================================
 // ENUMS
 // ============================================================
+
+enum ExtractionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
 enum PlanTier {
   STARTER

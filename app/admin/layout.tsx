@@ -47,6 +47,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             >
               Pricing
             </Link>
+            <Link
+              href="/admin/extraction-queue"
+              className="px-3 py-1.5 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-md transition-colors"
+            >
+              Extraction
+            </Link>
           </nav>
         </div>
         <Link

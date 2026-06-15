@@ -1,0 +1,287 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+
+type Candidate = {
+  id: string
+  section: string
+  fieldKey: string
+  extractedValue: unknown
+  confidence: number
+  sourceSnippet: string | null
+  modelUsed: string
+  status: string
+  jurisdiction: { county: string; state: string }
+  sourceUrl: { url: string; officeType: string } | null
+}
+
+type Props = {
+  candidates: Candidate[]
+  pendingCount: number
+  statusFilter: string
+  sectionFilter: string
+  allSections: string[]
+}
+
+function confidenceColor(c: number) {
+  if (c >= 0.85) return 'text-green-700 bg-green-50 border-green-200'
+  if (c >= 0.6) return 'text-amber-700 bg-amber-50 border-amber-200'
+  return 'text-red-700 bg-red-50 border-red-200'
+}
+
+export function ExtractionQueueClient({
+  candidates: initialCandidates,
+  pendingCount: initialPendingCount,
+  statusFilter,
+  sectionFilter,
+  allSections,
+}: Props) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [candidates, setCandidates] = useState(initialCandidates)
+  const [pendingCount, setPendingCount] = useState(initialPendingCount)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [batchMinConf, setBatchMinConf] = useState(85)
+  const [batchLoading, setBatchLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  function changeFilter(key: string, value: string) {
+    const params = new URLSearchParams()
+    if (key !== 'status') params.set('status', statusFilter)
+    if (key !== 'section') { if (sectionFilter) params.set('section', sectionFilter) }
+    if (value) params.set(key, value)
+    startTransition(() => router.push(`/admin/extraction-queue?${params}`))
+  }
+
+  function refresh() {
+    startTransition(() => router.refresh())
+  }
+
+  async function approve(id: string, editedValue?: string) {
+    setActionLoading(id)
+    const body: Record<string, unknown> = {}
+    if (editedValue !== undefined) {
+      try { body.value = JSON.parse(editedValue) } catch { body.value = editedValue }
+    }
+    const res = await fetch(`/api/admin/extraction-candidates/${id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (res.ok) {
+      setCandidates(prev => prev.filter(c => c.id !== id))
+      setPendingCount(prev => Math.max(0, prev - 1))
+      setEditingId(null)
+    }
+    setActionLoading(null)
+  }
+
+  async function reject(id: string) {
+    setActionLoading(id)
+    const res = await fetch(`/api/admin/extraction-candidates/${id}/reject`, { method: 'POST' })
+    if (res.ok) {
+      setCandidates(prev => prev.filter(c => c.id !== id))
+      setPendingCount(prev => Math.max(0, prev - 1))
+    }
+    setActionLoading(null)
+  }
+
+  async function batchApprove() {
+    setBatchLoading(true)
+    await fetch('/api/admin/extraction-queue/batch-approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ minConfidence: batchMinConf / 100, section: sectionFilter || undefined }),
+    })
+    setBatchLoading(false)
+    refresh()
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-zinc-500">Status</label>
+          <select
+            value={statusFilter}
+            onChange={e => changeFilter('status', e.target.value)}
+            disabled={isPending}
+            className="text-sm border border-zinc-200 rounded-md px-2 py-1.5 bg-white disabled:opacity-60"
+          >
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-zinc-500">Section</label>
+          <select
+            value={sectionFilter}
+            onChange={e => changeFilter('section', e.target.value)}
+            disabled={isPending}
+            className="text-sm border border-zinc-200 rounded-md px-2 py-1.5 bg-white disabled:opacity-60"
+          >
+            <option value="">All sections</option>
+            {allSections.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          {statusFilter === 'PENDING' && (
+            <>
+              <label className="text-xs font-medium text-zinc-500">Batch approve ≥</label>
+              <select
+                value={batchMinConf}
+                onChange={e => setBatchMinConf(Number(e.target.value))}
+                className="text-sm border border-zinc-200 rounded-md px-2 py-1.5 bg-white"
+              >
+                {[95, 90, 85, 80, 75, 70].map(v => (
+                  <option key={v} value={v}>{v}%</option>
+                ))}
+              </select>
+              <button
+                onClick={batchApprove}
+                disabled={batchLoading || candidates.length === 0}
+                className="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {batchLoading ? 'Approving…' : 'Batch Approve'}
+              </button>
+            </>
+          )}
+          <button
+            onClick={refresh}
+            disabled={isPending}
+            className="px-3 py-1.5 text-sm border border-zinc-200 rounded-md hover:bg-zinc-50 disabled:opacity-60"
+          >
+            {isPending ? 'Loading…' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      {candidates.length === 0 ? (
+        <div className="text-sm text-zinc-400 py-12 text-center border border-dashed border-zinc-200 rounded-lg">
+          {statusFilter === 'PENDING' ? 'No candidates pending review.' : `No ${statusFilter.toLowerCase()} candidates.`}
+        </div>
+      ) : (
+        <div className="overflow-hidden border border-zinc-200 rounded-lg">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-50 border-b border-zinc-200">
+              <tr>
+                <th className="text-left px-4 py-2.5 font-medium text-zinc-600 text-xs">Jurisdiction</th>
+                <th className="text-left px-4 py-2.5 font-medium text-zinc-600 text-xs">Field</th>
+                <th className="text-left px-4 py-2.5 font-medium text-zinc-600 text-xs">Extracted Value</th>
+                <th className="text-left px-4 py-2.5 font-medium text-zinc-600 text-xs w-40">Source Snippet</th>
+                <th className="text-center px-4 py-2.5 font-medium text-zinc-600 text-xs w-20">Conf.</th>
+                <th className="text-left px-4 py-2.5 font-medium text-zinc-600 text-xs w-20">Model</th>
+                {statusFilter === 'PENDING' && <th className="px-4 py-2.5 text-xs w-44" />}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {candidates.map(c => {
+                const extracted = c.extractedValue as Record<string, unknown>
+                const displayValue = JSON.stringify(extracted.value ?? extracted)
+                const isEditing = editingId === c.id
+
+                return (
+                  <tr key={c.id} className="hover:bg-zinc-50">
+                    <td className="px-4 py-3 text-zinc-900 whitespace-nowrap">
+                      {c.jurisdiction.county}, {c.jurisdiction.state}
+                      {c.sourceUrl && (
+                        <div className="text-xs text-zinc-400 mt-0.5">{c.sourceUrl.officeType.replace(/_/g, ' ')}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-zinc-700 whitespace-nowrap">
+                      <span className="text-zinc-400">{c.section}.</span>{c.fieldKey}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-800 max-w-xs">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          className="w-full text-sm border border-blue-300 rounded px-2 py-1 font-mono"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="font-mono text-xs">{displayValue}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-500 max-w-xs">
+                      {c.sourceSnippet ? (
+                        <span className="line-clamp-3 italic">&ldquo;{c.sourceSnippet}&rdquo;</span>
+                      ) : (
+                        <span className="text-zinc-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium border ${confidenceColor(c.confidence)}`}>
+                        {(c.confidence * 100).toFixed(0)}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">
+                      {c.modelUsed.includes('haiku') ? 'Haiku' : 'Sonnet'}
+                    </td>
+                    {statusFilter === 'PENDING' && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={() => approve(c.id, editValue)}
+                                disabled={actionLoading === c.id}
+                                className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                              >
+                                Save & Approve
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="px-2 py-1 text-xs border border-zinc-200 rounded hover:bg-zinc-50"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => approve(c.id)}
+                                disabled={actionLoading === c.id}
+                                className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                              >
+                                {actionLoading === c.id ? '…' : 'Approve'}
+                              </button>
+                              <button
+                                onClick={() => { setEditingId(c.id); setEditValue(displayValue.replace(/^"|"$/g, '')) }}
+                                className="px-2 py-1 text-xs border border-zinc-200 rounded hover:bg-zinc-50"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => reject(c.id)}
+                                disabled={actionLoading === c.id}
+                                className="px-2 py-1 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="text-xs text-zinc-400">
+        {candidates.length} shown · {pendingCount} total pending
+      </p>
+    </div>
+  )
+}
