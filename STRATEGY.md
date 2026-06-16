@@ -19,6 +19,8 @@ An AI-powered, multi-tenant SaaS platform for real estate investors. A universal
 
 **Tagline:** *The AI-powered real estate investment command center.*
 
+**Business model:** SaaS. The founder's goal is to transition from active REI deal income to platform revenue — building a service that helps thousands of investors, not just a personal tool. The founder will continue investing (which validates the product) but the business exit is the platform itself.
+
 ---
 
 ## Who It's For
