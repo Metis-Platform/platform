@@ -18,16 +18,16 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ---
 
-## Last Session (2026-06-15) — Pre-purchase research + MAO calculator
+## Last Session (2026-06-16) — Pre-purchase research + MAO calculator (complete)
 
 | Work | Result |
 |---|---|
-| Pre-purchase Parcel Research + MAO Calculator — PR #284 | Open — pending acceptance test |
+| Pre-purchase Parcel Research + MAO Calculator | Merged — PR #284 + adaa9a3 |
 | `lib/parcel/research-profile.ts` — standalone ParcelProfile assembly without Deal | Done |
-| `lib/mao/calculator.ts` — MAO formulas (raw land, fix & flip, buy & hold, MF) | Done |
+| `lib/mao/calculator.ts` — MAO formulas + MaoWarningType (unbuildable vs data_gap) | Done |
 | `POST /api/parcels/pre-purchase-research` — enriches, evaluates 30 exits, computes MAO | Done |
-| `/dashboard/research` — Research page + county search + manual entry + exit cards + MAO tiles | Done |
-| "Research" nav link added to dashboard layout | Done |
+| `/dashboard/research` — county search, manual entry, exit cards, MAO tiles, BidComparison | Done |
+| Fix: wonky bid-vs-MAO logic — split unbuildable vs data-gap, conservative threshold for warned parcels | Done — adaa9a3 |
 
 ## Prior Session (2026-06-15) — Spec + Interview
 
@@ -69,7 +69,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 |---|---|---|---|
 | ~~Add `ANTHROPIC_API_KEY` (platform key) to Vercel env vars~~ | ~~No~~ | 2026-06-15 | ✅ Done 2026-06-15 |
 | Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | Requires Playwright + browser session (uses JS rendering). Run manually in user session once Playwright is configured. |
-| **Acceptance test PR #284** — Volusia County altkey 2340282 | Yes — blocks merge | 2026-06-15 | Go to `/dashboard/research`, enter APN 2340282 + Volusia County FL, enter improved=false + lot size from vcpa.vcgov.org. Expect: NOT_VIABLE blockers + raw land MAO banner. Then `gh pr merge --squash 284`. |
+| ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
 
 ---
 
@@ -77,9 +77,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | — | Pre-purchase Parcel Research + MAO Calculator — APN in → exit analysis + MAO out |
-| 2 | #39 | Land module depth — GIS overlays, water/well lookup, raw land comps, AI parcel summary |
-| 3 | #40 | Wholesale module depth — seller pipeline, buyer matching, assignment fee calc |
+| 1 | #39 | Land module depth — GIS overlays, water/well lookup, raw land comps, AI parcel summary |
+| 2 | #40 | Wholesale module depth — seller pipeline, buyer matching, assignment fee calc |
+| 3 | #41 | Fix & Flip depth — cost database, multi-bid comparison, draw schedule |
 
 ---
 
