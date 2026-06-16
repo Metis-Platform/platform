@@ -26,5 +26,11 @@ Full founder-grade admin tooling: tenant management + module grants, jurisdictio
 ## Phase 4-full — Module Depth (Initiative 3, planned after #131 + #229)
 Module MVPs shipped across PRs #136–#217: financial ledger (#132), checklist engine (#133), Land (#39), Wholesale (#40), Fix & Flip (#41), Buy & Hold (#42), Multifamily (#43), entitlements (#130). Depth features (Contact CRM, GIS overlays, LP waterfall, unit-level tenant records) are Initiative 3 in `ACTIVE-SPRINT.md`. Specs in `STRATEGY.md`.
 
-## Post-Beta Initiatives (active)
-#131 Jurisdiction Intelligence Layer, #229 Parcel Intelligence + Exit Strategy Engine. Queue in `ACTIVE-SPRINT.md`.
+## Post-Beta Initiative 1 — Jurisdiction Intelligence Layer ✅ (#131, PRs #262–#267, #272)
+All 8 parts complete: JurisdictionProfile schema, 3,141-county seed, NETROnline AI extraction pipeline, auction platform feeds, market signals + scoring, investor research hub, in-deal jurisdiction surfacing, per-deal DD checklist generation. Geographic SVG map (clickable, zoomable, choropleth by investment type) shipped as follow-on UX improvement.
+
+## Post-Beta Initiative 2 — Parcel Intelligence + Exit Strategy Engine ✅ (#229, PRs #262, #265–#266, #268–#271, #273)
+All 9 parts complete: parcel profile data model + APN normalization, parcel data sourcing pipeline, zoning data layer + PostGIS GeoService, exit engine core (types/registry/projections/confidence), all 30 exit evaluators across 8 strategy families, JurisdictionFacts Prisma adapter, deal-page Exit Options panel, ExitEvaluation cache + InvestorProfile persistence, admin parcel research service (research-on-demand).
+
+## Initiative 3 — Module Depth (active)
+Contact CRM primitive, Land (#39), Wholesale (#40), Fix & Flip (#41), Buy & Hold (#42), Multifamily (#43) depth features. Queue in `ACTIVE-SPRINT.md`.
