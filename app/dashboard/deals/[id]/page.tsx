@@ -199,6 +199,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
   const hasLandPremium = isLand ? await hasTier(tenant.id, 'LAND', 'PREMIUM') : false
   const hasWholesalePremium = isWholesale ? await hasTier(tenant.id, 'WHOLESALE', 'PREMIUM') : false
+  const hasMfPremium = isMultifamily ? await hasTier(tenant.id, 'MULTIFAMILY', 'PREMIUM') : false
   const hasExitEngine = await hasStrategy(tenant.id, deal.strategyType)
 
   const fixFlipData: FixFlipData | null = isFixFlip
@@ -663,8 +664,8 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         </div>
       )}
 
-      {/* LP Waterfall + Capital Raise — multifamily only */}
-      {isMultifamily && (
+      {/* LP Waterfall + Capital Raise — multifamily PREMIUM only */}
+      {isMultifamily && hasMfPremium && (
         <div className="mb-6">
           <MfLpSection
             dealId={deal.id}
@@ -689,6 +690,21 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
               raisedDate:          deal.mfWaterfall!.raisedDate?.toISOString() ?? null,
             }))() : null}
           />
+        </div>
+      )}
+      {isMultifamily && !hasMfPremium && (
+        <div className="mb-6 bg-white rounded-xl border border-zinc-200 p-6">
+          <div className="text-sm font-semibold text-zinc-900 mb-1">LP Waterfall &amp; Capital Raise</div>
+          <p className="text-sm text-zinc-500 mb-4">
+            Track syndication investors, commitments, funded capital, and run waterfall distribution
+            scenarios. Available on Multifamily PREMIUM.
+          </p>
+          <a
+            href="/dashboard/billing"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700"
+          >
+            Upgrade to Multifamily PREMIUM →
+          </a>
         </div>
       )}
 

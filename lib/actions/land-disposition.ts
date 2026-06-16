@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import type { LandDispositionStatus } from '@/app/generated/prisma'
+import { hasStrategy } from '@/lib/entitlements'
 
 export type DispositionFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -25,6 +26,7 @@ export async function updateLandDisposition(
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found.' }
+  if (!await hasStrategy(tenant.id, 'LAND')) return { message: 'Land strategy is not enabled for your account.' }
 
   const parsed = UpdateSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }

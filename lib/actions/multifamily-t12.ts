@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
+import { hasStrategy } from '@/lib/entitlements'
 import { T12FinancialsSchema, parseT12Csv } from '@/lib/multifamily-schemas'
 
 export type T12State = { error?: string; success?: boolean }
@@ -18,6 +19,7 @@ export async function saveT12(
   const synced = await syncUserToDatabase()
   if (!synced) return { error: 'Tenant not found' }
   const { tenant } = synced
+  if (!await hasStrategy(tenant.id, 'MULTIFAMILY')) return { error: 'Multifamily strategy is not enabled for your account.' }
 
   const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id }, select: { id: true } })
   if (!deal) return { error: 'Deal not found' }

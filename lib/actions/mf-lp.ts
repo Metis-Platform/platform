@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
+import { hasStrategy, hasTier } from '@/lib/entitlements'
 
 export type MfLpFormState = { error?: string; fieldErrors?: Record<string, string> }
 export type MfWaterfallFormState = { error?: string }
@@ -30,6 +31,8 @@ export async function createLpInvestor(
   const synced = await syncUserToDatabase()
   if (!synced) return { error: 'Tenant not found' }
   const { tenant } = synced
+  if (!await hasStrategy(tenant.id, 'MULTIFAMILY')) return { error: 'Multifamily strategy is not enabled for your account.' }
+  if (!await hasTier(tenant.id, 'MULTIFAMILY', 'PREMIUM')) return { error: 'LP waterfall requires Multifamily PREMIUM.' }
 
   const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id, strategyType: 'MULTIFAMILY' } })
   if (!deal) return { error: 'Deal not found' }
@@ -75,6 +78,7 @@ export async function updateLpInvestor(
   const synced = await syncUserToDatabase()
   if (!synced) return { error: 'Tenant not found' }
   const { tenant } = synced
+  if (!await hasTier(tenant.id, 'MULTIFAMILY', 'PREMIUM')) return { error: 'LP waterfall requires Multifamily PREMIUM.' }
 
   const inv = await db.dealMfLpInvestor.findUnique({ where: { id: investorId, tenantId: tenant.id } })
   if (!inv || inv.dealId !== dealId) return { error: 'Investor not found' }
@@ -118,6 +122,7 @@ export async function deleteLpInvestor(
   const synced = await syncUserToDatabase()
   if (!synced) return { error: 'Tenant not found' }
   const { tenant } = synced
+  if (!await hasTier(tenant.id, 'MULTIFAMILY', 'PREMIUM')) return { error: 'LP waterfall requires Multifamily PREMIUM.' }
 
   const inv = await db.dealMfLpInvestor.findUnique({ where: { id: investorId, tenantId: tenant.id } })
   if (!inv || inv.dealId !== dealId) return { error: 'Investor not found' }
@@ -139,6 +144,7 @@ export async function upsertWaterfall(
   const synced = await syncUserToDatabase()
   if (!synced) return { error: 'Tenant not found' }
   const { tenant } = synced
+  if (!await hasTier(tenant.id, 'MULTIFAMILY', 'PREMIUM')) return { error: 'LP waterfall requires Multifamily PREMIUM.' }
 
   const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id, strategyType: 'MULTIFAMILY' } })
   if (!deal) return { error: 'Deal not found' }

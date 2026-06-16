@@ -18,12 +18,12 @@
 
 > Build order: Contact CRM first (all modules depend on it) → module depth in parallel after
 
-- [ ] **Contact CRM primitive** — platform-wide contact record (Wholesale, Fix & Flip, Buy & Hold, Land)
+- [x] **Contact CRM primitive** — platform-wide contact record (Wholesale, Fix & Flip, Buy & Hold, Land) — PRs #275 #277
 - [ ] **Land module (#39)** — GIS overlays, water/well lookup, raw land comps, AI parcel summary
 - [ ] **Wholesale module (#40)** — seller pipeline, buyer matching, assignment fee calc
 - [ ] **Fix & Flip depth (#41)** — cost database, multi-bid comparison, draw schedule
 - [ ] **Buy & Hold depth (#42)** — tenant records, lease tracking, maintenance log, rent roll
-- [ ] **Multifamily depth (#43)** — LP waterfall modeling, capital raise tracking
+- [x] **Multifamily depth (#43)** — LP waterfall modeling, capital raise tracking — PR #279
 
 ---
 

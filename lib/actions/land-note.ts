@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { emitAuditEvent } from '@/lib/audit'
+import { hasStrategy } from '@/lib/entitlements'
 
 export type LandNoteFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -46,6 +47,7 @@ export async function createLandNote(
 
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found.' }
+  if (!await hasStrategy(tenant.id, 'LAND')) return { message: 'Land strategy is not enabled for your account.' }
 
   const parsed = CreateNoteSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
