@@ -6,12 +6,15 @@ export interface MaoScenario {
   aggressive: number | null
 }
 
+export type MaoWarningType = 'unbuildable' | 'data_gap'
+
 export interface MaoResult {
   strategy: string
   label: string
   scenario: MaoScenario
   basis: string
   warning?: string
+  warningType?: MaoWarningType
 }
 
 const IMPROVED_EXIT_KEYS = new Set([
@@ -35,7 +38,24 @@ const VACANT_BUILD_EXIT_KEYS = new Set([
 export function computeMao(parcel: ParcelProfile, exitResults: ExitResult[]): MaoResult[] {
   const hasViableImproved = exitResults.some(r => r.verdict === 'VIABLE' && IMPROVED_EXIT_KEYS.has(r.exitKey))
   const hasViableVacantBuild = exitResults.some(r => r.verdict === 'VIABLE' && VACANT_BUILD_EXIT_KEYS.has(r.exitKey))
-  const allResidentialBlocked = !hasViableImproved && !hasViableVacantBuild
+
+  // Exits explicitly ruled out (NOT_VIABLE) vs just missing data (INSUFFICIENT_DATA)
+  const buildExplicitlyBlocked = exitResults.some(r =>
+    r.verdict === 'NOT_VIABLE' &&
+    (VACANT_BUILD_EXIT_KEYS.has(r.exitKey) || IMPROVED_EXIT_KEYS.has(r.exitKey)),
+  )
+  const buildDataGapOnly = !buildExplicitlyBlocked && exitResults.some(r =>
+    r.verdict === 'INSUFFICIENT_DATA' &&
+    (VACANT_BUILD_EXIT_KEYS.has(r.exitKey) || IMPROVED_EXIT_KEYS.has(r.exitKey)),
+  )
+
+  const rawLandWarning: { warning: string; warningType: MaoWarningType } | undefined =
+    hasViableImproved || hasViableVacantBuild ? undefined
+    : buildExplicitlyBlocked
+      ? { warning: 'No viable residential exits — lot unbuildable. Raw land pricing only.', warningType: 'unbuildable' }
+      : buildDataGapOnly
+        ? { warning: 'Build exits need more data (zoning, lot size). Raw land pricing shown until resolved.', warningType: 'data_gap' }
+        : undefined
 
   const results: MaoResult[] = []
 
@@ -67,9 +87,7 @@ export function computeMao(parcel: ParcelProfile, exitResults: ExitResult[]): Ma
         aggressive:   landValue * 0.80,
       },
       basis: `Assessed value ${fmtCurrency(landValue)} × 40-80%`,
-      warning: allResidentialBlocked
-        ? 'No viable residential exits — lot unbuildable. Raw land pricing only.'
-        : undefined,
+      ...rawLandWarning,
     })
   }
 

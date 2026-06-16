@@ -112,12 +112,6 @@ export default function ResearchForm({ jurisdictions }: Props) {
 
   const viableExits = data?.results.filter(r => r.verdict === 'VIABLE') ?? []
   const notViableExits = data?.results.filter(r => r.verdict === 'NOT_VIABLE') ?? []
-  const unbuildable = notViableExits.some(r => r.blockers.some(b =>
-    b.toLowerCase().includes('unbuildable') ||
-    b.toLowerCase().includes('minimum lot') ||
-    b.toLowerCase().includes('flood zone') ||
-    b.toLowerCase().includes('landlocked')
-  ))
 
   const rawLandMao = data?.mao.find(m => m.strategy === 'LAND')
   const hasResidentialMao = data?.mao.some(m => m.strategy === 'FIX_FLIP' || m.strategy === 'BUY_HOLD')
@@ -309,19 +303,30 @@ export default function ResearchForm({ jurisdictions }: Props) {
       {/* Results */}
       {data && (
         <>
-          {/* Alert banner for unbuildable / blocked parcels */}
-          {(unbuildable || rawLandMao?.warning) && (
+          {/* Alert banner — varies by warning type */}
+          {rawLandMao?.warningType === 'unbuildable' && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
               <p className="text-sm font-semibold text-red-800">
                 No viable residential exits — lot unbuildable
               </p>
               <p className="mt-1 text-xs text-red-600">
-                This parcel has no path to residential development. Max bid should reflect raw land value only.
-                {maxBid && rawLandMao?.scenario.moderate != null && Number(maxBid) > rawLandMao.scenario.moderate && (
+                Build exits are explicitly blocked. Max bid must reflect raw land value only.
+                {maxBid && rawLandMao.scenario.conservative != null && Number(maxBid) > rawLandMao.scenario.conservative && (
                   <span className="ml-1 font-semibold">
-                    Your max bid of {fmtCurrency(Number(maxBid))} is above the moderate raw land MAO of {fmtCurrency(rawLandMao.scenario.moderate)}.
+                    Your max bid of {fmtCurrency(Number(maxBid))} exceeds the conservative raw land MAO of {fmtCurrency(rawLandMao.scenario.conservative)}.
                   </span>
                 )}
+              </p>
+            </div>
+          )}
+          {rawLandMao?.warningType === 'data_gap' && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+              <p className="text-sm font-semibold text-amber-800">
+                Buildability cannot be determined — data gaps present
+              </p>
+              <p className="mt-1 text-xs text-amber-700">
+                Build exits need zoning and lot size to evaluate. Enter those above for a complete analysis.
+                Raw land MAO shown as a floor until buildability is confirmed.
               </p>
             </div>
           )}
@@ -363,17 +368,28 @@ export default function ResearchForm({ jurisdictions }: Props) {
               </p>
               <div className="space-y-4">
                 {data.mao.map(m => (
-                  <div key={m.strategy} className={`rounded-lg border p-4 ${m.warning ? 'border-red-200 bg-red-50' : 'border-zinc-200 bg-zinc-50'}`}>
+                  <div key={m.strategy} className={`rounded-lg border p-4 ${
+                    m.warningType === 'unbuildable' ? 'border-red-200 bg-red-50'
+                    : m.warningType === 'data_gap' ? 'border-amber-200 bg-amber-50'
+                    : 'border-zinc-200 bg-zinc-50'
+                  }`}>
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-sm font-semibold text-zinc-900">{m.label}</span>
-                      {m.warning && (
+                      {m.warningType === 'unbuildable' && (
                         <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
                           Raw land only
                         </span>
                       )}
+                      {m.warningType === 'data_gap' && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                          Data incomplete
+                        </span>
+                      )}
                     </div>
                     {m.warning && (
-                      <p className="mb-3 text-xs font-medium text-red-700">{m.warning}</p>
+                      <p className={`mb-3 text-xs font-medium ${m.warningType === 'unbuildable' ? 'text-red-700' : 'text-amber-700'}`}>
+                        {m.warning}
+                      </p>
                     )}
                     <div className="grid grid-cols-3 gap-3 text-center">
                       <MaoTier label="Conservative" value={m.scenario.conservative} tone="green" />
@@ -381,17 +397,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
                       <MaoTier label="Aggressive" value={m.scenario.aggressive} tone="blue" />
                     </div>
                     <p className="mt-3 text-xs text-zinc-400">{m.basis}</p>
-                    {maxBid && m.scenario.moderate != null && (
-                      <div className={`mt-2 rounded px-3 py-2 text-xs font-medium ${
-                        Number(maxBid) <= m.scenario.moderate
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {Number(maxBid) <= m.scenario.moderate
-                          ? `Your max bid of ${fmtCurrency(Number(maxBid))} is within the moderate MAO`
-                          : `Your max bid of ${fmtCurrency(Number(maxBid))} exceeds the moderate MAO by ${fmtCurrency(Number(maxBid) - m.scenario.moderate)}`}
-                      </div>
-                    )}
+                    {maxBid && <BidComparison bid={Number(maxBid)} mao={m} />}
                   </div>
                 ))}
               </div>
@@ -555,6 +561,35 @@ function MaoTier({ label, value, tone }: { label: string; value: number | null; 
       <p className="mt-1 text-lg font-bold">
         {value != null ? fmtCurrency(value) : '—'}
       </p>
+    </div>
+  )
+}
+
+function BidComparison({ bid, mao }: { bid: number; mao: MaoResult }) {
+  // For warned parcels (unbuildable or data gap), compare against conservative — stricter threshold
+  const isWarned = mao.warningType != null
+  const threshold = isWarned ? mao.scenario.conservative : mao.scenario.moderate
+  if (threshold == null) return null
+
+  const overBy = bid - threshold
+  const label = isWarned ? 'conservative' : 'moderate'
+
+  if (overBy <= 0) {
+    return (
+      <div className={`mt-2 rounded px-3 py-2 text-xs font-medium ${
+        isWarned ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'
+      }`}>
+        {isWarned
+          ? `Bid of ${fmtCurrency(bid)} is under the conservative MAO — but verify demand for raw land here before bidding`
+          : `Your max bid of ${fmtCurrency(bid)} is within the ${label} MAO`}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-2 rounded bg-red-100 px-3 py-2 text-xs font-medium text-red-700">
+      {`Your max bid of ${fmtCurrency(bid)} exceeds the ${label} MAO by ${fmtCurrency(overBy)}`}
+      {isWarned && ' — high risk on an unconfirmed/unbuildable parcel'}
     </div>
   )
 }
