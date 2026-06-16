@@ -16,9 +16,10 @@
 
 ## Initiative 3 — Module Depth (#131 + #229 complete; specs in STRATEGY.md)
 
-> Build order: Contact CRM first (all modules depend on it) → module depth in parallel after
+> Revised build order (2026-06-15 spec session): Pre-purchase parcel research + MAO calculator first — this is the founding problem and uses infrastructure already built. Then Land (most directly tied to deed investing). Then remaining modules.
 
 - [x] **Contact CRM primitive** — platform-wide contact record (Wholesale, Fix & Flip, Buy & Hold, Land) — PRs #275 #277
+- [ ] **Pre-purchase Parcel Research + MAO Calculator** — standalone "should I bid?" tool: APN/address in → exit analysis + MAO out (conservative/moderate/aggressive). Surfaces the existing exit engine + parcel intelligence as a pre-bid research flow. Acceptance test: Volusia County altkey 2340282 surfaces no viable residential exits + raw-land-only MAO.
 - [ ] **Land module (#39)** — GIS overlays, water/well lookup, raw land comps, AI parcel summary
 - [ ] **Wholesale module (#40)** — seller pipeline, buyer matching, assignment fee calc
 - [ ] **Fix & Flip depth (#41)** — cost database, multi-bid comparison, draw schedule

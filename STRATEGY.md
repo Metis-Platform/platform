@@ -5,11 +5,73 @@
 
 ---
 
+## Founding Problem
+
+A new investor buys a vacant parcel at a tax deed auction — pays $19,300, discovers afterward that county setback rules and lot dimensions make it unbuildable for any permitted residential structure. Even Habitat for Humanity can't get approval. The information that would have prevented this was always public — it lives in county GIS databases, zoning records, and building codes. But it's scattered, inaccessible, and nobody synthesizes it before you bid. The $20k mentor calls it "an expensive boo boo."
+
+**Metis exists to prevent that.** The primary job is to tell an investor what a parcel is worth, what they can do with it, and what the most they should pay is — before they bid. The secondary job is to manage the deal after they win.
+
+---
+
 ## Vision
 
-An AI-powered, multi-tenant SaaS platform for real estate investors. A universal deal and property management engine with pluggable investment strategy modules — starting with tax liens, expanding to all major REI strategies. The AI layer handles document extraction, deadline enforcement, deal analysis, exit strategy evaluation, and an in-app Deal Copilot.
+An AI-powered, multi-tenant SaaS platform for real estate investors. A universal deal and property management engine with pluggable investment strategy modules — starting with tax liens and deeds, expanding to all major REI strategies. The AI layer handles pre-purchase parcel intelligence, document extraction, deadline enforcement, deal analysis, exit strategy evaluation, and an in-app Deal Copilot.
 
 **Tagline:** *The AI-powered real estate investment command center.*
+
+---
+
+## Who It's For
+
+**Primary:** New-to-intermediate tax lien and deed investors who are still learning — motivated enough to bid but not yet experienced enough to evaluate a parcel confidently. They're making expensive, irreversible decisions with incomplete information.
+
+**Secondary:** More experienced investors scaling up — researching more parcels per auction cycle than they can manually analyze. The platform saves time rather than mistakes.
+
+**Secondary:** Investors expanding from liens/deeds into adjacent strategies (land, wholesale, fix & flip) who want the same decision support as they move into unfamiliar territory.
+
+**Not for:**
+- Passive investors (REITs, crowdfunding) — they don't evaluate parcels
+- Residential real estate agents — wrong domain entirely
+- Property managers at scale — different software category entirely
+- Anyone needing audit-grade accounting or tax reporting
+- Institutional buyers with in-house systems
+
+---
+
+## Core Product Flow
+
+**Phase 1 — Pre-purchase research (the primary job):**
+User is browsing an upcoming tax sale (realtaxdeed.com, county lists, etc.) and finds a parcel. They bring the APN or address to Metis. The platform:
+1. Pulls parcel data (dimensions, zoning, setbacks, flood zone, GIS overlays)
+2. Runs exit evaluators — determines every viable thing the investor could do with this property
+3. Flags blocking issues (e.g., lot too small for permitted residential construction)
+4. Pulls or estimates market value per viable exit (comparable land sales)
+5. Calculates a MAO range (conservative / moderate / aggressive) per strategy
+
+Output: **"Here's what this parcel is, here's what you can do with it, here's what you should pay."**
+
+A parcel researched pre-bid becomes a deal automatically if the investor wins — no data re-entry.
+
+**Phase 2 — Post-purchase lifecycle:**
+Jurisdiction deadline tracking, checklist management, AI Copilot, exit engine re-run as conditions change.
+
+---
+
+## MAO Calculator Spec
+
+| Strategy | Formula |
+|---|---|
+| Rural land | Market Value × 25–50% |
+| Infill lots | Market Value × 40–70% |
+| Fix & flip | ARV × 70% − Rehab cost |
+| Wholesale | ARV × 70% − Rehab − Assignment fee |
+| Tax lien | Interest rate + penalty based (separate formula) |
+
+Output: conservative / moderate / aggressive bid ceiling with math shown — the investor learns the formula as they use it.
+
+Market value input: user-provided initially; platform-assisted (comparable land sales from parcel pipeline) as data sources mature.
+
+**Test parcel:** Volusia County FL — altkey `2340282` on the VCPA site (`vcpa.vcgov.org`). Unbuildable lot, no viable residential exits. This is the acceptance test for the pre-purchase analysis feature — it must surface the blocking issue and calculate a deeply discounted MAO for raw land only.
 
 ---
 

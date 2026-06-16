@@ -130,7 +130,20 @@ Read/Write/Edit → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<path\t
 
 ## Core Behavioral Rules
 
-### 1. Think Before Coding
+### 1. State Your Verification Plan Before Starting
+
+**Before writing any code or making any changes, state how you will verify the work is correct. A task without a stated verification plan should not start.**
+
+The plan must include:
+- **Automated checks** that will pass: which of `tsc --noEmit`, `lint`, `build`, `npm test` apply
+- **Feature verification**: how you'll confirm the feature works, not just compiles — Playwright browser test, Vercel preview URL + specific action to take
+- **Acceptance test**: the specific real-world scenario that proves the work is done (e.g., "run parcel analysis on the Volusia County test parcel and confirm it surfaces no viable residential exits")
+
+State this before the first tool call. No verification plan = no implementation.
+
+After completing the work, **run every check in the verification plan and report the results explicitly** — pass, fail, or skipped with reason. Do not report work as done without showing the verification outcome.
+
+### 2. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
@@ -140,7 +153,7 @@ Before implementing:
 - If a simpler approach exists, say so. Push back when warranted.
 - If something is unclear, stop. Name what's confusing. Ask.
 
-### 2. Simplicity First
+### 3. Simplicity First
 
 **Minimum code that solves the problem. Nothing speculative.**
 
@@ -152,7 +165,7 @@ Before implementing:
 
 Ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-### 3. Surgical Changes
+### 4. Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
 
@@ -168,7 +181,7 @@ When your changes create orphans:
 
 Every changed line should trace directly to the current task.
 
-### 4. Goal-Driven Execution
+### 5. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
 

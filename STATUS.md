@@ -18,7 +18,19 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ---
 
-## Last Session (2026-06-15)
+## Last Session (2026-06-15) — Spec + Interview
+
+| Work | Result |
+|---|---|
+| Founder interview — core problem, who it's for, MAO spec | Complete |
+| Added verification rule to CLAUDE.md (Rule 1) | Pushed to main |
+| Updated STRATEGY.md — founding problem, core flow, MAO formulas, who it's for/not for | Pushed to main |
+| Updated ACTIVE-SPRINT.md — pre-purchase parcel research + MAO calculator inserted as new priority 1 | Pushed to main |
+| Memory files updated with interview context and founder profile | Done |
+
+---
+
+## Prior Session (2026-06-15)
 
 | Work | Result |
 |---|---|
@@ -53,7 +65,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 | Priority | Issue | Title |
 |---|---|---|
-| 1 | — | Contact CRM primitive — platform-wide contact record |
+| 1 | — | Pre-purchase Parcel Research + MAO Calculator — APN in → exit analysis + MAO out |
 | 2 | #39 | Land module depth — GIS overlays, water/well lookup, raw land comps, AI parcel summary |
 | 3 | #40 | Wholesale module depth — seller pipeline, buyer matching, assignment fee calc |
 
