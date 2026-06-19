@@ -2,13 +2,13 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-06-15
+> Last updated: 2026-06-16
 
 ---
 
 ## Current Phase
 
-Post-beta sprint: **#131 Jurisdiction Intelligence** + **#229 Parcel Intelligence / Exit Engine** complete. Next queue is **Initiative 3 — Module Depth** in `ACTIVE-SPRINT.md`.
+Post-beta sprint: **#131 Jurisdiction Intelligence** + **#229 Parcel Intelligence / Exit Engine** complete. **Initiative 3 — Module Depth** in `ACTIVE-SPRINT.md` is now fully ticked (Land's gap closed 2026-06-16; Wholesale/Fix & Flip/Buy & Hold have scoped remaining gaps noted there, not full rebuilds). Next: pick a new initiative — see `ACTIVE-SPRINT.md` note.
 
 ---
 
@@ -18,7 +18,15 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ---
 
-## Last Session (2026-06-16) — Pre-purchase research + MAO calculator (complete)
+## Last Session (2026-06-16) — Production migration fix + Land module depth
+
+| Work | Result |
+|---|---|
+| **Production bug found & fixed**: `ADD CONSTRAINT IF NOT EXISTS` (invalid Postgres) in migration `20260615200000_contact_fks_and_mf_lp_waterfall` had been silently failing CI since 2026-06-15 — prod was missing Contact CRM FK columns and the entire `DealMfLpInvestor`/`DealMfWaterfall` tables backing the "complete" Multifamily LP waterfall feature (PR #279) | Fixed + applied to prod — PR #285 |
+| Land module depth: sync from research (button fills DealLand gaps from ParcelDataCache), raw land comps (`LandComp` table + $/acre UI), AI parcel summary (BYOK Claude Haiku, cached) | Merged — PR #286 |
+| Discovered ACTIVE-SPRINT.md/STATUS.md were stale: #39/#40/#41/#42 had been listed as unbuilt for weeks when their full MVP lifecycle (P1-P4) had already shipped — only a narrower "depth" layer was actually missing | Corrected in `ACTIVE-SPRINT.md` |
+
+## Prior Session (2026-06-16) — Pre-purchase research + MAO calculator (complete)
 
 | Work | Result |
 |---|---|
@@ -70,16 +78,13 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | ~~Add `ANTHROPIC_API_KEY` (platform key) to Vercel env vars~~ | ~~No~~ | 2026-06-15 | ✅ Done 2026-06-15 |
 | Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | Requires Playwright + browser session (uses JS rendering). Run manually in user session once Playwright is configured. |
 | ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
+| **Manual click-through PR #286** — Land sync/comps/AI summary | No — build/lint/tsc all passed pre-merge | 2026-06-16 | Open a Land deal: click "Sync from research", add 2 comps, click "Generate" on AI summary (needs an Anthropic key in Settings). Not yet manually verified in the live app. |
 
 ---
 
 ## Next Up
 
-| Priority | Issue | Title |
-|---|---|---|
-| 1 | #39 | Land module depth — GIS overlays, water/well lookup, raw land comps, AI parcel summary |
-| 2 | #40 | Wholesale module depth — seller pipeline, buyer matching, assignment fee calc |
-| 3 | #41 | Fix & Flip depth — cost database, multi-bid comparison, draw schedule |
+Initiative 3 — Module Depth is fully ticked in `ACTIVE-SPRINT.md` (remaining scoped gaps noted there: Wholesale outreach-log wiring, Fix & Flip draw schedule/bid comparison, Buy & Hold tenant/lease/rent-roll records). Pick the next initiative with the user before starting new module work.
 
 ---
 
