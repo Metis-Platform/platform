@@ -3,14 +3,19 @@
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { generateLandEvents } from '@/lib/land-events'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
 import { emitAuditEvent } from '@/lib/audit'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
+import { normalizeApn } from '@/lib/parcel/apn'
+import { assembleParcelProfile } from '@/lib/parcel/profile'
+import { deriveLandSyncFields } from '@/lib/parcel/land-sync'
 
 export type LandFormState = { errors?: Record<string, string[]>; message?: string }
+export type LandSyncState = { message?: string; updated?: string[] }
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -184,4 +189,56 @@ export async function updateLand(dealId: string, _prev: LandFormState, formData:
   }
 
   redirect(`/dashboard/deals/${dealId}`)
+}
+
+// ---------------------------------------------------------------------------
+// syncLandFromResearch
+// ---------------------------------------------------------------------------
+
+export async function syncLandFromResearch(
+  dealId: string,
+  _prev: LandSyncState,
+  _formData: FormData,
+): Promise<LandSyncState> {
+  const { userId, orgId } = await auth()
+  if (!userId || !orgId) return { message: 'Not authenticated.' }
+
+  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
+  if (!tenant) return { message: 'Account not found.' }
+
+  const deal = await db.deal.findFirst({
+    where: { id: dealId, tenantId: tenant.id },
+    include: { property: { include: { jurisdiction: true } }, land: true },
+  })
+  if (!deal || !deal.land) return { message: 'Land deal not found.' }
+
+  const fipsCounty = deal.property.jurisdiction?.fips ?? ''
+  const normalizedApn = normalizeApn(deal.property.apn, fipsCounty)
+
+  const cacheRows = await db.parcelDataCache.findMany({
+    where: { tenantId: tenant.id, apnNormalized: normalizedApn.normalized, fipsCounty },
+  })
+
+  const profile = assembleParcelProfile(deal, cacheRows)
+  const acres = deal.property.acres != null ? Number(deal.property.acres.toString()) : null
+
+  const updates = deriveLandSyncFields(
+    profile,
+    {
+      zoning: deal.land.zoning,
+      floodZone: deal.land.floodZone,
+      access: deal.land.access,
+      wetlandsPercent: deal.land.wetlandsPercent != null ? Number(deal.land.wetlandsPercent.toString()) : null,
+    },
+    acres,
+  )
+
+  if (Object.keys(updates).length === 0) {
+    return { message: 'No new data available from research cache.' }
+  }
+
+  await db.dealLand.update({ where: { dealId }, data: updates })
+  revalidatePath(`/dashboard/deals/${dealId}`)
+
+  return { message: `Updated ${Object.keys(updates).join(', ')} from research data.`, updated: Object.keys(updates) }
 }
