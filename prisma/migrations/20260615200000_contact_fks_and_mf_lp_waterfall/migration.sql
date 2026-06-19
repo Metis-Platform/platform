@@ -1,35 +1,50 @@
 -- Contact FK columns on DealFixFlip
 ALTER TABLE "DealFixFlip" ADD COLUMN IF NOT EXISTS "contractorContactId" TEXT;
-ALTER TABLE "DealFixFlip"
-  ADD CONSTRAINT IF NOT EXISTS "DealFixFlip_contractorContactId_fkey"
-  FOREIGN KEY ("contractorContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "DealFixFlip"
+    ADD CONSTRAINT "DealFixFlip_contractorContactId_fkey"
+    FOREIGN KEY ("contractorContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE INDEX IF NOT EXISTS "DealFixFlip_contractorContactId_idx" ON "DealFixFlip"("contractorContactId");
 
 -- Contact FK columns on DealBuyHold
 ALTER TABLE "DealBuyHold" ADD COLUMN IF NOT EXISTS "tenantContactId" TEXT;
-ALTER TABLE "DealBuyHold"
-  ADD CONSTRAINT IF NOT EXISTS "DealBuyHold_tenantContactId_fkey"
-  FOREIGN KEY ("tenantContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "DealBuyHold"
+    ADD CONSTRAINT "DealBuyHold_tenantContactId_fkey"
+    FOREIGN KEY ("tenantContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE INDEX IF NOT EXISTS "DealBuyHold_tenantContactId_idx" ON "DealBuyHold"("tenantContactId");
 
 ALTER TABLE "DealBuyHold" ADD COLUMN IF NOT EXISTS "propertyManagerContactId" TEXT;
-ALTER TABLE "DealBuyHold"
-  ADD CONSTRAINT IF NOT EXISTS "DealBuyHold_propertyManagerContactId_fkey"
-  FOREIGN KEY ("propertyManagerContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "DealBuyHold"
+    ADD CONSTRAINT "DealBuyHold_propertyManagerContactId_fkey"
+    FOREIGN KEY ("propertyManagerContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE INDEX IF NOT EXISTS "DealBuyHold_propertyManagerContactId_idx" ON "DealBuyHold"("propertyManagerContactId");
 
 -- Contact FK column on DealMultifamily
 ALTER TABLE "DealMultifamily" ADD COLUMN IF NOT EXISTS "propertyManagerContactId" TEXT;
-ALTER TABLE "DealMultifamily"
-  ADD CONSTRAINT IF NOT EXISTS "DealMultifamily_propertyManagerContactId_fkey"
-  FOREIGN KEY ("propertyManagerContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "DealMultifamily"
+    ADD CONSTRAINT "DealMultifamily_propertyManagerContactId_fkey"
+    FOREIGN KEY ("propertyManagerContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE INDEX IF NOT EXISTS "DealMultifamily_propertyManagerContactId_idx" ON "DealMultifamily"("propertyManagerContactId");
 
 -- Contact FK column on LandNote
 ALTER TABLE "LandNote" ADD COLUMN IF NOT EXISTS "buyerContactId" TEXT;
-ALTER TABLE "LandNote"
-  ADD CONSTRAINT IF NOT EXISTS "LandNote_buyerContactId_fkey"
-  FOREIGN KEY ("buyerContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "LandNote"
+    ADD CONSTRAINT "LandNote_buyerContactId_fkey"
+    FOREIGN KEY ("buyerContactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE INDEX IF NOT EXISTS "LandNote_buyerContactId_idx" ON "LandNote"("buyerContactId");
 
 -- LP investor table for multifamily syndications
