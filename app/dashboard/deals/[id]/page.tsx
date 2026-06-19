@@ -16,6 +16,8 @@ import { buildResearchLinkGroups } from '@/lib/research-links'
 import { hasStrategy, hasTier } from '@/lib/entitlements'
 import DealLandSection, { type DealLandData, type LandEconomics } from './DealLandSection'
 import LandNoteSection, { type NoteData, type NotePayment } from './LandNoteSection'
+import LandCompsSection, { type LandCompData } from './LandCompsSection'
+import LandAiSummarySection from './LandAiSummarySection'
 import LandDispositionSection from './LandDispositionSection'
 import WholesaleSection, { type WholesaleData, type MatchedBuyer, type LinkedBuyerContact } from './WholesaleSection'
 import MaoCalculator from './MaoCalculator'
@@ -59,6 +61,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { include: { buyerContact: true }, orderBy: { createdAt: 'desc' } },
+        landComps: { orderBy: { saleDate: 'desc' } },
         mfLpInvestors: { include: { contact: true }, orderBy: { createdAt: 'asc' } },
         mfWaterfall: true,
       },
@@ -116,7 +119,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     notes:         e.notes,
   }))
 
-  const { taxLien, taxDeed, foreclosure, land, wholesale, fixFlip, buyHold, multifamily, property, events, landNotes } = deal
+  const { taxLien, taxDeed, foreclosure, land, wholesale, fixFlip, buyHold, multifamily, property, events, landNotes, landComps } = deal
 
   const landData: DealLandData | null = land
     ? {
@@ -160,6 +163,18 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
 
   const activeNote = landNotes.find(n => n.status === 'ACTIVE') ?? null
   const totalNoteCollected = notePayments.reduce((sum, p) => sum + Number(p.amount), 0)
+
+  // Land comps
+  const compRows: LandCompData[] = landComps.map(c => ({
+    id:        c.id,
+    address:   c.address,
+    apn:       c.apn,
+    acres:     c.acres.toString(),
+    salePrice: c.salePrice.toString(),
+    saleDate:  c.saleDate.toISOString(),
+    sourceUrl: c.sourceUrl,
+    notes:     c.notes,
+  }))
 
   const landEconomics: LandEconomics = {
     purchasePrice:      deal.purchasePrice != null ? Number(deal.purchasePrice) : null,
@@ -762,6 +777,28 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
       {isLand && (
         <div className="mb-6">
           <LandNoteSection dealId={deal.id} notes={noteRows} payments={notePayments} hasLandPremium={hasLandPremium} />
+        </div>
+      )}
+
+      {/* Raw land comps — land only */}
+      {isLand && (
+        <div className="mb-6">
+          <LandCompsSection
+            dealId={deal.id}
+            comps={compRows}
+            subjectAcres={property.acres != null ? Number(property.acres.toString()) : null}
+          />
+        </div>
+      )}
+
+      {/* AI parcel summary — land only */}
+      {isLand && (
+        <div className="mb-6">
+          <LandAiSummarySection
+            dealId={deal.id}
+            initialSummary={land?.aiSummary ?? null}
+            initialGeneratedAt={land?.aiSummaryGeneratedAt?.toISOString() ?? null}
+          />
         </div>
       )}
 

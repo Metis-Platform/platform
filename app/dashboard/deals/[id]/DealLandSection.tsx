@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import LandSyncButton from './LandSyncButton'
 
 const ACCESS_LABEL: Record<string, string> = {
   ROAD:       'Road frontage',
@@ -64,12 +65,15 @@ export default function DealLandSection({
     <div className="bg-white rounded-xl border border-zinc-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-zinc-900">Parcel Details</h2>
-        <Link
-          href={`/dashboard/deals/${dealId}/edit`}
-          className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors"
-        >
-          Edit
-        </Link>
+        <div className="flex items-center gap-3">
+          <LandSyncButton dealId={dealId} />
+          <Link
+            href={`/dashboard/deals/${dealId}/edit`}
+            className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors"
+          >
+            Edit
+          </Link>
+        </div>
       </div>
 
       <dl className="space-y-3 text-sm">

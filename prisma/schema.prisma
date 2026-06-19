@@ -459,6 +459,7 @@ model Deal {
   documents       Document[]
   auditLogs       AuditLog[]
   landNotes       LandNote[]
+  landComps       LandComp[]
   buyerBlastSends BuyerBlastSend[]
   exitEvaluations ExitEvaluation[]
   parcelResearchRequests ParcelResearchRequest[]
@@ -602,8 +603,31 @@ model DealLand {
   dispositionStatus  LandDispositionStatus?
   listedPrice        Decimal?               @db.Decimal(14, 2)
   dispositionDate    DateTime?
+  // AI parcel summary — regenerated on demand, never auto-refreshed
+  aiSummary           String?               @db.Text
+  aiSummaryGeneratedAt DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
+}
+
+// Comparable raw land sale logged against a Land deal for valuation context
+model LandComp {
+  id        String   @id @default(cuid())
+  dealId    String
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  tenantId  String
+  address   String?
+  apn       String?
+  acres     Decimal  @db.Decimal(10, 4)
+  salePrice Decimal  @db.Decimal(14, 2)
+  saleDate  DateTime
+  sourceUrl String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dealId])
+  @@index([tenantId])
 }
 
 // Seller-finance note on a Land deal — one active note at a time; archived on default/payoff
