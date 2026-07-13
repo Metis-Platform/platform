@@ -44,11 +44,15 @@ No manual deploys. Vercel preview deployments are the test environment.
 
 ## Agent / AI developer notes
 
+Start with [`CONTEXT.md`](CONTEXT.md), which maps every kind of project information to its canonical source and defines the portable session handoff.
+
 See [`CLAUDE.md`](CLAUDE.md) for full behavioral guidelines, architectural rules, code conventions, and session protocol.
 
 See [`ACTIVE-SPRINT.md`](ACTIVE-SPRINT.md) for the current implementation queue.
 
 See [`STRATEGY.md`](STRATEGY.md) for product vision and [`PHASE-HISTORY.md`](PHASE-HISTORY.md) for phase history.
+
+See [`docs/CROSS-MACHINE-WORKFLOW.md`](docs/CROSS-MACHINE-WORKFLOW.md) when moving work between WSL and macOS.
 
 ---
 

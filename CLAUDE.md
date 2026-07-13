@@ -14,7 +14,7 @@ Behavioral guidelines for Claude Code and any AI agent working in this repositor
 - **Repo:** Metis Platform GitHub org → `platform` repository
 - **Strategy:** `STRATEGY.md` (vision, module specs) | **Sprint:** `ACTIVE-SPRINT.md` (current queue) | **History:** `PHASE-HISTORY.md` (completed phases)
 - **Current Phase:** Post-beta initiatives — #131 Jurisdiction Intelligence and #229 Parcel Intelligence / Exit Strategy Engine
-- **System of Record:** Linear METIS is product/project command center; GitHub PRs/CI/merged code are engineering proof
+- **System of Record:** The GitHub repository, Issues, PRs, and Actions contain every executable requirement and engineering proof. Linear may organize or mirror product work, but it must not hold the only copy of implementation context.
 
 ### North Star (test every feature decision against this — full goalposts in STRATEGY.md)
 
@@ -40,8 +40,7 @@ before premium pricing, always. In practice:
 - `ACTIVE-SPRINT.md` — current sprint queue (read when implementing)
 - `git log --oneline -5` — recent commits
 
-**If `git log` shows merges not reflected in memory or STATUS.md** (i.e. another agent ran since last session), reconcile before doing anything else:
-- Update memory "Last session completed" and "Next up" to match git state
+**If `git log` shows merges not reflected in STATUS.md** (i.e. another agent ran since last session), reconcile before doing anything else:
 - Tick any completed items in `ACTIVE-SPRINT.md`
 - Update STATUS.md Last Session and Next Up rows
 
@@ -57,12 +56,16 @@ Read on demand only (not every session):
 - Node: source nvm before any npm/npx command: `source /home/xovox/.nvm/nvm.sh && <command>`
 - Windows temp (for migration SQL): `C:\Users\aswit\AppData\Local\Temp\` (WSL path: `/mnt/c/Users/aswit/AppData/Local/Temp/`)
 
-**Step 2 — Sync to main and check open PRs:**
+**Step 2 — Sync safely and check open PRs:**
 ```bash
-git fetch origin && git reset --hard origin/main
+git status --short
+git fetch --prune origin
+git switch main
+git pull --ff-only
 gh pr list --state open
 ```
-Use `git reset --hard origin/main` (not `git pull`) — local branch tracking gets corrupted across sessions when feature branches are squash-merged.
+
+If the working tree is not clean, do not switch branches, reset, or discard files. Commit and push intentional work on its feature branch before moving machines. See `docs/CROSS-MACHINE-WORKFLOW.md`.
 
 > **Windows Claude app only:** prefix these with `wsl bash -c "cd /home/xovox/dev/metis-platform && ..."` since it runs in Git Bash, not WSL.
 
@@ -79,18 +82,13 @@ Do this after every merge (not just at session end — protects against abrupt s
 
 **B) Update `STATUS.md`** — update Last Session row + Next Up table
 
-**C) Update memory** at `/home/xovox/.claude/projects/-home-xovox-dev-metis-platform/memory/project-metis-platform.md`:
-- Update "Last session completed" with PR numbers
-- Update "Next up" with the top 3 remaining issues
-- Memory auto-loads before the first user message next session — keeping it current means instant orientation
-
-**Commit checkpoint files directly to `main` — no branch, no PR:**
+**C) Commit the tracked checkpoint files directly to `main` — no branch, no PR:**
 ```bash
 git add ACTIVE-SPRINT.md STATUS.md
 git commit -m "chore: checkpoint after <feature name> merge"
 git push origin main
 ```
-Memory files live outside the repo and don't need a commit. **Never open a PR for checkpoint commits** — they create noise Preview deployments in Vercel and clutter the deployment history with chore rows.
+**Never open a PR for checkpoint commits** — they create noise Preview deployments in Vercel and clutter the deployment history with chore rows.
 
 **D) If the PR created any required human action** (env var to add, manual seed to run, DNS record, external service setup):
 - Add a row to the `## Pending Actions` table in STATUS.md
@@ -104,8 +102,9 @@ Memory files live outside the repo and don't need a commit. **Never open a PR fo
 | Individual bugs and features | GitHub Issues | Created per issue, closed on merge |
 | Current sprint queue | `ACTIVE-SPRINT.md` | After every PR merge (tick item) |
 | Session snapshot (last work, next up) | `STATUS.md` | After every PR merge |
-| Cross-session fast orient | memory `project-metis-platform.md` | After every PR merge |
-| Behavior/workflow rules | memory `feedback-session-rules.md` | When a preference changes |
+| Cross-session fast orient | `STATUS.md` | After every PR merge |
+| Behavior/workflow rules | `CLAUDE.md` | When a preference changes |
+| Context source map | `CONTEXT.md` | When a source-of-truth location changes |
 | Product vision + module specs | `STRATEGY.md` | When strategy changes |
 | Architecture decisions + ADRs | `ARCHITECTURE.md` | When architecture changes |
 | Completed phase history | `PHASE-HISTORY.md` | Append-only as phases complete |

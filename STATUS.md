@@ -2,19 +2,31 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-06-16
+> Last updated: 2026-07-13
 
 ---
 
 ## Current Phase
 
-Post-beta sprint: **#131 Jurisdiction Intelligence** + **#229 Parcel Intelligence / Exit Engine** complete. **Initiative 3 — Module Depth** in `ACTIVE-SPRINT.md` is now fully ticked (Land's gap closed 2026-06-16; Wholesale/Fix & Flip/Buy & Hold have scoped remaining gaps noted there, not full rebuilds). Next: pick a new initiative — see `ACTIVE-SPRINT.md` note.
+Post-beta initiatives **#131 Jurisdiction Intelligence**, **#229 Parcel Intelligence / Exit Engine**, and **Initiative 3 — Module Depth** are complete. **Initiative 4 — Platform Reliability and Verification (#287)** is active: portable GitHub context, full platform assessment, isolated QA, trace-based browser testing, and action observability.
 
 ---
 
 ## Open PRs
 
 Run `gh pr list --state open` — this file does not mirror PR state.
+
+---
+
+## Current Session (2026-07-13) — Cross-machine portability and verification kickoff
+
+| Work | Result |
+|---|---|
+| GitHub/WSL access audit | GitHub admin, push, workflow, issue, and PR access confirmed; WSL repo access confirmed |
+| External platform access audit | Vercel CLI is not installed or linked in WSL; Neon and Clerk dashboard administration still need verification before isolated QA provisioning |
+| Portable context foundation | In progress on `chore/cross-machine-context`: tracked context manifest, WSL/macOS handoff guide, Node version pin, context-check script, and removal of machine-local memory dependencies |
+| Baseline verification | TypeScript passed; 106 Vitest tests passed; lint passed with 12 pre-existing warnings; production build passed |
+| Reliability initiative | GitHub issue #287 created and Initiative 4 added to `ACTIVE-SPRINT.md` |
 
 ---
 
@@ -79,12 +91,15 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | Requires Playwright + browser session (uses JS rendering). Run manually in user session once Playwright is configured. |
 | ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
 | **Manual click-through PR #286** — Land sync/comps/AI summary | No — build/lint/tsc all passed pre-merge | 2026-06-16 | Open a Land deal: click "Sync from research", add 2 comps, click "Generate" on AI summary (needs an Anthropic key in Settings). Not yet manually verified in the live app. |
+| Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not the repository assessment | 2026-07-13 | WSL currently has no Vercel CLI/link. Automated tests must not use the production Clerk tenant or production Neon database. |
 
 ---
 
 ## Next Up
 
-Initiative 3 — Module Depth is fully ticked in `ACTIVE-SPRINT.md` (remaining scoped gaps noted there: Wholesale outreach-log wiring, Fix & Flip draw schedule/bid comparison, Buy & Hold tenant/lease/rent-roll records). Pick the next initiative with the user before starting new module work.
+1. Merge the cross-machine context portability checkpoint.
+2. Complete the repository/product/roadmap assessment and reconcile stale GitHub issues.
+3. Design and provision isolated QA, then implement the Playwright trace/report foundation.
 
 ---
 
