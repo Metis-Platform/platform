@@ -29,6 +29,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Reliability initiative | GitHub issue #287 created and Initiative 4 added to `ACTIVE-SPRINT.md` |
 | Full platform assessment | Completed in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`; founding parcel integrity, isolated QA, release protection, spreadsheet import safety, and trace-based testing are the ordered priorities |
 | Founding acceptance truth check | UI and evaluator shell exist, but dimensions/setback-envelope logic, a real Florida data path, canonical fixture/test, MAO formula alignment, and no-re-entry deal creation are missing |
+| Production release protection | `main` now requires CI (including production build) and Vercel, enforces protection for administrators, requires up-to-date linear PR merges and resolved conversations, and blocks force pushes/deletion; emergency procedure documented |
 
 ---
 

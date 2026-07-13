@@ -56,6 +56,8 @@ See [`docs/CROSS-MACHINE-WORKFLOW.md`](docs/CROSS-MACHINE-WORKFLOW.md) when movi
 
 See [`docs/PLATFORM-ASSESSMENT-2026-07-13.md`](docs/PLATFORM-ASSESSMENT-2026-07-13.md) for the evidence-backed current-state assessment and priority order.
 
+See [`docs/RELEASE-WORKFLOW.md`](docs/RELEASE-WORKFLOW.md) for required production gates and the emergency procedure.
+
 ---
 
 ## Environment variables
