@@ -6,6 +6,7 @@ import StrategyNav, { DealsNavLink } from './StrategyNav'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { getEnabledStrategies } from '@/lib/entitlements'
 import { db } from '@/lib/db'
+import { EnvironmentBanner } from './EnvironmentBanner'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [superAdmin, { orgId }] = await Promise.all([isSuperAdmin(), auth()])
@@ -24,6 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50">
+      <EnvironmentBanner />
       {/* Announcement banners */}
       {announcements.map(a => (
         <div

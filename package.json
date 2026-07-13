@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "context:check": "bash scripts/context-check.sh",
+    "integration:reset:preflight": "tsx scripts/integration-reset-preflight.ts",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run"
   },

@@ -33,6 +33,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | National county strategy | Volusia is now explicitly one acceptance case, not the product scope. Issue #296 defines verified, national-baseline, and on-demand county coverage with authority/provenance and review gates. |
 | Development portability follow-up | GitHub context is portable, but WSL-specific root instructions, local secret recreation, and the lack of a dev-container/bootstrap contract remain. Issue #295 tracks reproducible WSL/macOS/cloud development and an Ionos-vs-Codespaces evaluation. |
 | Environment lifecycle decision | There are no customers or customer data. The current live URL/database/Clerk state is classified as disposable shared integration. Issue #298 defines guarded full-state reset, versioned Gold-equivalent configuration, a clean release-candidate rehearsal, and fresh production cutover before external users. |
+| Environment reset safety foundation | Issue #300 adds explicit logical environment identity, an authenticated dashboard designation, and a fail-closed non-destructive reset preflight before any reset implementation or mutation browser suite is allowed. |
 
 ---
 
@@ -97,7 +98,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | Requires Playwright + browser session (uses JS rendering). Run manually in user session once Playwright is configured. |
 | ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
 | **Manual click-through PR #286** — Land sync/comps/AI summary | No — build/lint/tsc all passed pre-merge | 2026-06-16 | Open a Land deal: click "Sync from research", add 2 comps, click "Generate" on AI summary (needs an Anthropic key in Settings). Not yet manually verified in the live app. |
-| Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not the repository assessment | 2026-07-13 | WSL currently has no Vercel CLI/link. Automated tests must not use the production Clerk tenant or production Neon database. |
+| Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not repository work | 2026-07-13 | WSL currently has no Vercel CLI/link. After #300, configure the logical integration identity and verified service allowlists in Vercel. Do not authorize reset/mutation tests until #289 adds enforced runtime side-effect guards. |
 
 ---
 

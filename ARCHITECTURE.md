@@ -101,6 +101,14 @@ The D365-style Gold equivalent is **versioned reference configuration**, not a l
 
 An integration reset must verify explicit environment/service identities and reset all retained state: Neon data, tagged synthetic Clerk users/organizations, integration R2 objects, Stripe test artifacts as needed, email/cron safeguards, and deterministic fixtures. A database-only reset is not sufficient.
 
+The reset safety boundary starts with a non-destructive preflight:
+
+```bash
+npm run integration:reset:preflight -- --confirm <METIS_ENVIRONMENT_ID>
+```
+
+It fails closed unless the logical environment is `integration`, the configured and operator-confirmed environment IDs agree, Neon/Clerk/R2 identities are explicitly allowlisted and not production-denylisted, Stripe keys are test-mode, and the declared email/cron/auction/AI policy is safe. The runtime identity variables are documented in `.env.example`; actual service IDs and secrets remain outside Git. Passing this command only proves environment identity and declared policy. It never changes state or authorizes a reset. Issue #289 must wire and test the corresponding runtime side-effect guards before destructive testing is enabled.
+
 Before the first external user, production is provisioned or cut over using a fresh database, clean authentication state, production-only external-service resources, the approved immutable commit, migrations, and reference configuration. Full design and acceptance criteria: issue #298.
 
 ---
