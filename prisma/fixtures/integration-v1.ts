@@ -1,0 +1,73 @@
+export const INTEGRATION_FIXTURE_MANIFEST = {
+  fixtureSet: 'metis-e2e-v1',
+  fixtureVersion: '1.0.0',
+  requiredMigration: '20260713233000_integration_fixture_reset',
+  externalMetadataTag: 'metis-fixture:metis-e2e-v1',
+  tenant: {
+    id: 'fixture_metis_e2e_v1_tenant',
+    name: 'Metis Integration Fixture',
+    slug: 'metis-integration-fixture',
+    plan: 'TEAM',
+  },
+  owner: {
+    id: 'fixture_metis_e2e_v1_owner',
+    role: 'OWNER',
+    name: 'Integration Test Owner',
+  },
+  jurisdiction: {
+    fips: '12127',
+    state: 'FL',
+    county: 'Volusia',
+  },
+  property: {
+    id: 'fixture_metis_e2e_v1_property',
+    apn: '2340282',
+    state: 'FL',
+    propertyType: 'VACANT_LAND',
+  },
+  deal: {
+    id: 'fixture_metis_e2e_v1_deal',
+    strategyType: 'TAX_LIEN',
+    status: 'LEAD',
+    purchasePrice: '850.00',
+    notes: 'Deterministic pre-purchase research fixture. Synthetic data only.',
+  },
+  taxLien: {
+    id: 'fixture_metis_e2e_v1_tax_lien',
+    certificateNumber: 'FIXTURE-2340282',
+    faceAmount: '625.00',
+    interestRate: '0.1800',
+    maxBid: '850.00',
+    auctionDate: '2026-08-15T14:00:00.000Z',
+  },
+  module: {
+    id: 'fixture_metis_e2e_v1_module',
+    strategy: 'TAX_LIEN',
+    tier: 'PREMIUM',
+  },
+  investorProfile: {
+    id: 'fixture_metis_e2e_v1_investor',
+    maxPurchasePrice: 25000,
+    improvementCapital: 5000,
+    holdMonthsTolerance: 24,
+    targetRoi: 0.2,
+    financing: 'cash',
+  },
+  event: {
+    id: 'fixture_metis_e2e_v1_event',
+    eventType: 'AUCTION_DATE',
+    label: 'Fixture auction date',
+    dueDate: '2026-08-15T14:00:00.000Z',
+    status: 'PENDING',
+  },
+  task: {
+    id: 'fixture_metis_e2e_v1_task',
+    taskType: 'CUSTOM',
+    title: 'Review fixture parcel research',
+    dueDate: '2026-08-14T17:00:00.000Z',
+    status: 'OPEN',
+    priority: 'MEDIUM',
+  },
+} as const
+
+export type IntegrationFixtureManifest = typeof INTEGRATION_FIXTURE_MANIFEST

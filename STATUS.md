@@ -34,7 +34,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Development portability follow-up | GitHub context is portable, but WSL-specific root instructions, local secret recreation, and the lack of a dev-container/bootstrap contract remain. Issue #295 tracks reproducible WSL/macOS/cloud development and an Ionos-vs-Codespaces evaluation. |
 | Environment lifecycle decision | There are no customers or customer data. The current live URL/database/Clerk state is classified as disposable shared integration. Issue #298 defines guarded full-state reset, versioned Gold-equivalent configuration, a clean release-candidate rehearsal, and fresh production cutover before external users. |
 | Environment reset safety foundation | Issue #300 adds explicit logical environment identity, an authenticated dashboard designation, and a fail-closed non-destructive reset preflight before any reset implementation or mutation browser suite is allowed. |
-| Runtime side-effect enforcement | Issue #302 centralizes fail-closed cron, email, auction, and AI policy. Guarded environments require explicit enablement; email supports no-send sink or exact-recipient allowlisting. Tagged fixtures and reset orchestration remain unimplemented. |
+| Runtime side-effect enforcement | Issue #302 centralizes fail-closed cron, email, auction, and AI policy. Guarded environments require explicit enablement; email supports no-send sink or exact-recipient allowlisting. |
+| Deterministic integration database baseline | Issue #304 versions one explicitly tagged fixture tenant and adds dry-run planning plus guarded transactional replacement with durable reset-run auditing. It refuses R2/Stripe orphan risk; hosted execution remains blocked pending Clerk/R2 orchestration and environment access. |
 
 ---
 

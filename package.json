@@ -9,6 +9,8 @@
     "lint": "eslint",
     "context:check": "bash scripts/context-check.sh",
     "integration:reset:preflight": "tsx scripts/integration-reset-preflight.ts",
+    "integration:fixtures:plan": "tsx scripts/integration-fixture-reset.ts",
+    "integration:fixtures:reset": "tsx scripts/integration-fixture-reset.ts --execute",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run"
   },

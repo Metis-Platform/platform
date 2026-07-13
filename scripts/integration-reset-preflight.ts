@@ -11,5 +11,5 @@ if (!result.ok) {
   process.exitCode = 1
 } else {
   console.log('Integration identity and declared-policy preflight passed. No state was changed.')
-  console.log('This does not authorize a reset; runtime side-effect guards are still required by #289.')
+  console.log('This does not authorize a reset; fixture and cross-service cleanup gates still apply under #289.')
 }
