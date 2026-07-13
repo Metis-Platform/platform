@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { AuctionFeedSource, DealStatus } from '@/app/generated/prisma'
+import { assertSideEffectAllowed, type RuntimeEnvironment } from '@/lib/side-effect-policy'
 
 export type AuctionSaleData = {
   jurisdictionId: string
@@ -11,7 +12,11 @@ export type AuctionSaleData = {
   notes?: string
 }
 
-export async function upsertAuctionSales(sales: AuctionSaleData[]): Promise<number> {
+export async function upsertAuctionSales(
+  sales: AuctionSaleData[],
+  env: RuntimeEnvironment = process.env
+): Promise<number> {
+  assertSideEffectAllowed('auction', env)
   const now = new Date()
   let count = 0
   for (const sale of sales) {
@@ -58,7 +63,9 @@ export async function createTaxSaleEvents(
   saleDate: Date,
   label: string,
   notes?: string,
+  env: RuntimeEnvironment = process.env,
 ): Promise<number> {
+  assertSideEffectAllowed('auction', env)
   const deals = await db.deal.findMany({
     where: {
       status: { notIn: ARCHIVED_STATUSES },

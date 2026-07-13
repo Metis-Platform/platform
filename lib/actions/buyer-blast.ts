@@ -5,13 +5,14 @@ import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { hasTier } from '@/lib/entitlements'
-import { getResend } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 import { emitAuditEvent } from '@/lib/audit'
 
 export type BuyerBlastState = {
   error?: string
   success?: string
   sent?: number
+  sunk?: number
   skipped?: number
 }
 
@@ -80,26 +81,30 @@ export async function sendBuyerBlast(dealId: string): Promise<BuyerBlastState> {
     return { success: `All ${eligible.length} matched buyers already received this blast.`, sent: 0, skipped }
   }
 
-  const resend = getResend()
   const dealSheetHtml = buildDealSheetHtml(deal)
 
   let sent = 0
-  const errors: string[] = []
+  let sunk = 0
+  let failed = 0
 
   for (const buyer of toSend) {
     try {
-      await resend.emails.send({
+      const delivery = await sendEmail({
         from: process.env.EMAIL_FROM ?? 'noreply@metisplatforms.com',
         to:   [buyer.email!],
         subject: `New Wholesale Deal — ${deal.property.apn}${deal.property.city ? ` (${deal.property.city}, ${deal.property.state})` : ''}`,
         html: dealSheetHtml,
       })
+      if (delivery === 'sunk') {
+        sunk++
+        continue
+      }
       await db.buyerBlastSend.create({
         data: { tenantId: tenant.id, dealId, contactId: buyer.id },
       })
       sent++
     } catch {
-      errors.push(buyer.email!)
+      failed++
     }
   }
 
@@ -109,10 +114,18 @@ export async function sendBuyerBlast(dealId: string): Promise<BuyerBlastState> {
     await emitAuditEvent(tenant.id, 'BLAST_SENT', { dealId, sent, skipped }, userId)
   }
 
-  if (errors.length > 0) {
-    return { error: `Sent ${sent}, failed for: ${errors.join(', ')}`, sent, skipped }
+  if (failed > 0) {
+    return { error: `Sent ${sent}; delivery failed for ${failed} buyer${failed === 1 ? '' : 's'}.`, sent, sunk, skipped }
   }
-  return { success: `Blast sent to ${sent} buyer${sent === 1 ? '' : 's'}.`, sent, skipped }
+  if (sunk > 0) {
+    return {
+      success: `${sunk} email${sunk === 1 ? '' : 's'} captured by the integration sink; no delivery history was recorded.`,
+      sent,
+      sunk,
+      skipped,
+    }
+  }
+  return { success: `Blast sent to ${sent} buyer${sent === 1 ? '' : 's'}.`, sent, sunk, skipped }
 }
 
 // ---------------------------------------------------------------------------

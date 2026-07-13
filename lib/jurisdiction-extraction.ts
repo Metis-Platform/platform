@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'
 import Anthropic from '@anthropic-ai/sdk'
 import type { JurisdictionProfileSection } from './jurisdiction-profile'
+import { assertSideEffectAllowed, type RuntimeEnvironment } from './side-effect-policy'
 
 export type ExtractionResult = {
   section: JurisdictionProfileSection
@@ -146,9 +147,10 @@ export function parseExtractionResponse(text: string): ExtractionResult[] {
 }
 
 let _platformAnthropic: Anthropic | null = null
-export function getPlatformAnthropic(): Anthropic {
+export function getPlatformAnthropic(env: RuntimeEnvironment = process.env): Anthropic {
+  assertSideEffectAllowed('ai', env)
   if (!_platformAnthropic) {
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = env.ANTHROPIC_API_KEY
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not configured')
     _platformAnthropic = new Anthropic({ apiKey })
   }

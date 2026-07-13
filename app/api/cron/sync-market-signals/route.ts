@@ -8,15 +8,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { syncMarketSignals } from '@/lib/market-signals'
+import { guardCronRequest } from '@/lib/cron-guard'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const blocked = guardCronRequest(req)
+  if (blocked) return blocked
 
   try {
     const result = await syncMarketSignals()

@@ -1,8 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { db } from '@/lib/db'
+import { assertSideEffectAllowed, type RuntimeEnvironment } from '@/lib/side-effect-policy'
 
-export function getAnthropic(apiKey: string): Anthropic {
+export function getAnthropic(
+  apiKey: string,
+  env: RuntimeEnvironment = process.env
+): Anthropic {
   if (!apiKey) throw new Error('Anthropic API key is required')
+  assertSideEffectAllowed('ai', env)
   return new Anthropic({ apiKey })
 }
 

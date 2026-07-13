@@ -6,7 +6,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { hasTier } from '@/lib/entitlements'
 import { payoffQuote } from '@/lib/land-note-servicing'
-import { getResend } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 
 export type NoteServicingState = { error?: string; success?: string }
 
@@ -52,12 +52,16 @@ export async function sendLateNotice(
     paymentAmount: Number(note.paymentAmount),
   })
 
-  await getResend().emails.send({
+  const delivery = await sendEmail({
     from: process.env.EMAIL_FROM ?? 'noreply@metisplatforms.com',
     to:   [note.buyerEmail],
     subject,
     html,
   })
+
+  if (delivery === 'sunk') {
+    return { success: `${label} captured by the integration sink; no email was sent.` }
+  }
 
   // Log the notice as a task note on the deal
   await db.task.create({

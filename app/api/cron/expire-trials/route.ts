@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getResend } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
+import { guardCronRequest } from '@/lib/cron-guard'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request): Promise<NextResponse> {
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const blocked = guardCronRequest(req)
+  if (blocked) return blocked
 
   const now = new Date()
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-  const resend = getResend()
   const from = process.env.EMAIL_FROM ?? 'noreply@metisplatforms.com'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://metisplatforms.com'
 
@@ -30,7 +28,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     const ownerEmail = mod.tenant.users[0]?.email
     if (ownerEmail) {
       try {
-        await resend.emails.send({
+        await sendEmail({
           from,
           to: ownerEmail,
           subject: `Your ${mod.strategy.replace(/_/g, ' ')} trial has ended — Metis`,
@@ -67,7 +65,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     if (daysLeft !== 3) continue
 
     try {
-      await resend.emails.send({
+      await sendEmail({
         from,
         to: ownerEmail,
         subject: `Your ${mod.strategy.replace(/_/g, ' ')} trial expires in ${daysLeft} days — Metis`,

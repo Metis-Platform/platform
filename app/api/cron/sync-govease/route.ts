@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { upsertAuctionSales, createTaxSaleEvents } from '@/lib/auction-feeds'
 import { AuctionFeedSource } from '@/app/generated/prisma'
+import { guardCronRequest } from '@/lib/cron-guard'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -44,10 +45,8 @@ async function fetchGovEaseSales(): Promise<GovEaseSale[]> {
 }
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const blocked = guardCronRequest(req, { requiredSideEffects: ['auction'] })
+  if (blocked) return blocked
 
   try {
     const sales = await fetchGovEaseSales()

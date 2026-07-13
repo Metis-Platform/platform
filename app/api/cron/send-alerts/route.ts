@@ -15,15 +15,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sendDailyDigest, type AlertEvent } from '@/lib/email'
+import { guardCronRequest } from '@/lib/cron-guard'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://metisplatforms.com'
 
 export async function GET(req: NextRequest) {
-  // Fail closed if the secret is unset — otherwise "Bearer undefined" authenticates.
-  const authHeader = req.headers.get('authorization')
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const blocked = guardCronRequest(req)
+  if (blocked) return blocked
 
   const now      = new Date()
   const in7days  = new Date(now.getTime() + 7  * 86_400_000)
@@ -40,6 +38,7 @@ export async function GET(req: NextRequest) {
   })
 
   let emailsSent  = 0
+  let emailsSunk = 0
   let emailsSkipped = 0
   const errors: string[] = []
 
@@ -79,7 +78,7 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      await sendDailyDigest({
+      const delivery = await sendDailyDigest({
         to: ownerEmails,
         tenantName: tenant.name,
         overdue,
@@ -87,7 +86,9 @@ export async function GET(req: NextRequest) {
         upcoming,
         appUrl: APP_URL,
       })
-      emailsSent++
+      if (delivery === 'sent') emailsSent++
+      else if (delivery === 'sunk') emailsSunk++
+      else emailsSkipped++
     } catch (err) {
       errors.push(`${tenant.name}: ${err instanceof Error ? err.message : String(err)}`)
     }
@@ -97,6 +98,7 @@ export async function GET(req: NextRequest) {
     ok: true,
     ran: now.toISOString(),
     emailsSent,
+    emailsSunk,
     emailsSkipped,
     errors,
   })
