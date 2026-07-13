@@ -34,6 +34,17 @@ The implemented flow does not yet satisfy that acceptance contract:
 
 Conclusion: the UI/evaluator scaffolding shipped, but the canonical acceptance outcome is unproven and the roadmap's completed wording is incorrect. This is the first product workstream to fix.
 
+### Canonical parcel evidence and verdict caution
+
+Official sources currently establish the following:
+
+- The [Volusia Property Appraiser record](https://vcpa.vcgov.org/parcel/summary/?altkey=2340282) identifies parcel `800401180260`, vacant residential use, no buildings, unincorporated westside tax district, 50 feet of frontage, and 100 feet of depth.
+- The county's public ArcGIS `Land_Use_Zoning/MapServer/0` point query at the appraiser coordinates returns `R-4`.
+- The county's [zoning dimensional requirements](https://www.volusia.org/core/fileparse.php/6001/urlt/Zoning-Dimensional-Requirements.pdf) list R-4 minimums of 7,500 square feet and 75 feet width, with 25-foot front, 20-foot rear, and 20-foot combined side yards (minimum 8 feet on either side).
+- The same dimensional guide permits seven-foot side yards on certain nonconforming lots not more than 50 feet wide. The county's [nonconforming-lot guide](https://www.volusia.org/core/fileparse.php/4754/urlt/Nonconforming-Lot-Letter.pdf) says development eligibility can depend on historical ownership of adjacent/contiguous property and requires a title-company or attorney letter for a determination.
+
+Therefore the documented “unbuildable” verdict itself needs authoritative confirmation. Metis can safely conclude that the parcel fails standard R-4 area/width rules and requires nonconforming-lot, access, survey, well/septic, and permitting diligence. It must not convert that evidence into a definitive buildability verdict without modeling exceptions and provenance. The canonical acceptance test should encode the confirmed county determination when obtained and should meanwhile expect a conditional/insufficient-data result with the exact unresolved requirements.
+
 ## Reliability and security findings
 
 ### Release path
@@ -58,7 +69,7 @@ The GovEase, RealAuction FL, and Tax Sale Resources synchronization routes conta
 
 ### P0 — trust and production safety
 
-1. **Founding parcel acceptance (#291):** build a deterministic `2340282` fixture and acceptance test; represent dimensions; apply setbacks to a buildable envelope; establish a real Florida source/geocoding path; align MAO formulas; preserve research into deal creation.
+1. **Founding parcel acceptance (#291):** obtain/record the authoritative buildability determination; build a deterministic `2340282` evidence fixture and acceptance test; represent dimensions, exceptions, and provenance; apply setbacks to a buildable envelope; establish a real Florida source/geocoding path; align MAO formulas; preserve research into deal creation.
 2. **Isolated QA (#289):** provision a non-production Neon branch, Clerk development instance, safe external-service defaults, deterministic test tenant/users, and resettable fixtures.
 3. **Release protection (#292):** require CI production build and Vercel preview checks on `main`, prevent administrator bypass, and use PRs for every production change.
 4. **Spreadsheet import safety (#290):** replace/contain the vulnerable parser and add pre-parse limits plus hostile-file tests.
