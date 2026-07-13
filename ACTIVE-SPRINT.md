@@ -1,12 +1,12 @@
 # ACTIVE-SPRINT.md — Current Sprint
 
 > This file is the committed work queue for the current sprint.
-> Tick items as PRs merge. Update STATUS.md + memory after every merge.
+> Tick items as PRs merge. Update STATUS.md after every merge.
 > Backlog lives in GitHub Issues — only committed work belongs here.
 
 ## Resume protocol
 
-1. `git fetch && git reset --hard origin/main`
+1. Confirm the working tree is clean, then `git fetch --prune origin && git pull --ff-only`
 2. Read this file — find the first unticked item in the active initiative
 3. `gh pr list --state open` — check if a branch is already in flight
 4. `gh issue view <number>` — read the full spec before implementing
@@ -30,11 +30,23 @@
 
 ---
 
+## Initiative 4 — Platform Reliability and Verification (#287)
+
+> Approved 2026-07-13: make GitHub portable across WSL/macOS, fully assess the platform, then establish isolated browser verification with inspectable evidence for every critical user flow.
+
+- [ ] **Cross-machine context portability** — GitHub contains every non-secret handoff and requirement; safe WSL/macOS workflow and automated context check
+- [ ] **Repository, product, and roadmap assessment** — reconcile code, routes, models, tests, CI, migrations, deployments, strategy, status, and issues; produce the prioritized queue
+- [ ] **Isolated QA environment** — Clerk development instance, non-production Neon branch, deterministic fixtures, and external-service safeguards
+- [ ] **Playwright feature verification** — named user-story steps, traces, screenshots, requests, console evidence, HTML reports, and GitHub Actions artifacts
+- [ ] **Mutation observability** — structured tenant-safe logs, semantic audit events, and correlation IDs from browser action through server result
+
+---
+
 ## Standing rules
 
 1. Fresh branch from `origin/main` per PR; never reuse squash-merged branches
 2. `npx tsc --noEmit` + `npm run lint` + `npm run build` before push
 3. PR body includes `Closes #<issue>`; queue `gh pr merge --auto --squash` immediately
-4. **After every merge: tick this file + update STATUS.md + update memory**
+4. **After every merge: tick this file + update STATUS.md**
 5. Schema migrations: temp-copy method for SQL files (see CLAUDE.md)
 6. Every query scoped to `tenantId`; SDK clients lazy-init; Claude API only

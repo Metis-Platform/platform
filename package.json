@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "context:check": "bash scripts/context-check.sh",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run"
   },
