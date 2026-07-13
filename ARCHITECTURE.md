@@ -86,11 +86,30 @@ GitHub Action (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` aut
 
 ---
 
+## Environment lifecycle
+
+Metis is pre-customer. Until the production-readiness gate is completed, the current live domain and its connected services are a **shared disposable integration environment**, even though Vercel technically labels the deployment target `Production`.
+
+| Logical environment | Purpose | Data policy |
+|---|---|---|
+| Local / PR Preview | Code iteration, build proof, and isolated browser tests | Synthetic data only; preview writes require integration/QA service bindings |
+| Shared Integration | Current live application; end-to-end feature development and demonstrations | Disposable synthetic data; resettable across database and external services |
+| Release Candidate | Temporary clean launch rehearsal from an approved commit and configuration bundle | Fresh rebuild; no copied integration transactions |
+| Production | External beta/customers after the production-readiness gate | Non-disposable customer data; reset tooling permanently blocked |
+
+The D365-style Gold equivalent is **versioned reference configuration**, not a long-lived mutable database. Migrations, jurisdiction/rule sources, checklist/workflow templates, plan/entitlement definitions, feature flags, canonical parcel fixtures, and deterministic seed manifests are reviewed in Git. Configuration created through admin screens must eventually support reviewed export/import or become code-managed.
+
+An integration reset must verify explicit environment/service identities and reset all retained state: Neon data, tagged synthetic Clerk users/organizations, integration R2 objects, Stripe test artifacts as needed, email/cron safeguards, and deterministic fixtures. A database-only reset is not sufficient.
+
+Before the first external user, production is provisioned or cut over using a fresh database, clean authentication state, production-only external-service resources, the approved immutable commit, migrations, and reference configuration. Full design and acceptance criteria: issue #298.
+
+---
+
 ## Clerk specifics
 
 - Middleware: `proxy.ts` at project root (not `middleware.ts`)
 - `auth()` and `clerkClient()` are both async — always `await` them
-- Production-only instance (`pk_live_` keys in both `.env.local` and Vercel) — no separate dev Clerk instance; local dev uses the production Clerk instance and production database
+- Current integration environment uses a Clerk production instance and the shared integration database. This is a temporary pre-customer condition, not the target production topology; issue #298 defines the clean cutover and #289 defines isolated automated-test state.
 - Requires 5 Cloudflare DNS CNAMEs pointing to Clerk services (see CLAUDE.md for values)
 
 ---
