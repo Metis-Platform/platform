@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { Prisma } from '@/app/generated/prisma'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
-import { getResend } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 
 const manualFieldsSchema = z.object({
   irsLienPresent: z.boolean().optional(),
@@ -221,7 +221,7 @@ async function notifyTenantOwners(request: {
   const recipients = request.tenant.users.map(user => user.email).filter(Boolean)
   if (recipients.length === 0) return
 
-  await getResend().emails.send({
+  await sendEmail({
     from: process.env.EMAIL_FROM ?? 'noreply@metisplatforms.com',
     to: recipients,
     subject: `Parcel research complete for APN ${request.deal.property.apn}`,

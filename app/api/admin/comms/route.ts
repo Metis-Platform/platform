@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
-import { getResend } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 import { emitAuditEvent } from '@/lib/audit'
 import { auth } from '@clerk/nextjs/server'
 
@@ -28,7 +28,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const parsed = Schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const resend = getResend()
   const from = process.env.EMAIL_FROM ?? 'noreply@metisplatforms.com'
 
   if ('broadcast' in parsed.data) {
@@ -56,28 +55,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (recipients.length === 0) return NextResponse.json({ error: 'No recipients found' }, { status: 400 })
 
     let sent = 0
-    const errors: string[] = []
+    let sunk = 0
+    let failed = 0
     for (const email of recipients) {
       try {
-        await resend.emails.send({
+        const delivery = await sendEmail({
           from,
           to: email,
           subject: parsed.data.subject,
           html: `<div style="font-family:sans-serif;max-width:600px;margin:auto;padding:24px"><p>${parsed.data.body.replace(/\n/g, '<br>')}</p><hr style="border:none;border-top:1px solid #eee;margin:24px 0"><p style="font-size:12px;color:#999">Sent from Metis Platform admin</p></div>`,
         })
-        sent++
+        if (delivery === 'sent') sent++
+        else sunk++
       } catch {
-        errors.push(email)
+        failed++
       }
     }
 
     await emitAuditEvent('system', 'ADMIN_EMAIL_SENT', {
       broadcast: true,
       sent,
+      sunk,
+      failed,
       subject: parsed.data.subject,
     }, userId ?? undefined)
 
-    return NextResponse.json({ sent, skipped: errors.length, errors })
+    return NextResponse.json({ sent, sunk, failed })
   } else {
     // Per-tenant email
     const tenant = await db.tenant.findUnique({
@@ -89,7 +92,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const recipients = tenant.users.map(u => u.email).filter(Boolean)
     if (recipients.length === 0) return NextResponse.json({ error: 'No users in this tenant' }, { status: 400 })
 
-    await resend.emails.send({
+    const delivery = await sendEmail({
       from,
       to: recipients,
       subject: parsed.data.subject,
@@ -98,9 +101,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     await emitAuditEvent(tenant.id, 'ADMIN_EMAIL_SENT', {
       subject: parsed.data.subject,
-      recipients: recipients.length,
+      recipients: delivery === 'sent' ? recipients.length : 0,
+      sunk: delivery === 'sunk' ? recipients.length : 0,
     }, userId ?? undefined)
 
-    return NextResponse.json({ sent: recipients.length })
+    return NextResponse.json({
+      sent: delivery === 'sent' ? recipients.length : 0,
+      sunk: delivery === 'sunk' ? recipients.length : 0,
+    })
   }
 }

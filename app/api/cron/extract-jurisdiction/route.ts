@@ -13,6 +13,7 @@ import {
   type ExtractionResult,
 } from '@/lib/jurisdiction-extraction'
 import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
+import { guardCronRequest } from '@/lib/cron-guard'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -106,9 +107,8 @@ async function publishField(
 }
 
 export async function GET(req: Request): Promise<NextResponse> {
-  if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const blocked = guardCronRequest(req, { requiredSideEffects: ['ai'] })
+  if (blocked) return blocked
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })

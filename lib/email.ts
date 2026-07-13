@@ -1,12 +1,38 @@
 import { Resend } from 'resend'
+import { resolveEmailDeliveryPolicy, type RuntimeEnvironment } from './side-effect-policy'
 
 let _resend: Resend | null = null
-export function getResend(): Resend {
+function getResend(): Resend {
   if (!_resend) {
     if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY is not set')
     _resend = new Resend(process.env.RESEND_API_KEY)
   }
   return _resend
+}
+
+type EmailOptions = Parameters<Resend['emails']['send']>[0]
+export type EmailDeliveryResult = 'sent' | 'sunk'
+
+function addresses(value: string | string[] | undefined): string[] {
+  if (!value) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+export async function sendEmail(
+  options: EmailOptions,
+  env: RuntimeEnvironment = process.env
+): Promise<EmailDeliveryResult> {
+  const recipients = [
+    ...addresses(options.to),
+    ...addresses(options.cc),
+    ...addresses(options.bcc),
+  ]
+  const policy = resolveEmailDeliveryPolicy(recipients, env)
+  if (policy === 'sink') return 'sunk'
+
+  const response = await getResend().emails.send(options)
+  if (response.error) throw new Error('Email delivery failed')
+  return 'sent'
 }
 
 export type AlertEvent = {
@@ -33,11 +59,11 @@ export async function sendDailyDigest({
   dueSoon: AlertEvent[]
   upcoming: AlertEvent[]
   appUrl: string
-}): Promise<void> {
-  if (to.length === 0) return
+}): Promise<EmailDeliveryResult | 'skipped'> {
+  if (to.length === 0) return 'skipped'
 
   const total = overdue.length + dueSoon.length + upcoming.length
-  if (total === 0) return  // nothing to report — skip the email
+  if (total === 0) return 'skipped'  // nothing to report — skip the email
 
   const subject =
     overdue.length > 0
@@ -48,7 +74,7 @@ export async function sendDailyDigest({
 
   const html = buildDigestHtml({ tenantName, overdue, dueSoon, upcoming, appUrl })
 
-  await getResend().emails.send({
+  return sendEmail({
     from: process.env.EMAIL_FROM ?? 'noreply@metisplatform.com',
     to,
     subject,
