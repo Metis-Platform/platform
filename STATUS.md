@@ -32,6 +32,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Production release protection | `main` now requires CI (including production build) and Vercel, enforces protection for administrators, requires up-to-date linear PR merges and resolved conversations, and blocks force pushes/deletion; emergency procedure documented |
 | National county strategy | Volusia is now explicitly one acceptance case, not the product scope. Issue #296 defines verified, national-baseline, and on-demand county coverage with authority/provenance and review gates. |
 | Development portability follow-up | GitHub context is portable, but WSL-specific root instructions, local secret recreation, and the lack of a dev-container/bootstrap contract remain. Issue #295 tracks reproducible WSL/macOS/cloud development and an Ionos-vs-Codespaces evaluation. |
+| Environment lifecycle decision | There are no customers or customer data. The current live URL/database/Clerk state is classified as disposable shared integration. Issue #298 defines guarded full-state reset, versioned Gold-equivalent configuration, a clean release-candidate rehearsal, and fresh production cutover before external users. |
 
 ---
 
@@ -103,8 +104,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 ## Next Up
 
 1. Design the national jurisdiction intelligence/on-demand research architecture, then use Volusia as one canonical proof case.
-2. Make development reproducible across WSL, macOS, and an approved cloud host; provision isolated QA.
-3. Implement Playwright trace/report verification, mutation observability, and spreadsheet import safety.
+2. Make development reproducible across WSL, macOS, and an approved cloud host; implement the guarded integration reset and isolated QA lifecycle.
+3. Implement Playwright trace/report verification, mutation observability, spreadsheet import safety, and rehearse a clean production cutover.
 
 ---
 
