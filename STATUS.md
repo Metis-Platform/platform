@@ -28,7 +28,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Baseline verification | TypeScript passed; 106 Vitest tests passed; lint passed with 12 pre-existing warnings; production build passed |
 | Reliability initiative | GitHub issue #287 created and Initiative 4 added to `ACTIVE-SPRINT.md` |
 | Full platform assessment | Completed in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`; founding parcel integrity, isolated QA, release protection, spreadsheet import safety, and trace-based testing are the ordered priorities |
-| Founding acceptance truth check | UI and evaluator shell exist, but dimensions/setback-envelope logic, a real Florida data path, canonical fixture/test, MAO formula alignment, and no-re-entry deal creation are missing |
+| Founding acceptance truth check | Official data confirms 50×100 feet and R-4, which fails standard R-4 area/width; county nonconforming-lot exceptions make the definitive “unbuildable” claim itself unproven without ownership/title and permitting evidence. The app lacks dimensions/exception/provenance logic, a real Florida data path, canonical fixture/test, MAO formula alignment, and no-re-entry deal creation. |
 | Production release protection | `main` now requires CI (including production build) and Vercel, enforces protection for administrators, requires up-to-date linear PR merges and resolved conversations, and blocks force pushes/deletion; emergency procedure documented |
 
 ---

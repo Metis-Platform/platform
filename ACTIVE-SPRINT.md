@@ -36,7 +36,7 @@
 
 - [x] **Cross-machine context portability** — GitHub contains every non-secret handoff and requirement; safe WSL/macOS workflow and automated context check — PR #288
 - [x] **Repository, product, and roadmap assessment** — evidence and prioritized queue in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`
-- [ ] **Founding parcel acceptance repair (#291)** — make Volusia altkey 2340282 deterministic and truthful; dimensions + setbacks + Florida data + MAO alignment + research-to-deal handoff
+- [ ] **Founding parcel acceptance repair (#291)** — obtain/record the authoritative county determination and make Volusia altkey 2340282 deterministic and truthful; dimensions + exceptions + provenance + setbacks + Florida data + MAO alignment + research-to-deal handoff
 - [x] **Release protection (#292)** — CI now includes the production build; `main` requires CI + Vercel, enforces protection for admins, requires current branches/resolved conversations/linear history, and blocks force pushes/deletion; direct-main checkpoint instructions removed
 - [ ] **Spreadsheet import safety (#290)** — replace or contain `xlsx`, impose pre-parse limits, and test hostile/oversized files
 - [ ] **Isolated QA environment (#289)** — Clerk development instance, non-production Neon branch, deterministic fixtures, and external-service safeguards
