@@ -19,7 +19,7 @@
 > Revised build order (2026-06-15 spec session): Pre-purchase parcel research + MAO calculator first — this is the founding problem and uses infrastructure already built. Then Land (most directly tied to deed investing). Then remaining modules.
 
 - [x] **Contact CRM primitive** — platform-wide contact record (Wholesale, Fix & Flip, Buy & Hold, Land) — PRs #275 #277
-- [x] **Pre-purchase Parcel Research + MAO Calculator** — standalone "should I bid?" tool: APN/address in → exit analysis + MAO out (conservative/moderate/aggressive). Surfaces the existing exit engine + parcel intelligence as a pre-bid research flow. Acceptance test: Volusia County altkey 2340282 surfaces no viable residential exits + raw-land-only MAO. — PRs #284 + adaa9a3
+- [ ] **Pre-purchase Parcel Research + MAO Calculator — acceptance gap** — PRs #284 + adaa9a3 shipped the UI, endpoint, evaluator shell, and MAO display, but the 2026-07-13 truth check found that the canonical Volusia altkey 2340282 outcome is not implemented or automatically tested. Dimensions/setback-envelope logic, a real Florida data path, formula alignment, and no-re-entry deal creation remain P0 work. See `docs/PLATFORM-ASSESSMENT-2026-07-13.md`.
 - [x] **Land module (#39)** — full lifecycle (P1-P4) shipped weeks ago (#144 #146 #148 #175); depth gap (sync from research, raw land comps, AI parcel summary) closed by PR #286. Skipped "water/well lookup" — no real data source exists; manual `utilities.water` field covers it.
 - [x] **Wholesale module (#40)** — full lifecycle shipped (#150 #152 #154 #177): pipeline funnel, buyer CRM + buy-box matching, MAO calculator, premium analytics. **Remaining gap**: Contact CRM outreach log not wired into Wholesale deals (it is wired into Fix & Flip/Buy & Hold/Multifamily/Land Note — commit 0eeefbf — but not Wholesale).
 - [x] **Fix & Flip depth (#41)** — full lifecycle shipped (#156 #157 #159 #216): rehab line-item budget, P&L/ROI economics, AI bid extraction + draw package. **Remaining gap**: no multi-contractor bid comparison UI, no milestone-tied draw schedule (draw package PR generates a document, not a tracked schedule).
@@ -35,8 +35,11 @@
 > Approved 2026-07-13: make GitHub portable across WSL/macOS, fully assess the platform, then establish isolated browser verification with inspectable evidence for every critical user flow.
 
 - [x] **Cross-machine context portability** — GitHub contains every non-secret handoff and requirement; safe WSL/macOS workflow and automated context check — PR #288
-- [ ] **Repository, product, and roadmap assessment** — reconcile code, routes, models, tests, CI, migrations, deployments, strategy, status, and issues; produce the prioritized queue
-- [ ] **Isolated QA environment** — Clerk development instance, non-production Neon branch, deterministic fixtures, and external-service safeguards
+- [x] **Repository, product, and roadmap assessment** — evidence and prioritized queue in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`
+- [ ] **Founding parcel acceptance repair (#291)** — make Volusia altkey 2340282 deterministic and truthful; dimensions + setbacks + Florida data + MAO alignment + research-to-deal handoff
+- [ ] **Release protection (#292)** — require CI build and Vercel preview checks; remove administrator bypass/direct-main workflow
+- [ ] **Spreadsheet import safety (#290)** — replace or contain `xlsx`, impose pre-parse limits, and test hostile/oversized files
+- [ ] **Isolated QA environment (#289)** — Clerk development instance, non-production Neon branch, deterministic fixtures, and external-service safeguards
 - [ ] **Playwright feature verification** — named user-story steps, traces, screenshots, requests, console evidence, HTML reports, and GitHub Actions artifacts
 - [ ] **Mutation observability** — structured tenant-safe logs, semantic audit events, and correlation IDs from browser action through server result
 

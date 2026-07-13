@@ -54,6 +54,8 @@ See [`STRATEGY.md`](STRATEGY.md) for product vision and [`PHASE-HISTORY.md`](PHA
 
 See [`docs/CROSS-MACHINE-WORKFLOW.md`](docs/CROSS-MACHINE-WORKFLOW.md) when moving work between WSL and macOS.
 
+See [`docs/PLATFORM-ASSESSMENT-2026-07-13.md`](docs/PLATFORM-ASSESSMENT-2026-07-13.md) for the evidence-backed current-state assessment and priority order.
+
 ---
 
 ## Environment variables
