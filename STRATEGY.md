@@ -119,6 +119,22 @@ Two shared services must be built before Phase 4-full module depth. Build once; 
 - Foundation for: Land module, Tax Sale due diligence, Parcel Intelligence (#229)
 - ⚠️ `#229-P3` (PostGIS spatial join) must be designed as this reusable service from day one — not a one-off zoning lookup
 
+## National Jurisdiction Intelligence
+
+Volusia County altkey `2340282` is a canonical acceptance case, not the geographic scope of the product. Metis must support an investor researching a parcel in any U.S. county and must state clearly what is verified, preliminary, contradictory, stale, or still unknown.
+
+The national model has three coverage tiers:
+
+1. **Verified priority coverage** — deeply researched counties with official sources, reviewed high-risk rules, freshness monitoring, and canonical parcel tests.
+2. **National baseline coverage** — standardized parcel data plus authoritative federal/state layers and verified core jurisdiction sources where available.
+3. **On-demand preliminary coverage** — when an investor selects an incomplete county, Metis discovers official sources, runs safe baseline checks, queues extracted claims for review, exposes missing evidence, and improves the shared county profile for every future investor.
+
+Every decision-bearing fact must carry its source, authority class, geographic scope, effective/retrieved dates, evidence, extraction method, verification state, exceptions, and contradictions. AI confidence determines review priority; it is not authority. Legal, zoning, deadline, title, and buildability claims cannot become decision-grade solely because a model is confident.
+
+Coverage is a product surface, not an internal implementation detail. Investors should see whether a conclusion is verified or preliminary, what evidence is missing, and what action would resolve it. The platform should measure verified investor-demand coverage and freshness—not merely the number of county rows in the database.
+
+Implementation architecture and acceptance criteria are tracked in GitHub issue #296.
+
 ---
 
 ## Module Depth Specs

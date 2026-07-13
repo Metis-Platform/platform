@@ -36,12 +36,14 @@
 
 - [x] **Cross-machine context portability** — GitHub contains every non-secret handoff and requirement; safe WSL/macOS workflow and automated context check — PR #288
 - [x] **Repository, product, and roadmap assessment** — evidence and prioritized queue in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`
+- [ ] **National jurisdiction intelligence architecture (#296)** — authority/provenance model, versioned question library, coverage tiers, source discovery, on-demand county research, review gates, freshness/contradiction handling, and coverage dashboard
 - [ ] **Founding parcel acceptance repair (#291)** — obtain/record the authoritative county determination and make Volusia altkey 2340282 deterministic and truthful; dimensions + exceptions + provenance + setbacks + Florida data + MAO alignment + research-to-deal handoff
 - [x] **Release protection (#292)** — CI now includes the production build; `main` requires CI + Vercel, enforces protection for admins, requires current branches/resolved conversations/linear history, and blocks force pushes/deletion; direct-main checkpoint instructions removed
 - [ ] **Spreadsheet import safety (#290)** — replace or contain `xlsx`, impose pre-parse limits, and test hostile/oversized files
 - [ ] **Isolated QA environment (#289)** — Clerk development instance, non-production Neon branch, deterministic fixtures, and external-service safeguards
 - [ ] **Playwright feature verification** — named user-story steps, traces, screenshots, requests, console evidence, HTML reports, and GitHub Actions artifacts
 - [ ] **Mutation observability** — structured tenant-safe logs, semantic audit events, and correlation IDs from browser action through server result
+- [ ] **Portable reproducible development (#295)** — one container/bootstrap contract for WSL, macOS, and an approved cloud host; remove root dependence on original WSL paths
 
 ---
 
