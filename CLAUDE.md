@@ -74,21 +74,22 @@ If the working tree is not clean, do not switch branches, reset, or discard file
 gh pr merge <number> --auto --squash
 ```
 
-**Step 4 — After every PR merge AND at session end: checkpoint state.**
+**Step 4 — Keep tracked state in the same PR and push session checkpoints to its feature branch.**
 
-Do this after every merge (not just at session end — protects against abrupt session loss):
+Before merging a PR:
 
 **A) Tick `ACTIVE-SPRINT.md`** — mark the completed item
 
 **B) Update `STATUS.md`** — update Last Session row + Next Up table
 
-**C) Commit the tracked checkpoint files directly to `main` — no branch, no PR:**
+**C) Commit the tracked state with the implementation on its feature branch:**
 ```bash
 git add ACTIVE-SPRINT.md STATUS.md
-git commit -m "chore: checkpoint after <feature name> merge"
-git push origin main
+git commit -m "docs: update status for <feature name>"
+git push
 ```
-**Never open a PR for checkpoint commits** — they create noise Preview deployments in Vercel and clutter the deployment history with chore rows.
+
+If a session ends with intentional work in progress, commit and push it to the open feature branch so another machine can resume it. Never push checkpoint commits directly to `main`; branch protection and required checks apply to administrators too.
 
 **D) If the PR created any required human action** (env var to add, manual seed to run, DNS record, external service setup):
 - Add a row to the `## Pending Actions` table in STATUS.md
@@ -350,7 +351,7 @@ git push → open PR on GitHub
   → Vercel auto-deploys to metisplatforms.com (~2 min)
 ```
 
-**Never manually deploy.** Every merge to `main` is automatic. **Vercel preview deployments are the test environment** — there is no separate local dev site. Test against the preview URL or production.
+**Never manually deploy.** Every merge to `main` is automatic. Vercel previews verify builds and read-only behavior, but must not run mutation tests until the preview is linked to the isolated QA database and Clerk instance described in issue #289. Never use production customer data for automated tests.
 
 **Preview deployments** use the production Clerk instance and production DB — they are real, not sandboxes. Don't create test data on a preview URL.
 

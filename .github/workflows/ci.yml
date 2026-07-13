@@ -5,7 +5,7 @@ on:
 
 jobs:
   ci:
-    name: Type check, lint, and test
+    name: Type check, lint, test, and build
     runs-on: ubuntu-latest
 
     steps:
@@ -30,3 +30,6 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Production build
+        run: npm run build

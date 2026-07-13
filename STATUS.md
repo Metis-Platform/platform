@@ -8,7 +8,7 @@
 
 ## Current Phase
 
-Post-beta initiatives **#131 Jurisdiction Intelligence**, **#229 Parcel Intelligence / Exit Engine**, and **Initiative 3 — Module Depth** are complete. **Initiative 4 — Platform Reliability and Verification (#287)** is active: portable GitHub context, full platform assessment, isolated QA, trace-based browser testing, and action observability.
+Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, and module breadth. The 2026-07-13 truth check found that the founding parcel acceptance case is not actually satisfied, so that work is reopened as P0 rather than described as complete. **Initiative 4 — Platform Reliability and Verification (#287)** is active.
 
 ---
 
@@ -27,6 +27,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Portable context foundation | Merged — PR #288: tracked context manifest, WSL/macOS handoff guide, Node version pin, context-check script, and removal of machine-local memory dependencies |
 | Baseline verification | TypeScript passed; 106 Vitest tests passed; lint passed with 12 pre-existing warnings; production build passed |
 | Reliability initiative | GitHub issue #287 created and Initiative 4 added to `ACTIVE-SPRINT.md` |
+| Full platform assessment | Completed in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`; founding parcel integrity, isolated QA, release protection, spreadsheet import safety, and trace-based testing are the ordered priorities |
+| Founding acceptance truth check | UI and evaluator shell exist, but dimensions/setback-envelope logic, a real Florida data path, canonical fixture/test, MAO formula alignment, and no-re-entry deal creation are missing |
+| Production release protection | `main` now requires CI (including production build) and Vercel, enforces protection for administrators, requires up-to-date linear PR merges and resolved conversations, and blocks force pushes/deletion; emergency procedure documented |
 
 ---
 
@@ -38,11 +41,11 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Land module depth: sync from research (button fills DealLand gaps from ParcelDataCache), raw land comps (`LandComp` table + $/acre UI), AI parcel summary (BYOK Claude Haiku, cached) | Merged — PR #286 |
 | Discovered ACTIVE-SPRINT.md/STATUS.md were stale: #39/#40/#41/#42 had been listed as unbuilt for weeks when their full MVP lifecycle (P1-P4) had already shipped — only a narrower "depth" layer was actually missing | Corrected in `ACTIVE-SPRINT.md` |
 
-## Prior Session (2026-06-16) — Pre-purchase research + MAO calculator (complete)
+## Prior Session (2026-06-16) — Pre-purchase research + MAO calculator (implementation shell)
 
 | Work | Result |
 |---|---|
-| Pre-purchase Parcel Research + MAO Calculator | Merged — PR #284 + adaa9a3 |
+| Pre-purchase Parcel Research + MAO Calculator | Merged — PR #284 + adaa9a3; canonical acceptance was later found unimplemented/unproven and is reopened in Initiative 4 |
 | `lib/parcel/research-profile.ts` — standalone ParcelProfile assembly without Deal | Done |
 | `lib/mao/calculator.ts` — MAO formulas + MaoWarningType (unbuildable vs data_gap) | Done |
 | `POST /api/parcels/pre-purchase-research` — enriches, evaluates 30 exits, computes MAO | Done |
@@ -97,9 +100,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ## Next Up
 
-1. Complete the repository/product/roadmap assessment and reconcile stale GitHub issues.
-2. Design and provision isolated QA.
-3. Implement the Playwright trace/report foundation and mutation observability.
+1. Repair and automatically prove the founding Volusia parcel acceptance flow.
+2. Provision isolated QA and harden the production release gate.
+3. Implement Playwright trace/report verification, mutation observability, and spreadsheet import safety.
 
 ---
 
