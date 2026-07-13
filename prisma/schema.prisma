@@ -30,6 +30,7 @@ model Tenant {
   currentPeriodEnd         DateTime?
   adminNotes               String?
   anthropicApiKey          String? // BYOK: tenant-supplied, never platform key
+  fixtureSet               String?   @unique // null = customer/non-fixture; set only by guarded integration reset
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
@@ -49,6 +50,7 @@ model Tenant {
   parcelResearchRequests ParcelResearchRequest[]
   mfLpInvestors    DealMfLpInvestor[]
   mfWaterfalls     DealMfWaterfall[]
+  checklistTemplates ChecklistTemplate[]
 }
 
 model TenantWorkflowRule {
@@ -955,7 +957,7 @@ model Document {
 model AuditLog {
   id         String   @id @default(cuid())
   tenantId   String
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId     String?
   user       User?    @relation(fields: [userId], references: [id])
   dealId     String?
@@ -997,6 +999,7 @@ model Announcement {
 model ChecklistTemplate {
   id        String       @id @default(cuid())
   tenantId  String? // null = system template; set = tenant override
+  tenant    Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   strategy  StrategyType
   name      String
   items     Json // ChecklistItem[]
@@ -1019,6 +1022,23 @@ model EmailEvent {
 
   @@index([type, timestamp])
   @@index([email])
+}
+
+model IntegrationResetRun {
+  id                String    @id @default(cuid())
+  environmentId     String
+  fixtureSet        String
+  fixtureVersion    String
+  gitCommit         String
+  requiredMigration String
+  status            String
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+  summary           Json?
+  errorCode         String?
+
+  @@index([environmentId, startedAt])
+  @@index([fixtureSet, startedAt])
 }
 
 // ============================================================

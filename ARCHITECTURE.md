@@ -111,6 +111,20 @@ It fails closed unless the logical environment is `integration`, the configured 
 
 Runtime side-effect enforcement is centralized in `lib/side-effect-policy.ts`. Integration, Preview, Release Candidate, and Test deny cron, auction, and AI work unless that class is explicitly `enabled`. Email is never generally enabled there: `sink` performs no network delivery, while `allowlist` permits only exact configured recipients. Every cron route applies the shared authenticated guard before work, all Resend delivery passes through `sendEmail`, Anthropic client construction checks AI policy, and auction writes check auction policy. Explicit Local preserves normal behavior. Production does so only when `PRODUCTION_AUTHORIZED_ENVIRONMENT_ID` matches `METIS_ENVIRONMENT_ID`; this prevents the current Vercel target name or a stale `APP_ENV` from impersonating the future clean production boundary. Hosted execution without a valid `APP_ENV` fails closed. These guards are necessary but not sufficient for reset: tagged fixtures and cross-service deletion/orchestration remain in issue #289.
 
+The deterministic database baseline is versioned at `prisma/fixtures/integration-v1.ts`. It owns exactly one tenant through the unique `Tenant.fixtureSet` marker and uses stable IDs for its owner, Volusia parcel/property, tax-lien deal, module, investor profile, event, and task. Null `fixtureSet` always means non-fixture/customer data. Planning is read-only:
+
+```bash
+npm run integration:fixtures:plan -- --confirm-environment <METIS_ENVIRONMENT_ID>
+```
+
+Database replacement additionally requires the exact fixture-set confirmation:
+
+```bash
+npm run integration:fixtures:reset -- --confirm-environment <METIS_ENVIRONMENT_ID> --confirm-fixture metis-e2e-v1
+```
+
+Both commands require the full integration preflight and provisioned Clerk fixture identity. Replacement is transactional, records a durable `IntegrationResetRun`, deletes only the tagged tenant plus its explicitly owned email events, and recreates the manifest. It refuses to proceed when R2 document keys, Stripe identifiers, fixture identity drift, or stable-ID conflicts indicate that cross-service cleanup is incomplete. This is only the database phase; no hosted reset is authorized until Clerk/R2 orchestration and environment access are complete.
+
 Before the first external user, production is provisioned or cut over using a fresh database, clean authentication state, production-only external-service resources, the approved immutable commit, migrations, and reference configuration. Full design and acceptance criteria: issue #298.
 
 ---
