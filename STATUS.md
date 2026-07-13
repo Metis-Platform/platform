@@ -30,6 +30,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Full platform assessment | Completed in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`; founding parcel integrity, isolated QA, release protection, spreadsheet import safety, and trace-based testing are the ordered priorities |
 | Founding acceptance truth check | Official data confirms 50×100 feet and R-4, which fails standard R-4 area/width; county nonconforming-lot exceptions make the definitive “unbuildable” claim itself unproven without ownership/title and permitting evidence. The app lacks dimensions/exception/provenance logic, a real Florida data path, canonical fixture/test, MAO formula alignment, and no-re-entry deal creation. |
 | Production release protection | `main` now requires CI (including production build) and Vercel, enforces protection for administrators, requires up-to-date linear PR merges and resolved conversations, and blocks force pushes/deletion; emergency procedure documented |
+| National county strategy | Volusia is now explicitly one acceptance case, not the product scope. Issue #296 defines verified, national-baseline, and on-demand county coverage with authority/provenance and review gates. |
+| Development portability follow-up | GitHub context is portable, but WSL-specific root instructions, local secret recreation, and the lack of a dev-container/bootstrap contract remain. Issue #295 tracks reproducible WSL/macOS/cloud development and an Ionos-vs-Codespaces evaluation. |
 
 ---
 
@@ -100,8 +102,8 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ## Next Up
 
-1. Repair and automatically prove the founding Volusia parcel acceptance flow.
-2. Provision isolated QA and harden the production release gate.
+1. Design the national jurisdiction intelligence/on-demand research architecture, then use Volusia as one canonical proof case.
+2. Make development reproducible across WSL, macOS, and an approved cloud host; provision isolated QA.
 3. Implement Playwright trace/report verification, mutation observability, and spreadsheet import safety.
 
 ---
