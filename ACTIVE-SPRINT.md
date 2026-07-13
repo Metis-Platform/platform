@@ -34,7 +34,7 @@
 
 > Approved 2026-07-13: make GitHub portable across WSL/macOS, fully assess the platform, then establish isolated browser verification with inspectable evidence for every critical user flow.
 
-- [ ] **Cross-machine context portability** — GitHub contains every non-secret handoff and requirement; safe WSL/macOS workflow and automated context check
+- [x] **Cross-machine context portability** — GitHub contains every non-secret handoff and requirement; safe WSL/macOS workflow and automated context check — PR #288
 - [ ] **Repository, product, and roadmap assessment** — reconcile code, routes, models, tests, CI, migrations, deployments, strategy, status, and issues; produce the prioritized queue
 - [ ] **Isolated QA environment** — Clerk development instance, non-production Neon branch, deterministic fixtures, and external-service safeguards
 - [ ] **Playwright feature verification** — named user-story steps, traces, screenshots, requests, console evidence, HTML reports, and GitHub Actions artifacts

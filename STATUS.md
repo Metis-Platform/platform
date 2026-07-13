@@ -24,7 +24,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 |---|---|
 | GitHub/WSL access audit | GitHub admin, push, workflow, issue, and PR access confirmed; WSL repo access confirmed |
 | External platform access audit | Vercel CLI is not installed or linked in WSL; Neon and Clerk dashboard administration still need verification before isolated QA provisioning |
-| Portable context foundation | In progress on `chore/cross-machine-context`: tracked context manifest, WSL/macOS handoff guide, Node version pin, context-check script, and removal of machine-local memory dependencies |
+| Portable context foundation | Merged — PR #288: tracked context manifest, WSL/macOS handoff guide, Node version pin, context-check script, and removal of machine-local memory dependencies |
 | Baseline verification | TypeScript passed; 106 Vitest tests passed; lint passed with 12 pre-existing warnings; production build passed |
 | Reliability initiative | GitHub issue #287 created and Initiative 4 added to `ACTIVE-SPRINT.md` |
 
@@ -97,9 +97,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ## Next Up
 
-1. Merge the cross-machine context portability checkpoint.
-2. Complete the repository/product/roadmap assessment and reconcile stale GitHub issues.
-3. Design and provision isolated QA, then implement the Playwright trace/report foundation.
+1. Complete the repository/product/roadmap assessment and reconcile stale GitHub issues.
+2. Design and provision isolated QA.
+3. Implement the Playwright trace/report foundation and mutation observability.
 
 ---
 
