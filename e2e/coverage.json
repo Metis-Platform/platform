@@ -6,8 +6,8 @@
       "risk": "low",
       "mode": "read-only",
       "spec": "e2e/health.spec.ts",
-      "status": "planned",
-      "notes": "May run only against an explicitly supplied non-production URL."
+      "status": "active",
+      "notes": "Run npm run e2e:readonly only against an explicitly supplied non-production URL. The runner refuses the production domain."
     },
     {
       "id": "investor-create-save-delete-deal",
