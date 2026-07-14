@@ -32,13 +32,42 @@ AI-powered, multi-tenant SaaS for real estate investors. Starts as a tax lien li
 
 ---
 
+## Development setup
+
+Use Node 20 (pinned in `.nvmrc`) and one of the supported hosts: native macOS/Linux,
+WSL, GitHub Codespaces, or the tracked dev container. From a fresh clone:
+
+```bash
+npm run bootstrap
+npm run env:check
+npm run context:check
+```
+
+`bootstrap` installs the locked dependencies and creates a local `.env.local` template only
+when one is absent. It never copies secrets. Provision a machine-specific, non-production
+credential set through the approved secret manager, then run the verification commands below.
+Do not point local development at the future customer-production environment.
+
+```bash
+npx prisma validate
+npx prisma generate
+npm test -- --run
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+The dev container supplies Node 20, Git, and the PostgreSQL client. It intentionally does not
+embed credentials or a database: development must use approved isolated QA services.
+
 ## Deploy model
 
 Every merge to `main` triggers:
 1. GitHub Action runs `prisma migrate deploy` (schema changes only)
 2. Vercel builds and deploys to `metisplatforms.com`
 
-No manual deploys. Vercel preview deployments are the test environment.
+No manual deploys. Preview deployments are build/read-only proof until they are connected to the
+isolated QA services required by #289; they are not a mutation test environment today.
 
 ---
 

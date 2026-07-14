@@ -7,6 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "bootstrap": "bash scripts/bootstrap.sh",
+    "env:check": "tsx scripts/env-check.ts",
     "context:check": "bash scripts/context-check.sh",
     "integration:reset:preflight": "tsx scripts/integration-reset-preflight.ts",
     "integration:fixtures:plan": "tsx scripts/integration-fixture-reset.ts",

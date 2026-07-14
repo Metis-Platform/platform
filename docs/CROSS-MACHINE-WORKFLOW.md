@@ -7,14 +7,35 @@ GitHub is the handoff point between the Windows/WSL machine and macOS. Do not sy
 ```bash
 git clone https://github.com/Metis-Platform/platform.git
 cd platform
-nvm install
-nvm use
-npm ci
+# Select Node 20 using nvm, fnm, volta, or your platform's equivalent.
+npm run bootstrap
 gh auth status
+npm run env:check
 npm run context:check
 ```
 
-Configure required service credentials outside Git. Use `.env.example` as the variable-name checklist; never copy secret values through a commit or chat.
+Configure required service credentials outside Git. Use `.env.example` as the variable-name
+checklist; never copy secret values through a commit or chat. Each machine receives its own
+revocable, non-production credential set from the approved secret manager. A lost laptop, WSL
+installation, Codespace, or VPS is handled by revoking that machine's credentials—not by rotating
+or sharing a production secret.
+
+`APP_ENV=production` is prohibited for local work. Until isolated QA services are provisioned,
+the current live stack is shared integration and mutation/browser tests remain blocked by #289.
+
+## Supported hosts
+
+- **macOS, Linux, and WSL:** use the bootstrap command above in a native clone.
+- **Codespaces or another container host:** reopen the repository in `.devcontainer/`; the same
+  bootstrap and verification commands apply.
+- **Ionos VPS:** may host a disposable clone or runner only. It is never the canonical source of
+  code, context, or secrets; GitHub remains canonical and the VPS must receive its own revocable
+  QA credentials.
+
+For interactive development, prefer a local clone or Codespaces. Reserve the VPS for an approved
+runner only after SSH access, patching, backups, disk encryption, and machine-specific secret
+revocation are documented. This avoids turning a long-lived VPS into an untracked second source
+of truth.
 
 ## Begin work
 
