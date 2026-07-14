@@ -7,6 +7,15 @@ import JurisdictionSourceDiscoveryControls from './JurisdictionSourceDiscoveryCo
 
 export const dynamic = 'force-dynamic'
 
+function notificationSummary(notifications: Array<{ status: string }>) {
+  if (notifications.length === 0) return '—'
+  const counts = notifications.reduce<Record<string, number>>((result, notification) => {
+    result[notification.status] = (result[notification.status] ?? 0) + 1
+    return result
+  }, {})
+  return Object.entries(counts).map(([status, count]) => `${status.toLowerCase()}: ${count}`).join(', ')
+}
+
 export default async function JurisdictionResearchPage() {
   if (!(await isSuperAdmin())) redirect('/')
   const work = await db.jurisdictionResearchWork.findMany({
@@ -23,6 +32,7 @@ export default async function JurisdictionResearchPage() {
               extractionCandidates: { where: { status: 'PENDING' } },
             },
           },
+          coverageNotifications: { select: { status: true } },
         },
       },
     },
@@ -47,6 +57,7 @@ export default async function JurisdictionResearchPage() {
               <th className="px-4 py-3">Sources</th>
               <th className="px-4 py-3">Leads</th>
               <th className="px-4 py-3">Candidates</th>
+              <th className="px-4 py-3">Notifications</th>
               <th className="px-4 py-3">Control</th>
             </tr>
           </thead>
@@ -65,6 +76,7 @@ export default async function JurisdictionResearchPage() {
                 <td className="px-4 py-3">{row.jurisdiction._count.sourceUrls}</td>
                 <td className="px-4 py-3">{row.jurisdiction._count.sourceDiscoveryLeads}</td>
                 <td className="px-4 py-3">{row.jurisdiction._count.extractionCandidates}</td>
+                <td className="px-4 py-3">{notificationSummary(row.jurisdiction.coverageNotifications)}</td>
                 <td className="px-4 py-3">
                   <JurisdictionResearchWorkControls workId={row.id} status={row.status} />
                   <JurisdictionSourceDiscoveryControls jurisdictionId={row.jurisdictionId} />
@@ -73,7 +85,7 @@ export default async function JurisdictionResearchPage() {
             ))}
             {work.length === 0 && (
               <tr>
-                <td className="px-4 py-8 text-center text-zinc-500" colSpan={7}>
+                <td className="px-4 py-8 text-center text-zinc-500" colSpan={8}>
                   No county research work has been requested.
                 </td>
               </tr>

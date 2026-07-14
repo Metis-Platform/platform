@@ -49,6 +49,7 @@ model Tenant {
   investorProfile  InvestorProfile?
   parcelResearchRequests ParcelResearchRequest[]
   jurisdictionResearchDemands JurisdictionResearchDemand[]
+  jurisdictionCoverageNotifications JurisdictionCoverageNotification[]
   mfLpInvestors    DealMfLpInvestor[]
   mfWaterfalls     DealMfWaterfall[]
   checklistTemplates ChecklistTemplate[]
@@ -178,6 +179,7 @@ model Jurisdiction {
   auctionSaleFeeds     AuctionSaleFeed[]
   researchWork         JurisdictionResearchWork?
   researchDemands      JurisdictionResearchDemand[]
+  coverageNotifications JurisdictionCoverageNotification[]
 
   @@unique([state, county])
 }
@@ -273,9 +275,37 @@ model JurisdictionResearchDemand {
   requestedAt    DateTime     @default(now())
   notifiedAt     DateTime?
 
+  coverageNotifications JurisdictionCoverageNotification[]
+
   @@unique([jurisdictionId, tenantId])
   @@index([tenantId, requestedAt])
   @@index([jurisdictionId, requestedAt])
+}
+
+// Durable tenant-scoped delivery work. A notification is created only for an
+// evidence-backed verified coverage version; it is not a research-work verdict.
+model JurisdictionCoverageNotification {
+  id              String   @id @default(cuid())
+  demandId        String
+  demand          JurisdictionResearchDemand @relation(fields: [demandId], references: [id], onDelete: Cascade)
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jurisdictionId  String
+  jurisdiction    Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  coverageVersion String
+  kind            String   @default("VERIFIED_COVERAGE")
+  recipientEmail  String?
+  status          String   @default("PENDING") // PENDING, SENT, SUNK, SKIPPED_NO_RECIPIENT, FAILED
+  attemptedAt     DateTime?
+  deliveredAt     DateTime?
+  providerMessageId String?
+  failureCode     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tenantId, jurisdictionId, coverageVersion, kind])
+  @@index([status, createdAt])
+  @@index([jurisdictionId, createdAt])
 }
 
 model JurisdictionSourceUrl {

@@ -7,6 +7,7 @@ import {
   calculateClaimFreshness,
 } from './jurisdiction-claim-freshness'
 import { claimValuesConflict } from './jurisdiction-claim-contradiction'
+import { queueVerifiedCoverageNotifications } from './jurisdiction-coverage-notification'
 
 export type SourceAuthorityStatus = 'UNVERIFIED' | 'VERIFIED' | 'REJECTED'
 export type ClaimVerificationState = 'REVIEWED' | 'VERIFIED'
@@ -465,6 +466,12 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
       if (approved.count !== 1) throw new Error('CANDIDATE_NOT_PENDING')
     }
 
-    return { claimId, ...publication }
+    const queuedCoverageNotifications = await queueVerifiedCoverageNotifications(
+      tx,
+      input.jurisdictionId,
+      reviewedAt,
+    )
+
+    return { claimId, queuedCoverageNotifications, ...publication }
   })
 }

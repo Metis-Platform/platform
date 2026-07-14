@@ -12,6 +12,7 @@ function getResend(): Resend {
 
 type EmailOptions = Parameters<Resend['emails']['send']>[0]
 export type EmailDeliveryResult = 'sent' | 'sunk'
+export type IdempotentEmailOptions = EmailOptions & { idempotencyKey?: string }
 
 function addresses(value: string | string[] | undefined): string[] {
   if (!value) return []
@@ -19,18 +20,19 @@ function addresses(value: string | string[] | undefined): string[] {
 }
 
 export async function sendEmail(
-  options: EmailOptions,
+  options: IdempotentEmailOptions,
   env: RuntimeEnvironment = process.env
 ): Promise<EmailDeliveryResult> {
+  const { idempotencyKey, ...email } = options
   const recipients = [
-    ...addresses(options.to),
-    ...addresses(options.cc),
-    ...addresses(options.bcc),
+    ...addresses(email.to),
+    ...addresses(email.cc),
+    ...addresses(email.bcc),
   ]
   const policy = resolveEmailDeliveryPolicy(recipients, env)
   if (policy === 'sink') return 'sunk'
 
-  const response = await getResend().emails.send(options)
+  const response = await getResend().emails.send(email, idempotencyKey ? { idempotencyKey } : undefined)
   if (response.error) throw new Error('Email delivery failed')
   return 'sent'
 }
