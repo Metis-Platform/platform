@@ -1,9 +1,11 @@
 export type JurisdictionAdapter = {
   id: string
   state: string
+  county?: string
   officeTypes: string[]
   authorityOwner: string
-  sourceUrl: string
+  sourceUrl?: string
+  sourceUrls?: Partial<Record<string, string>>
 }
 
 export type DiscoveredJurisdictionSource = {
@@ -25,29 +27,56 @@ const ADAPTERS: JurisdictionAdapter[] = [
     authorityOwner: 'Florida county government',
     sourceUrl: 'https://www.myfloridacfo.com/',
   },
+  {
+    id: 'fl-volusia-county-offices-v1',
+    state: 'FL',
+    county: 'Volusia',
+    officeTypes: ['assessor', 'tax_collector', 'recorder', 'gis', 'planning_zoning', 'building'],
+    authorityOwner: 'Volusia County constitutional offices and government',
+    sourceUrls: {
+      assessor: 'https://paproapp.vcgov.org/',
+      tax_collector: 'https://volusiatax.gov/',
+      recorder: 'https://www.clerk.org/Search-Records.aspx',
+      gis: 'https://www.volusia.org/services/financial-and-administrative-services/finance-department/information-technology/geographic-information-services/',
+      planning_zoning: 'https://www.volusia.org/services/growth-and-resource-management/planning-and-development/',
+      building: 'https://www.volusia.org/services/growth-and-resource-management/building-and-zoning/',
+    },
+  },
 ]
 
 export function adaptersForState(state: string) {
   return ADAPTERS.filter(adapter => adapter.state === state.trim().toUpperCase())
 }
 
+function normalizeCounty(county: string) {
+  return county.trim().replace(/\s+county$/i, '').toLowerCase()
+}
+
+export function adaptersForJurisdiction(state: string, county?: string) {
+  const adapters = adaptersForState(state)
+  if (!county?.trim()) return adapters.filter(adapter => !adapter.county)
+  const exactCountyAdapters = adapters.filter(adapter => adapter.county && normalizeCounty(adapter.county) === normalizeCounty(county))
+  return exactCountyAdapters.length > 0 ? exactCountyAdapters : adapters.filter(adapter => !adapter.county)
+}
+
 export function discoverJurisdictionSources(input: {
   state: string
+  county?: string
   requestedOfficeTypes: string[]
   now?: Date
 }) {
-  const adapters = adaptersForState(input.state)
+  const adapters = adaptersForJurisdiction(input.state, input.county)
   if (adapters.length === 0) {
     return { status: 'DISCOVERY_NEEDED' as const, sources: [] as DiscoveredJurisdictionSource[] }
   }
   const now = input.now ?? new Date()
   const sources = adapters.flatMap(adapter =>
     input.requestedOfficeTypes
-      .filter(officeType => adapter.officeTypes.includes(officeType))
+      .filter(officeType => adapter.officeTypes.includes(officeType) && (adapter.sourceUrls?.[officeType] ?? adapter.sourceUrl))
       .map(officeType => ({
         adapterId: adapter.id,
         officeType,
-        url: adapter.sourceUrl,
+        url: adapter.sourceUrls?.[officeType] ?? adapter.sourceUrl!,
         authorityOwner: adapter.authorityOwner,
         authorityRationale: 'Registry capability is a discovery lead only; authority review is required before extraction or claim publication.',
         discoveredAt: now,
