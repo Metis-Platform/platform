@@ -23,7 +23,7 @@ const initialFixFlipState: FixFlipFormState = {}
 const initialBuyHoldState: BuyHoldFormState = {}
 const initialMultifamilyState: MultifamilyFormState = {}
 
-type Preselected = { id: string; county: string; stateName: string; state: string } | null
+type Preselected = { id: string; county: string; stateName: string; state: string; apn?: string } | null
 
 /** Dispatcher — renders strategy-specific form without calling lien hooks for other strategies. */
 export function NewLienForm({
@@ -122,7 +122,7 @@ function NewLienFormInner({
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Property</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="APN / Parcel Number" error={state.errors?.apn}>
-            <input type="text" name="apn" placeholder="e.g. 12-34-56-7890-00-001" className="input-base font-mono" />
+            <input type="text" name="apn" defaultValue={preselected?.apn} placeholder="e.g. 12-34-56-7890-00-001" className="input-base font-mono" />
           </Field>
           <Field label="Property Address (optional)" error={state.errors?.address}>
             <input type="text" name="address" placeholder="123 Main St, Orlando FL 32801" className="input-base" />
