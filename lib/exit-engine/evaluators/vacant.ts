@@ -11,13 +11,21 @@ function vacantBase(exitKey: 'VACANT_SELL_AS_IS' | 'VACANT_HOLD' | 'VACANT_WHOLE
   return null
 }
 
-function builderBlockers(ctx: EvalContext): string[] {
+function builderAssessment(ctx: EvalContext) {
   const blockers: string[] = []
+  const conditions: string[] = []
   const minLot = minLotSize(ctx)
   if (minLot != null && (ctx.parcel.lotSizeSqFt ?? 0) < minLot) blockers.push('Lot is smaller than jurisdiction minimum lot size')
+  const minWidth = ctx.jurisdiction.minLotWidthFt?.(ctx.parcel.zoning)
+  if (minWidth != null && ctx.parcel.frontageLinearFt != null && ctx.parcel.frontageLinearFt < minWidth) {
+    blockers.push('Lot frontage is smaller than jurisdiction minimum width')
+  }
   if (isFloodBuildRisk(ctx)) blockers.push('Flood zone plus wetlands creates buildability risk')
   if (ctx.parcel.roadFrontage === 'landlocked') blockers.push('Landlocked parcel lacks legal/physical road frontage')
-  return blockers
+  if (blockers.some(blocker => blocker.includes('minimum')) && ctx.parcel.frontageLinearFt != null && ctx.parcel.lotDepthFt != null) {
+    conditions.push('Confirm nonconforming-lot eligibility, survey boundaries, legal access, and utility/septic approval before treating standard dimensional failures as dispositive')
+  }
+  return { blockers, conditions }
 }
 
 export function evaluateVacantSellAsIs(ctx: EvalContext) {
@@ -33,9 +41,10 @@ export function evaluateVacantSellToBuilder(ctx: EvalContext) {
   if (missing) return missing
   if (ctx.parcel.improved) return result('VACANT_SELL_TO_BUILDER', 'NOT_VIABLE', ['Parcel is already improved'])
 
-  const blockers = builderBlockers(ctx)
-  return result('VACANT_SELL_TO_BUILDER', blockers.length ? 'NOT_VIABLE' : 'VIABLE', blockers, [
+  const assessment = builderAssessment(ctx)
+  return result('VACANT_SELL_TO_BUILDER', assessment.conditions.length ? 'CONDITIONAL' : assessment.blockers.length ? 'NOT_VIABLE' : 'VIABLE', assessment.blockers, [
     'Perc test if no sewer; survey boundaries before marketing to builders',
+    ...assessment.conditions,
   ])
 }
 
@@ -44,10 +53,13 @@ export function evaluateVacantBuildAndSell(ctx: EvalContext) {
   if (universal) return universal
   const missing = missingData('VACANT_BUILD_AND_SELL', ctx, ['lotSizeSqFt', 'zoning', 'improved'])
   if (missing) return missing
-  const blockers = builderBlockers(ctx)
+  const assessment = builderAssessment(ctx)
+  const blockers = assessment.blockers
   const constructionMid = 225000
   if ((ctx.investor.improvementCapital ?? 0) < constructionMid) blockers.push('Investor improvement capital is below estimated construction cost')
-  const verdict = blockers.length ? 'NOT_VIABLE' : ctx.investor.financing === 'LENDER' ? 'CONDITIONAL' : 'VIABLE'
+  const verdict = assessment.conditions.length || ctx.investor.financing === 'LENDER'
+    ? 'CONDITIONAL'
+    : blockers.length ? 'NOT_VIABLE' : 'VIABLE'
   const projection = projectNetProfit({
     arv: ctx.parcel.arv ?? range(ctx.parcel.estimatedArv ?? 350000),
     purchasePrice: purchasePrice(ctx),
@@ -55,7 +67,7 @@ export function evaluateVacantBuildAndSell(ctx: EvalContext) {
     holdingCostPerMonth: 1500,
     holdMonths: 12,
   })
-  return result('VACANT_BUILD_AND_SELL', verdict, blockers, ['Construction financing and permits require separate diligence'], projection)
+  return result('VACANT_BUILD_AND_SELL', verdict, blockers, ['Construction financing and permits require separate diligence', ...assessment.conditions], projection)
 }
 
 export function evaluateVacantSubdivideAndSell(ctx: EvalContext) {

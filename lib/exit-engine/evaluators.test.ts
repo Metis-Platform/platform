@@ -26,6 +26,7 @@ function ctx(parcel: Partial<ParcelProfile> = {}): EvalContext {
     parcel: { ...baseParcel, ...parcel },
     jurisdiction: {
       minLotSizeSqFt: () => 7500,
+      minLotWidthFt: () => 75,
       setbackFeet: () => ({ front: 25, side: 7.5, rear: 20 }),
       strAllowed: true,
       rentControlZone: false,
@@ -63,5 +64,18 @@ describe('exit evaluators registry', () => {
   it('returns insufficient data from evaluator when hard data is missing', () => {
     const evaluator = EXIT_REGISTRY.find(entry => entry.exitKey === 'VACANT_SELL_TO_BUILDER')!
     expect(evaluator.evaluate(ctx({ lotSizeSqFt: undefined })).verdict).toBe('INSUFFICIENT_DATA')
+  })
+
+  it('keeps Volusia-like standard dimensional failures conditional when nonconforming eligibility is unresolved', () => {
+    const result = EXIT_REGISTRY.find(entry => entry.exitKey === 'VACANT_SELL_TO_BUILDER')!.evaluate(ctx({
+      lotSizeSqFt: 5000,
+      frontageLinearFt: 50,
+      lotDepthFt: 100,
+      zoning: 'R-4',
+    }))
+    expect(result.verdict).toBe('CONDITIONAL')
+    expect(result.blockers).toContain('Lot is smaller than jurisdiction minimum lot size')
+    expect(result.blockers).toContain('Lot frontage is smaller than jurisdiction minimum width')
+    expect(result.conditions.join(' ')).toContain('nonconforming-lot eligibility')
   })
 })
