@@ -71,7 +71,6 @@ export const OFFICE_TYPE_FIELDS: Record<string, FieldSpec[]> = {
   ],
 }
 
-export const AUTO_PUBLISH_CONFIDENCE = 0.85
 export const SONNET_FALLBACK_CONFIDENCE = 0.6
 export const HAIKU_MODEL = 'claude-haiku-4-5-20251001'
 export const SONNET_MODEL = 'claude-sonnet-4-6'
