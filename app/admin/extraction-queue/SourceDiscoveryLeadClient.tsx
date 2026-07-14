@@ -9,6 +9,7 @@ type Lead = {
   url: string
   authorityOwner: string | null
   authorityRationale: string
+  candidateScope: 'DISCOVERY_ENTRYPOINT' | 'COUNTY_OFFICE_CANDIDATE'
   updatedAt: string
   jurisdiction: { county: string; state: string }
 }
@@ -69,6 +70,7 @@ export function SourceDiscoveryLeadClient({ leads }: { leads: Lead[] }) {
                       <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">pending review</span>
                       <span className="text-sm font-semibold text-zinc-900">{lead.jurisdiction.county}, {lead.jurisdiction.state}</span>
                       <span className="text-xs text-zinc-400">{lead.officeType.replaceAll('_', ' ')}</span>
+                      <span className="text-xs text-zinc-400">{lead.candidateScope === 'DISCOVERY_ENTRYPOINT' ? 'entry point — replace URL required' : 'county-office candidate'}</span>
                     </div>
                     {isSafeExternalUrl(lead.url) ? (
                       <a href={lead.url} target="_blank" rel="noopener noreferrer" className="mt-2 block truncate text-sm text-blue-700 hover:text-blue-900">{lead.url}</a>
@@ -82,7 +84,7 @@ export function SourceDiscoveryLeadClient({ leads }: { leads: Lead[] }) {
                 </div>
                 {editing && (
                   <div className="mt-4 flex flex-col gap-2 border-t border-zinc-100 pt-4 sm:flex-row">
-                    <label className="flex-1 text-xs font-medium text-zinc-600">Concrete county-office URL
+                    <label className="flex-1 text-xs font-medium text-zinc-600">Concrete county-office URL{lead.candidateScope === 'DISCOVERY_ENTRYPOINT' ? ' (must differ from entry point)' : ''}
                       <input value={sourceUrl} onChange={event => setSourceUrl(event.target.value)} className="mt-1 w-full rounded-md border border-zinc-200 px-2 py-2 text-sm" />
                     </label>
                     <button type="button" onClick={() => promote(lead)} disabled={isPending} className="mt-5 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60">{isPending ? 'Promoting…' : 'Promote unverified source'}</button>

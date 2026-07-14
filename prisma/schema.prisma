@@ -194,6 +194,7 @@ model JurisdictionSourceDiscoveryLead {
   url                String
   authorityOwner     String?
   authorityRationale String                            @db.Text
+  candidateScope     JurisdictionSourceDiscoveryCandidateScope @default(DISCOVERY_ENTRYPOINT)
   status             JurisdictionSourceDiscoveryStatus @default(PENDING_REVIEW)
   promotedSourceUrlId String?
   promotedSourceUrl   JurisdictionSourceUrl?           @relation("DiscoveryLeadPromotion", fields: [promotedSourceUrlId], references: [id], onDelete: SetNull)
@@ -1367,6 +1368,11 @@ enum JurisdictionSourceDiscoveryStatus {
   PENDING_REVIEW
   REJECTED
   PROMOTED
+}
+
+enum JurisdictionSourceDiscoveryCandidateScope {
+  DISCOVERY_ENTRYPOINT
+  COUNTY_OFFICE_CANDIDATE
 }
 
 enum JurisdictionEvidenceRetrievalAdapter {

@@ -2,7 +2,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
-import { sourceDiscoveryPromotionSchema } from '@/lib/jurisdiction-source-promotion'
+import { requiresReplacementSourceUrl, sourceDiscoveryPromotionSchema } from '@/lib/jurisdiction-source-promotion'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isSuperAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -18,6 +18,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (!lead) throw new Error('LEAD_NOT_FOUND')
       if (lead.status !== 'PENDING_REVIEW') throw new Error('LEAD_NOT_PENDING')
       if (lead.updatedAt.getTime() !== parsed.data.expectedUpdatedAt.getTime()) throw new Error('STALE_LEAD')
+      if (requiresReplacementSourceUrl({
+        candidateScope: lead.candidateScope,
+        leadUrl: lead.url,
+        sourceUrl: parsed.data.sourceUrl,
+      })) throw new Error('CONCRETE_SOURCE_REQUIRED')
 
       const existing = await tx.jurisdictionSourceUrl.findUnique({
         where: { jurisdictionId_officeType_url: { jurisdictionId: lead.jurisdictionId, officeType: lead.officeType, url: parsed.data.sourceUrl } },
@@ -37,6 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const code = error instanceof Error ? error.message : 'PROMOTION_FAILED'
     if (code === 'LEAD_NOT_FOUND') return NextResponse.json({ error: code }, { status: 404 })
     if (code === 'LEAD_NOT_PENDING' || code === 'STALE_LEAD') return NextResponse.json({ error: code }, { status: 409 })
+    if (code === 'CONCRETE_SOURCE_REQUIRED') return NextResponse.json({ error: code }, { status: 422 })
     return NextResponse.json({ error: 'PROMOTION_FAILED' }, { status: 500 })
   }
 }

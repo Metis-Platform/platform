@@ -14,6 +14,7 @@ export type DiscoveredJurisdictionSource = {
   url: string
   authorityOwner: string
   authorityRationale: string
+  candidateScope: 'DISCOVERY_ENTRYPOINT' | 'COUNTY_OFFICE_CANDIDATE'
   discoveredAt: Date
 }
 
@@ -70,7 +71,7 @@ export function discoverJurisdictionSources(input: {
     return { status: 'DISCOVERY_NEEDED' as const, sources: [] as DiscoveredJurisdictionSource[] }
   }
   const now = input.now ?? new Date()
-  const sources = adapters.flatMap(adapter =>
+  const sources: DiscoveredJurisdictionSource[] = adapters.flatMap(adapter =>
     input.requestedOfficeTypes
       .filter(officeType => adapter.officeTypes.includes(officeType) && (adapter.sourceUrls?.[officeType] ?? adapter.sourceUrl))
       .map(officeType => ({
@@ -79,6 +80,7 @@ export function discoverJurisdictionSources(input: {
         url: adapter.sourceUrls?.[officeType] ?? adapter.sourceUrl!,
         authorityOwner: adapter.authorityOwner,
         authorityRationale: 'Registry capability is a discovery lead only; authority review is required before extraction or claim publication.',
+        candidateScope: adapter.sourceUrls?.[officeType] ? 'COUNTY_OFFICE_CANDIDATE' : 'DISCOVERY_ENTRYPOINT',
         discoveredAt: now,
       })),
   )
@@ -95,6 +97,7 @@ export async function queueDiscoveredJurisdictionSources(input: {
     url: string
     authorityOwner: string
     authorityRationale: string
+    candidateScope: 'DISCOVERY_ENTRYPOINT' | 'COUNTY_OFFICE_CANDIDATE'
     discoveredAt: Date
   }) => Promise<unknown>
 }) {
