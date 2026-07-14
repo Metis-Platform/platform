@@ -71,6 +71,19 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
+export function provenanceLabel(field: ResearchProfileField | null): string {
+  if (!field) return 'Not yet reviewed'
+  if (!field.claimId) return 'Legacy — provenance unavailable'
+  const date = field.verifiedAt ? formatDate(field.verifiedAt) : 'date unavailable'
+  switch (field.verificationState) {
+    case 'VERIFIED': return `Verified: ${date}`
+    case 'REVIEWED': return `Reviewed: ${date}`
+    case 'STALE': return `Stale — last reviewed ${date}`
+    case 'BLOCKED': return 'Blocked — unresolved evidence'
+    default: return 'Claim provenance incomplete'
+  }
+}
+
 function formatValue(value: unknown): string {
   if (value === null || value === undefined || value === '') return 'Not yet verified'
   if (typeof value === 'boolean') return value ? 'Yes' : 'No'
@@ -317,7 +330,7 @@ function ResearchField({
             ) : (
               <span>Source: none</span>
             )}
-            <span>Verified: {profileField?.verifiedAt ? formatDate(profileField.verifiedAt) : 'Not yet verified'}</span>
+            <span>{provenanceLabel(profileField)}</span>
             {citationHref ? (
               <a href={citationHref} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-700 hover:text-blue-900">
                 {citation ?? 'Citation'}
@@ -364,8 +377,18 @@ function MarketSignalsPanel({
     <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-zinc-900">Market signals</h2>
       <div className="mt-4 space-y-4">
-        <Gauge label="Opportunity" value={opportunityScore} tone="bg-emerald-500" />
-        <Gauge label="Saturation" value={saturationScore} tone="bg-amber-500" />
+        <Gauge
+          label="Opportunity"
+          value={opportunityScore}
+          tone="bg-emerald-500"
+          provenance={provenanceLabel(fieldFor(profile, MARKET_SIGNAL_FIELDS[0]))}
+        />
+        <Gauge
+          label="Saturation"
+          value={saturationScore}
+          tone="bg-amber-500"
+          provenance={provenanceLabel(fieldFor(profile, MARKET_SIGNAL_FIELDS[1]))}
+        />
       </div>
       <dl className="mt-5 space-y-3 text-sm">
         {MARKET_SIGNAL_FIELDS.slice(2).map((field) => {
@@ -375,6 +398,9 @@ function MarketSignalsPanel({
               <dt className="text-zinc-500">{field.label}</dt>
               <dd className={profileField ? 'text-right font-medium text-zinc-900' : 'text-right italic text-zinc-400'}>
                 {formatValue(profileField?.value)}
+                <span className="mt-0.5 block text-xs font-normal text-zinc-400">
+                  {provenanceLabel(profileField)}
+                </span>
               </dd>
             </div>
           )
@@ -384,7 +410,17 @@ function MarketSignalsPanel({
   )
 }
 
-function Gauge({ label, value, tone }: { label: string; value: number | null; tone: string }) {
+function Gauge({
+  label,
+  value,
+  tone,
+  provenance,
+}: {
+  label: string
+  value: number | null
+  tone: string
+  provenance: string
+}) {
   const width = value === null ? 0 : Math.min(100, Math.max(0, value))
   return (
     <div>
@@ -397,6 +433,7 @@ function Gauge({ label, value, tone }: { label: string; value: number | null; to
       <div className="mt-2 h-2 rounded-full bg-zinc-100">
         <div className={`h-2 rounded-full ${tone}`} style={{ width: `${width}%` }} />
       </div>
+      <p className="mt-1 text-xs text-zinc-400">{provenance}</p>
     </div>
   )
 }
@@ -430,6 +467,7 @@ function ContactRow({ label, field }: { label: string; field: ResearchProfileFie
       <p className={name ? 'mt-1 text-sm text-zinc-700' : 'mt-1 text-sm italic text-zinc-400'}>
         {name ?? 'Not yet verified'}
       </p>
+      <p className="mt-1 text-xs text-zinc-400">{provenanceLabel(field)}</p>
       {(phone || email || website) && (
         <div className="mt-2 flex flex-wrap gap-2 text-xs">
           {phone && <a href={`tel:${phone}`} className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-200">{phone}</a>}
@@ -489,4 +527,3 @@ function RulesSection({ activeRuleSet }: { activeRuleSet: ActiveRuleSet }) {
     </div>
   )
 }
-

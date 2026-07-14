@@ -77,10 +77,22 @@ review; only low- and medium-risk facts may use the human batch-review path. The
 review timestamp and reviewer ID and stamps the question schema version and authority class.
 
 `REVIEWED` means a human accepted the sourced claim; it does not mean the source has yet been
-independently validated as authoritative. Persisted source-authority validation, claim history,
-contradiction handling, freshness transitions, and migration of legacy profile JSON remain part of
-the national jurisdiction intelligence initiative (#296). Existing fields are never silently
-relabeled verified by this publication boundary.
+independently validated as authoritative. `JurisdictionSourceUrl` persists actual authority class,
+owner, status, verifier, and verification time separately from the authority a question expects. A
+source can produce `VERIFIED` only when that persisted verification is complete and its class
+matches the question.
+
+Every new human publication atomically creates an append-only `JurisdictionClaim`, copies its URL,
+quoted evidence, retrieval time, content hash, and model/candidate links into
+`JurisdictionClaimEvidence`, and updates `JurisdictionProfile` as the current read projection with
+the durable claim ID. Replacing a field creates a new claim linked to the prior claim; it does not
+overwrite history. Source authority is re-read and candidate version is checked inside the same
+transaction, preventing stale review races. Legacy profile JSON is not assigned fabricated claims
+and the county UI labels it `Legacy — provenance unavailable` rather than verified.
+
+Authority verification operations/UI, content snapshot archival, contradiction handling, freshness
+transitions, and researched legacy migration remain part of the national jurisdiction intelligence
+initiative (#296).
 
 ---
 

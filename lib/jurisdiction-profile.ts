@@ -2,9 +2,16 @@ export type ProfileFieldValue = string | number | boolean | string[]
 
 export type ProfileField<T = ProfileFieldValue> = {
   value: T
+  claimId?: string
   questionId?: string
   questionSchemaVersion?: string
   authorityClass?: string
+  expectedAuthorityClass?: string
+  sourceAuthorityClass?: string
+  sourceAuthorityOwner?: string
+  sourceAuthorityStatus?: 'UNVERIFIED' | 'VERIFIED' | 'REJECTED'
+  sourceAuthorityVerifiedAt?: string
+  sourceAuthorityVerifiedBy?: string
   verificationState?: 'REVIEWED' | 'VERIFIED' | 'STALE' | 'BLOCKED'
   sourceUrl?: string
   citation?: string

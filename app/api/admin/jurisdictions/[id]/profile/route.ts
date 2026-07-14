@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { Prisma, type JurisdictionProfile } from '@/app/generated/prisma'
 import { currentUser } from '@clerk/nextjs/server'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import {
-  applyProfileFieldUpdate,
   isJurisdictionProfileSection,
   type JurisdictionProfileSection,
-  type ProfileField,
 } from '@/lib/jurisdiction-profile'
-import {
-  evaluateJurisdictionPublication,
-  reviewedProfileField,
-} from '@/lib/jurisdiction-publication-policy'
+import { publishJurisdictionClaim } from '@/lib/jurisdiction-claim-publication'
+import { evaluateJurisdictionPublication } from '@/lib/jurisdiction-publication-policy'
 
 const profileFieldSchema = z.object({
   value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.record(z.string(), z.unknown())]),
@@ -24,6 +19,9 @@ const profileFieldSchema = z.object({
   confidence: z.number().min(0).max(1),
   verifiedById: z.string().optional(),
   volatility: z.enum(['static', 'annual', 'per_sale', 'quarterly']),
+  normalizedUnit: z.string().optional(),
+  geographicScope: z.string().optional(),
+  effectiveAt: z.string().datetime().optional(),
 })
 
 const patchSchema = z.object({
@@ -77,6 +75,8 @@ export async function PATCH(
   const section = parsed.data.section as JurisdictionProfileSection
   const user = await currentUser()
   const reviewerId = user?.id ?? ''
+  const reviewerLabel = user?.emailAddresses.find(e => e.id === user.primaryEmailAddressId)
+    ?.emailAddress ?? reviewerId
   const decision = evaluateJurisdictionPublication({
     section,
     fieldKey: parsed.data.fieldKey,
@@ -90,34 +90,21 @@ export async function PATCH(
   if (!decision.allowed) {
     return NextResponse.json({ error: decision.code }, { status: 422 })
   }
-  const field = reviewedProfileField({
+  const result = await publishJurisdictionClaim({
+    jurisdictionId: id,
+    section,
+    fieldKey: parsed.data.fieldKey,
     extractedValue: parsed.data.field,
     question: decision.question,
     reviewerId,
-  }) as ProfileField
-  const updatedSections = applyProfileFieldUpdate(
-    { [section]: profile[section] as Record<string, ProfileField> },
-    {
-      section,
-      fieldKey: parsed.data.fieldKey,
-      field,
-    }
-  )
+    reviewerLabel,
+    source: {
+      url: parsed.data.field.sourceUrl!,
+      snippet: parsed.data.field.citation!,
+      retrievedAt: new Date(),
+      authorityStatus: 'UNVERIFIED',
+    },
+  })
 
-  // Raw SQL is used here so independent field saves merge atomically into the JSONB
-  // section instead of read-modify-writing the whole section and dropping concurrent edits.
-  const [updated] = await db.$queryRaw<JurisdictionProfile[]>`
-    UPDATE "JurisdictionProfile"
-    SET ${Prisma.raw(`"${section}"`)} = jsonb_set(
-      COALESCE(${Prisma.raw(`"${section}"`)}, '{}'::jsonb),
-      ARRAY[${parsed.data.fieldKey}],
-      ${JSON.stringify(updatedSections[section][parsed.data.fieldKey])}::jsonb,
-      true
-    ),
-    "updatedAt" = NOW()
-    WHERE "jurisdictionId" = ${id}
-    RETURNING *
-  `
-
-  return NextResponse.json(updated)
+  return NextResponse.json({ ok: true, claimId: result.claimId, field: result.profileField })
 }

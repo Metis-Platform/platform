@@ -10,7 +10,7 @@ import {
   JURISDICTION_QUESTION_SCHEMA_VERSION,
   getJurisdictionQuestion,
 } from './jurisdiction-question-library'
-import { evaluateJurisdictionPublication, reviewedProfileField } from './jurisdiction-publication-policy'
+import { evaluateJurisdictionPublication } from './jurisdiction-publication-policy'
 
 describe('jurisdiction question library', () => {
   it('registers every current UI and extraction field with stable unique IDs', () => {
@@ -89,6 +89,12 @@ describe('jurisdiction publication policy', () => {
       mode: 'HUMAN_SINGLE',
       evidence: { ...evidence, reviewerId: '' },
     })).toMatchObject({ allowed: false, code: 'REVIEWER_REQUIRED' })
+    expect(evaluateJurisdictionPublication({
+      section: 'zoning',
+      fieldKey: 'minimumLotSizeSqft',
+      mode: 'HUMAN_SINGLE',
+      evidence: { ...evidence, sourceAuthorityStatus: 'REJECTED' },
+    })).toMatchObject({ allowed: false, code: 'SOURCE_REJECTED' })
   })
 
   it('requires individual review for high-risk claims but permits evidenced low-risk batching', () => {
@@ -104,28 +110,5 @@ describe('jurisdiction publication policy', () => {
       mode: 'HUMAN_BATCH',
       evidence,
     })).toMatchObject({ allowed: true })
-  })
-
-  it('stamps reviewed fields with question, authority, and reviewer provenance', () => {
-    const question = getJurisdictionQuestion('taxSale', 'saleType')!
-    expect(reviewedProfileField({
-      extractedValue: {
-        value: 'tax_lien',
-        confidence: 0.99,
-        verifiedAt: '1999-01-01T00:00:00.000Z',
-        verifiedById: 'untrusted-client',
-        verificationState: 'VERIFIED',
-      },
-      question,
-      reviewerId: 'reviewer@example.test',
-      reviewedAt: new Date('2026-07-14T00:00:00.000Z'),
-    })).toMatchObject({
-      questionId: question.id,
-      questionSchemaVersion: '2026-07-14.v1',
-      authorityClass: question.expectedAuthority,
-      verificationState: 'REVIEWED',
-      verifiedAt: '2026-07-14T00:00:00.000Z',
-      verifiedById: 'reviewer@example.test',
-    })
   })
 })

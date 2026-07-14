@@ -170,11 +170,12 @@ export async function GET(req: Request): Promise<NextResponse> {
         sourceUrl: sourceUrl.url,
         citation: result.sourceSnippet,
         retrievedAt: now,
+        contentHash,
         confidence: result.confidence,
         volatility: result.volatility,
         questionId: publication.question.id,
         questionSchemaVersion: publication.question.schemaVersion,
-        authorityClass: publication.question.expectedAuthority,
+        expectedAuthorityClass: publication.question.expectedAuthority,
         verificationState: 'CANDIDATE',
       }
 
