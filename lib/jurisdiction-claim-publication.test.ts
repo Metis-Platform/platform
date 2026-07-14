@@ -7,7 +7,7 @@ const { tx, transaction } = vi.hoisted(() => {
     jurisdictionClaim: { findFirst: vi.fn(), create: vi.fn() },
     jurisdictionClaimEvidence: { create: vi.fn() },
     jurisdictionSourceUrl: { findFirst: vi.fn() },
-    extractionCandidate: { updateMany: vi.fn() },
+    extractionCandidate: { findFirst: vi.fn(), updateMany: vi.fn() },
     $queryRaw: vi.fn(),
   }
   return {
@@ -33,6 +33,11 @@ const source = {
   snippet: 'Minimum lot area is 7,500 square feet.',
   retrievedAt: new Date('2026-07-13T23:00:00.000Z'),
   contentHash: 'content-sha256',
+  evidenceSnapshotId: 'snapshot-1',
+  storageKey: 'jurisdiction-evidence/sha256/co/content-sha256.md',
+  retrievalAdapter: 'JINA_READER' as const,
+  representationMediaType: 'text/markdown; charset=utf-8',
+  byteLength: 2048,
   modelUsed: 'claude-test',
   authorityClass: question.expectedAuthority,
   authorityOwner: 'Example County Planning Department',
@@ -104,9 +109,14 @@ describe('jurisdiction claim publication records', () => {
       claimId: 'claim-2',
       sourceUrlId: 'source-1',
       candidateId: 'candidate-1',
+      evidenceSnapshotId: 'snapshot-1',
       sourceUrl: source.url,
       sourceSnippet: source.snippet,
       contentHash: 'content-sha256',
+      storageKey: source.storageKey,
+      retrievalAdapter: 'JINA_READER',
+      representationMediaType: source.representationMediaType,
+      byteLength: 2048,
     })
     expect(publication.profileField).toMatchObject({
       claimId: 'claim-2',
@@ -181,6 +191,23 @@ describe('atomic claim publication service', () => {
     })
     tx.jurisdictionClaim.create.mockResolvedValue({ id: 'new-claim' })
     tx.jurisdictionClaimEvidence.create.mockResolvedValue({ id: 'evidence-1' })
+    tx.extractionCandidate.findFirst.mockResolvedValue({
+      sourceUrlId: source.sourceUrlId,
+      sourceSnippet: source.snippet,
+      modelUsed: source.modelUsed,
+      evidenceSnapshot: {
+        id: source.evidenceSnapshotId,
+        jurisdictionId: input.jurisdictionId,
+        sourceUrlId: source.sourceUrlId,
+        sourceUrl: source.url,
+        retrievedAt: source.retrievedAt,
+        retrievalAdapter: source.retrievalAdapter,
+        representationMediaType: source.representationMediaType,
+        contentHash: source.contentHash,
+        storageKey: source.storageKey,
+        byteLength: source.byteLength,
+      },
+    })
     tx.extractionCandidate.updateMany.mockResolvedValue({ count: 1 })
     tx.$queryRaw.mockResolvedValue([])
   })
@@ -197,6 +224,8 @@ describe('atomic claim publication service', () => {
         sourceUrl: source.url,
         sourceSnippet: source.snippet,
         candidateId: 'candidate-1',
+        evidenceSnapshotId: 'snapshot-1',
+        storageKey: source.storageKey,
       }),
     })
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1)
@@ -214,6 +243,89 @@ describe('atomic claim publication service', () => {
   it('aborts when the candidate was approved concurrently', async () => {
     tx.extractionCandidate.updateMany.mockResolvedValue({ count: 0 })
     await expect(publishJurisdictionClaim(input)).rejects.toThrow('CANDIDATE_NOT_PENDING')
+  })
+
+  it('rejects legacy AI candidates without a snapshot before claim writes', async () => {
+    tx.extractionCandidate.findFirst.mockResolvedValue({
+      sourceUrlId: source.sourceUrlId,
+      sourceSnippet: source.snippet,
+      modelUsed: source.modelUsed,
+      evidenceSnapshot: null,
+    })
+
+    await expect(publishJurisdictionClaim(input)).rejects.toThrow('EVIDENCE_SNAPSHOT_REQUIRED')
+    expect(tx.jurisdictionProfile.upsert).not.toHaveBeenCalled()
+    expect(tx.jurisdictionClaim.create).not.toHaveBeenCalled()
+  })
+
+  it('rejects a stale candidate version before claim writes', async () => {
+    tx.extractionCandidate.findFirst.mockResolvedValue(null)
+
+    await expect(publishJurisdictionClaim(input)).rejects.toThrow('CANDIDATE_NOT_PENDING')
+    expect(tx.jurisdictionProfile.upsert).not.toHaveBeenCalled()
+    expect(tx.jurisdictionClaim.create).not.toHaveBeenCalled()
+  })
+
+  it('rejects a snapshot outside the candidate source scope', async () => {
+    tx.extractionCandidate.findFirst.mockResolvedValue({
+      sourceUrlId: source.sourceUrlId,
+      sourceSnippet: source.snippet,
+      modelUsed: source.modelUsed,
+      evidenceSnapshot: {
+        id: source.evidenceSnapshotId,
+        jurisdictionId: input.jurisdictionId,
+        sourceUrlId: 'different-source',
+        sourceUrl: source.url,
+        retrievedAt: source.retrievedAt,
+        retrievalAdapter: source.retrievalAdapter,
+        representationMediaType: source.representationMediaType,
+        contentHash: source.contentHash,
+        storageKey: source.storageKey,
+        byteLength: source.byteLength,
+      },
+    })
+
+    await expect(publishJurisdictionClaim(input)).rejects.toThrow(
+      'EVIDENCE_SNAPSHOT_SCOPE_MISMATCH',
+    )
+    expect(tx.jurisdictionProfile.upsert).not.toHaveBeenCalled()
+  })
+
+  it('ignores route snapshot provenance and copies the transactionally re-read snapshot', async () => {
+    tx.jurisdictionSourceUrl.findFirst.mockResolvedValue({
+      url: 'https://county.example.gov/new-zoning-url',
+      authorityClass: source.authorityClass,
+      authorityOwner: source.authorityOwner,
+      authorityStatus: source.authorityStatus,
+      authorityVerifiedAt: null,
+      authorityVerifiedBy: null,
+    })
+
+    await publishJurisdictionClaim({
+      ...input,
+      source: {
+        ...source,
+        url: 'https://attacker.invalid',
+        snippet: 'hostile snippet',
+        retrievedAt: new Date('1999-01-01T00:00:00.000Z'),
+        contentHash: 'hostile-hash',
+        evidenceSnapshotId: 'hostile-snapshot',
+        storageKey: 'hostile-key',
+        byteLength: 1,
+      },
+    })
+
+    expect(tx.jurisdictionClaimEvidence.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        evidenceSnapshotId: source.evidenceSnapshotId,
+        sourceUrl: source.url,
+        sourceSnippet: source.snippet,
+        retrievedAt: source.retrievedAt,
+        contentHash: source.contentHash,
+        storageKey: source.storageKey,
+        byteLength: source.byteLength,
+      }),
+    })
   })
 
   it('re-reads authority inside the transaction and rejects a newly rejected source', async () => {

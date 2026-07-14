@@ -14,6 +14,11 @@ export interface ClaimPublicationSource {
   snippet: string
   retrievedAt: Date
   contentHash?: string | null
+  evidenceSnapshotId?: string | null
+  storageKey?: string | null
+  retrievalAdapter?: 'JINA_READER' | null
+  representationMediaType?: string | null
+  byteLength?: number | null
   modelUsed?: string | null
   authorityClass?: string | null
   authorityOwner?: string | null
@@ -85,6 +90,16 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
   if (!input.source.url.trim()) throw new Error('SOURCE_URL_REQUIRED')
   if (!input.source.snippet.trim()) throw new Error('SOURCE_SNIPPET_REQUIRED')
   if (!input.reviewerId.trim()) throw new Error('REVIEWER_REQUIRED')
+  if (input.source.evidenceSnapshotId && (
+    !input.source.contentHash ||
+    !input.source.storageKey ||
+    !input.source.retrievalAdapter ||
+    !input.source.representationMediaType ||
+    !input.source.byteLength ||
+    input.source.byteLength < 1
+  )) {
+    throw new Error('EVIDENCE_SNAPSHOT_INCOMPLETE')
+  }
   const reviewedAt = input.reviewedAt ?? new Date()
   const verificationState = claimVerificationState(input.question, input.source)
   const rawConfidence = typeof input.extractedValue.confidence === 'number'
@@ -151,10 +166,15 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
       claimId: input.claimId,
       sourceUrlId: input.source.sourceUrlId ?? undefined,
       candidateId: input.source.candidateId ?? undefined,
+      evidenceSnapshotId: input.source.evidenceSnapshotId ?? undefined,
       sourceUrl: input.source.url,
       sourceSnippet: input.source.snippet,
       retrievedAt: input.source.retrievedAt,
       contentHash: input.source.contentHash ?? undefined,
+      storageKey: input.source.storageKey ?? undefined,
+      retrievalAdapter: input.source.retrievalAdapter ?? undefined,
+      representationMediaType: input.source.representationMediaType ?? undefined,
+      byteLength: input.source.byteLength ?? undefined,
       modelUsed: input.source.modelUsed ?? undefined,
     },
   }
@@ -163,6 +183,62 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
 export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
   const reviewedAt = input.reviewedAt ?? new Date()
   return db.$transaction(async tx => {
+    let trustedSource = input.source
+    if (input.source.candidateId) {
+      const candidate = await tx.extractionCandidate.findFirst({
+        where: {
+          id: input.source.candidateId,
+          jurisdictionId: input.jurisdictionId,
+          status: 'PENDING',
+          ...(input.source.candidateUpdatedAt
+            ? { updatedAt: input.source.candidateUpdatedAt }
+            : {}),
+        },
+        select: {
+          sourceUrlId: true,
+          sourceSnippet: true,
+          modelUsed: true,
+          evidenceSnapshot: {
+            select: {
+              id: true,
+              jurisdictionId: true,
+              sourceUrlId: true,
+              sourceUrl: true,
+              retrievedAt: true,
+              retrievalAdapter: true,
+              representationMediaType: true,
+              contentHash: true,
+              storageKey: true,
+              byteLength: true,
+            },
+          },
+        },
+      })
+      if (!candidate) throw new Error('CANDIDATE_NOT_PENDING')
+      const snapshot = candidate.evidenceSnapshot
+      if (!snapshot) throw new Error('EVIDENCE_SNAPSHOT_REQUIRED')
+      if (
+        snapshot.jurisdictionId !== input.jurisdictionId ||
+        snapshot.sourceUrlId !== candidate.sourceUrlId
+      ) {
+        throw new Error('EVIDENCE_SNAPSHOT_SCOPE_MISMATCH')
+      }
+      trustedSource = {
+        ...input.source,
+        sourceUrlId: candidate.sourceUrlId,
+        url: snapshot.sourceUrl,
+        snippet: candidate.sourceSnippet ?? '',
+        retrievedAt: snapshot.retrievedAt,
+        contentHash: snapshot.contentHash,
+        evidenceSnapshotId: snapshot.id,
+        storageKey: snapshot.storageKey,
+        retrievalAdapter: snapshot.retrievalAdapter,
+        representationMediaType: snapshot.representationMediaType,
+        byteLength: snapshot.byteLength,
+        modelUsed: candidate.modelUsed,
+      }
+    }
+
     const profile = await tx.jurisdictionProfile.upsert({
       where: { jurisdictionId: input.jurisdictionId },
       update: {},
@@ -183,11 +259,10 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
       : null
 
     // Re-read the mutable source authority record inside the transaction. Route data is only a hint.
-    let trustedSource = input.source
-    if (input.source.sourceUrlId) {
+    if (trustedSource.sourceUrlId) {
       const persistedSource = await tx.jurisdictionSourceUrl.findFirst({
         where: {
-          id: input.source.sourceUrlId,
+          id: trustedSource.sourceUrlId,
           jurisdictionId: input.jurisdictionId,
         },
         select: {
@@ -201,8 +276,10 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
       })
       if (!persistedSource) throw new Error('SOURCE_NOT_FOUND')
       trustedSource = {
-        ...input.source,
-        url: persistedSource.url,
+        ...trustedSource,
+        // Snapshot-backed evidence retains the URL copied at retrieval time. Manual
+        // citations without a snapshot use the current persisted source URL.
+        url: trustedSource.evidenceSnapshotId ? trustedSource.url : persistedSource.url,
         authorityClass: persistedSource.authorityClass,
         authorityOwner: persistedSource.authorityOwner,
         authorityStatus: persistedSource.authorityStatus,

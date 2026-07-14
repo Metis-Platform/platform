@@ -3,7 +3,6 @@ import { db } from '@/lib/db'
 import {
   buildExtractionPrompt,
   getPlatformAnthropic,
-  hashContent,
   parseExtractionResponse,
   HAIKU_MODEL,
   SONNET_MODEL,
@@ -12,6 +11,15 @@ import {
 } from '@/lib/jurisdiction-extraction'
 import { evaluateJurisdictionPublication } from '@/lib/jurisdiction-publication-policy'
 import { guardCronRequest } from '@/lib/cron-guard'
+import {
+  archiveJurisdictionEvidence,
+  prepareJurisdictionEvidence,
+} from '@/lib/jurisdiction-evidence'
+import {
+  persistJurisdictionRetrieval,
+  recordJurisdictionEvidenceSnapshot,
+  type JurisdictionCandidateDraft,
+} from '@/lib/jurisdiction-extraction-persistence'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -124,28 +132,44 @@ export async function GET(req: Request): Promise<NextResponse> {
       })
       continue
     }
+    const retrievedAt = new Date()
 
-    const contentHash = hashContent(content)
-    if (contentHash === sourceUrl.lastContentHash) {
-      // No change — update timestamp and skip Claude
-      await db.jurisdictionSourceUrl.update({
-        where: { id: sourceUrl.id },
-        data: { lastFetchedAt: new Date() },
-      })
-      stats.skipped++
-      continue
-    }
-
-    let results: ExtractionResult[]
+    let preparedEvidence: ReturnType<typeof prepareJurisdictionEvidence>
     try {
-      results = await runExtraction(county, state, sourceUrl.officeType, content)
+      preparedEvidence = prepareJurisdictionEvidence(content)
     } catch (err) {
-      console.error(`[extract-jurisdiction] extraction failed ${county} ${state}: ${err}`)
+      console.error(`[extract-jurisdiction] evidence invalid ${county} ${state}: ${err}`)
       stats.errors++
       continue
     }
+    const contentChanged = preparedEvidence.contentHash !== sourceUrl.lastContentHash
 
-    const now = new Date().toISOString()
+    let results: ExtractionResult[] = []
+    if (contentChanged) {
+      try {
+        results = await runExtraction(county, state, sourceUrl.officeType, content)
+      } catch (err) {
+        console.error(`[extract-jurisdiction] extraction failed ${county} ${state}: ${err}`)
+        try {
+          const archivedEvidence = await archiveJurisdictionEvidence(preparedEvidence)
+          await recordJurisdictionEvidenceSnapshot({
+            jurisdictionId: sourceUrl.jurisdictionId,
+            sourceUrlId: sourceUrl.id,
+            sourceUrl: sourceUrl.url,
+            retrievedAt,
+            evidence: archivedEvidence,
+          })
+        } catch (archiveError) {
+          console.error(
+            `[extract-jurisdiction] failed extraction evidence archive ${county} ${state}: ${archiveError}`,
+          )
+        }
+        stats.errors++
+        continue
+      }
+    }
+
+    const candidates: JurisdictionCandidateDraft[] = []
 
     for (const result of results) {
       const publication = evaluateJurisdictionPublication({
@@ -169,8 +193,8 @@ export async function GET(req: Request): Promise<NextResponse> {
         value: result.value,
         sourceUrl: sourceUrl.url,
         citation: result.sourceSnippet,
-        retrievedAt: now,
-        contentHash,
+        retrievedAt: retrievedAt.toISOString(),
+        contentHash: preparedEvidence.contentHash,
         confidence: result.confidence,
         volatility: result.volatility,
         questionId: publication.question.id,
@@ -183,42 +207,14 @@ export async function GET(req: Request): Promise<NextResponse> {
 
       if (!publication.allowed) {
         // Model confidence controls queue priority only; it never establishes authority.
-        const existing = await db.extractionCandidate.findFirst({
-          where: {
-            jurisdictionId: sourceUrl.jurisdictionId,
-            section: result.section,
-            fieldKey: result.fieldKey,
-            status: 'PENDING',
-          },
-          select: { id: true },
+        candidates.push({
+          section: result.section,
+          fieldKey: result.fieldKey,
+          extractedValue: profileField,
+          confidence: result.confidence,
+          sourceSnippet: result.sourceSnippet,
+          modelUsed,
         })
-
-        if (existing) {
-          await db.extractionCandidate.update({
-            where: { id: existing.id },
-            data: {
-              sourceUrlId: sourceUrl.id,
-              extractedValue: profileField,
-              confidence: result.confidence,
-              sourceSnippet: result.sourceSnippet,
-              modelUsed,
-            },
-          })
-        } else {
-          await db.extractionCandidate.create({
-            data: {
-              jurisdictionId: sourceUrl.jurisdictionId,
-              sourceUrlId: sourceUrl.id,
-              section: result.section,
-              fieldKey: result.fieldKey,
-              extractedValue: profileField,
-              confidence: result.confidence,
-              sourceSnippet: result.sourceSnippet,
-              modelUsed,
-            },
-          })
-        }
-        stats.extracted++
       } else {
         // No v1 questions permit AI auto-publication. This branch is explicit so a future
         // policy change cannot bypass a deliberate publication implementation/review.
@@ -226,11 +222,25 @@ export async function GET(req: Request): Promise<NextResponse> {
       }
     }
 
-    await db.jurisdictionSourceUrl.update({
-      where: { id: sourceUrl.id },
-      data: { lastFetchedAt: new Date(), lastContentHash: contentHash },
-    })
-    stats.processed++
+    try {
+      const archivedEvidence = await archiveJurisdictionEvidence(preparedEvidence)
+      await persistJurisdictionRetrieval({
+        jurisdictionId: sourceUrl.jurisdictionId,
+        sourceUrlId: sourceUrl.id,
+        sourceUrl: sourceUrl.url,
+        sourceUpdatedAt: sourceUrl.updatedAt,
+        retrievedAt,
+        evidence: archivedEvidence,
+        contentChanged,
+        candidates,
+      })
+      stats.extracted += candidates.length
+      if (contentChanged) stats.processed++
+      else stats.skipped++
+    } catch (err) {
+      console.error(`[extract-jurisdiction] evidence persistence failed ${county} ${state}: ${err}`)
+      stats.errors++
+    }
   }
 
   return NextResponse.json({ ok: true, ...stats })

@@ -90,9 +90,21 @@ overwrite history. Source authority is re-read and candidate version is checked 
 transaction, preventing stale review races. Legacy profile JSON is not assigned fabricated claims
 and the county UI labels it `Legacy — provenance unavailable` rather than verified.
 
-Authority verification operations/UI, content snapshot archival, contradiction handling, freshness
-transitions, and researched legacy migration remain part of the national jurisdiction intelligence
-initiative (#296).
+The extraction pipeline archives the exact UTF-8 Markdown representation supplied by Jina Reader
+and reviewed by the model. It does not mislabel that transformed representation as the original
+county HTML or document. Bytes are stored in R2 under a SHA-256 content-addressed key using a
+non-overwriting conditional write; a `JurisdictionEvidenceSnapshot` row records every successful
+retrieval event, including unchanged content, with adapter, media type, hash, byte length, copied
+URL, and retrieval time. R2 integrity is confirmed before database metadata may commit. Because R2
+and PostgreSQL cannot share a transaction, a failed database write can leave an unreferenced
+deduplicated object, but a database snapshot cannot point to a missing or mismatched object.
+
+New AI candidates must reference the exact snapshot used for extraction. Claim publication
+re-reads that pending candidate and snapshot inside the claim transaction and copies the integrity
+envelope into `JurisdictionClaimEvidence`; route-supplied snapshot provenance is ignored. Legacy AI
+candidates without snapshots fail closed. Direct manual citations remain snapshot-less and
+`REVIEWED`. Claim re-review, contradiction handling, freshness transitions, and researched legacy
+migration remain part of the national jurisdiction intelligence initiative (#296).
 
 Source authority decisions are made only through the super-admin review workflow. Each verify,
 reject, or reset action atomically appends a `JurisdictionSourceAuthorityReview` containing the
