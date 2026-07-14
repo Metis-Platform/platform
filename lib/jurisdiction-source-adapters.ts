@@ -56,15 +56,23 @@ export function discoverJurisdictionSources(input: {
   return { status: sources.length ? 'DISCOVERED' as const : 'DISCOVERY_NEEDED' as const, sources }
 }
 
-export async function persistDiscoveredJurisdictionSources(input: {
+export async function queueDiscoveredJurisdictionSources(input: {
   jurisdictionId: string
   sources: DiscoveredJurisdictionSource[]
-  createSource: (data: { jurisdictionId: string; officeType: string; url: string }) => Promise<unknown>
+  createLead: (data: {
+    jurisdictionId: string
+    adapterId: string
+    officeType: string
+    url: string
+    authorityOwner: string
+    authorityRationale: string
+    discoveredAt: Date
+  }) => Promise<unknown>
 }) {
   if (!input.jurisdictionId.trim()) throw new Error('JURISDICTION_REQUIRED')
   for (const source of input.sources) {
-    // Create-only is deliberate: adapters may never mutate authority, evidence,
-    // or a human-curated source after its identity is registered.
-    await input.createSource({ jurisdictionId: input.jurisdictionId, officeType: source.officeType, url: source.url })
+    // A discovery lead is not a jurisdiction source record. The latter requires
+    // explicit review because an adapter may return a statewide directory.
+    await input.createLead({ jurisdictionId: input.jurisdictionId, ...source })
   }
 }

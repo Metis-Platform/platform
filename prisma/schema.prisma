@@ -169,6 +169,7 @@ model Jurisdiction {
   strategyData         JurisdictionStrategyData[]
   profile              JurisdictionProfile?
   sourceUrls           JurisdictionSourceUrl[]
+  sourceDiscoveryLeads JurisdictionSourceDiscoveryLead[]
   evidenceSnapshots    JurisdictionEvidenceSnapshot[]
   extractionCandidates ExtractionCandidate[]
   claims               JurisdictionClaim[]
@@ -179,6 +180,27 @@ model Jurisdiction {
   researchDemands      JurisdictionResearchDemand[]
 
   @@unique([state, county])
+}
+
+// Discovery output is deliberately separate from a source record. A lead can be
+// a statewide directory or other starting point; it is not evidence that a
+// county office URL is authoritative or suitable for extraction.
+model JurisdictionSourceDiscoveryLead {
+  id                 String                            @id @default(cuid())
+  jurisdictionId     String
+  jurisdiction       Jurisdiction                      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  adapterId          String
+  officeType         String
+  url                String
+  authorityOwner     String?
+  authorityRationale String                            @db.Text
+  status             JurisdictionSourceDiscoveryStatus @default(PENDING_REVIEW)
+  discoveredAt       DateTime
+  createdAt          DateTime                          @default(now())
+  updatedAt          DateTime                          @updatedAt
+
+  @@unique([jurisdictionId, adapterId, officeType, url])
+  @@index([jurisdictionId, status])
 }
 
 model JurisdictionStrategyData {
@@ -1332,6 +1354,12 @@ enum JurisdictionSourceAuthorityStatus {
   UNVERIFIED
   VERIFIED
   REJECTED
+}
+
+enum JurisdictionSourceDiscoveryStatus {
+  PENDING_REVIEW
+  REJECTED
+  PROMOTED
 }
 
 enum JurisdictionEvidenceRetrievalAdapter {
