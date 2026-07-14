@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getJurisdictionQuestion } from './jurisdiction-question-library'
 
-const { tx, transaction } = vi.hoisted(() => {
+const { tx, transaction, queueVerifiedCoverageNotifications } = vi.hoisted(() => {
   const client = {
     jurisdictionProfile: { upsert: vi.fn() },
     jurisdictionClaim: { findFirst: vi.fn(), create: vi.fn() },
@@ -15,10 +15,12 @@ const { tx, transaction } = vi.hoisted(() => {
   return {
     tx: client,
     transaction: vi.fn(async (callback: (value: typeof client) => Promise<unknown>) => callback(client)),
+    queueVerifiedCoverageNotifications: vi.fn().mockResolvedValue(0),
   }
 })
 
 vi.mock('./db', () => ({ db: { $transaction: transaction } }))
+vi.mock('./jurisdiction-coverage-notification', () => ({ queueVerifiedCoverageNotifications }))
 
 import {
   buildClaimPublication,
@@ -281,6 +283,7 @@ describe('atomic claim publication service', () => {
       },
       data: expect.objectContaining({ status: 'APPROVED' }),
     })
+    expect(queueVerifiedCoverageNotifications).toHaveBeenCalledWith(tx, 'jurisdiction-1', reviewedAt)
     expect(result.profileField.claimId).toBe(result.claimId)
   })
 

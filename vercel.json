@@ -9,6 +9,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/deliver-jurisdiction-coverage",
+      "schedule": "15 7 * * *"
+    },
+    {
       "path": "/api/cron/expire-trials",
       "schedule": "0 8 * * *"
     },
