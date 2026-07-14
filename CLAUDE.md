@@ -52,9 +52,9 @@ Read on demand only (not every session):
 - `PHASE-HISTORY.md` — completed phase archive
 
 **Environment:**
-- Repo: `/home/xovox/dev/metis-platform/` (WSL, Ubuntu)
-- Node: source nvm before any npm/npx command: `source /home/xovox/.nvm/nvm.sh && <command>`
-- Windows temp (for migration SQL): `C:\Users\aswit\AppData\Local\Temp\` (WSL path: `/mnt/c/Users/aswit/AppData/Local/Temp/`)
+- Repo: the active Git checkout; resolve it with `git rev-parse --show-toplevel` rather than assuming a machine path.
+- Node: Node 20 from `.nvmrc`; run `npm run bootstrap` on a fresh clone before npm/npx work.
+- Use the host temporary directory for migration SQL, then copy it into the repository with normal ownership.
 
 **Step 2 — Sync safely and check open PRs:**
 ```bash
@@ -67,7 +67,7 @@ gh pr list --state open
 
 If the working tree is not clean, do not switch branches, reset, or discard files. Commit and push intentional work on its feature branch before moving machines. See `docs/CROSS-MACHINE-WORKFLOW.md`.
 
-> **Windows Claude app only:** prefix these with `wsl bash -c "cd /home/xovox/dev/metis-platform && ..."` since it runs in Git Bash, not WSL.
+> **Windows/WSL note:** run commands from the repository checkout in the appropriate host shell; do not assume an editor terminal already points at the repository.
 
 **Step 3 — After every `gh pr create`, immediately queue auto-merge:**
 ```bash
@@ -115,15 +115,7 @@ If a session ends with intentional work in progress, commit and push it to the o
 
 **Rot prevention:** When you encounter a stale reference, wrong filename, or inaccurate content in any project doc, fix it in-place as part of your current work — don't note it for later. At the end of each initiative (when all ACTIVE-SPRINT.md items for an initiative check off), do a quick read of the file map to catch anything missed opportunistically.
 
-**File writing — use Linux paths (VS Code extension and WSL CLI):**
-```
-Read/Write/Edit → /home/xovox/dev/metis-platform/<path/to/file>
-```
-
-**Windows Claude app:** tools are Windows-native and cannot use Linux paths directly.
-```
-Read/Write/Edit → \\wsl.localhost\Ubuntu\home\xovox\dev\metis-platform\<path\to\file>
-```
+**File paths:** use repository-relative paths resolved from the checkout root. Windows-native tools may use a UNC path to a WSL checkout, but this is an editor transport detail, not a repository requirement.
 ⚠️ **Migration SQL files must never be written via UNC path** — UNC-written files get Windows/root ownership in WSL and break `git reset --hard`. Use the temp-copy method instead (see Schema Migrations section).
 
 ---

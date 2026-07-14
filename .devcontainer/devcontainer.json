@@ -1,0 +1,11 @@
+{
+  "name": "Metis Platform",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "node",
+  "postCreateCommand": "npm ci",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "Prisma.prisma"]
+    }
+  }
+}
