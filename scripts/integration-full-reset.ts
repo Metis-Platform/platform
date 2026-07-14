@@ -4,11 +4,15 @@ import { createSeedPrismaClient } from '../prisma/seeds/db'
 import { PrismaIntegrationFixtureStore } from '../prisma/integration-fixture-store'
 import { INTEGRATION_FIXTURE_MANIFEST } from '../prisma/fixtures/integration-v1'
 import {
-  executeIntegrationFixtureReset,
-  IntegrationResetRefusedError,
-  planIntegrationFixtureReset,
-  validateIntegrationFixtureResetRequest,
-} from '../lib/integration-fixture-reset'
+  executeFullIntegrationReset,
+  planFullIntegrationReset,
+  validateFullIntegrationResetRequest,
+} from '../lib/integration-full-reset'
+import { IntegrationResetRefusedError } from '../lib/integration-fixture-reset'
+import {
+  createClerkFixtureProvider,
+  createR2FixtureProvider,
+} from '../lib/integration-fixture-providers'
 
 function argument(name: string): string | undefined {
   const index = process.argv.indexOf(name)
@@ -25,9 +29,8 @@ async function main() {
   const confirmation = argument('--confirm-environment') ?? ''
   const fixtureSetConfirmation = argument('--confirm-fixture') ?? ''
 
-  // Keep the safety boundary independent of Prisma and DATABASE_URL parsing.
-  // An unsafe or incomplete environment must fail before a client can connect.
-  validateIntegrationFixtureResetRequest({
+  // Validate every non-secret safety input before constructing provider/database clients.
+  validateFullIntegrationResetRequest({
     env: process.env,
     confirmation,
     fixtureSetConfirmation: execute ? fixtureSetConfirmation : undefined,
@@ -35,24 +38,30 @@ async function main() {
 
   const prisma = createSeedPrismaClient()
   const store = new PrismaIntegrationFixtureStore(prisma)
+  const clerk = createClerkFixtureProvider(process.env)
+  const r2 = createR2FixtureProvider(process.env)
 
   try {
     if (!execute) {
-      const plan = await planIntegrationFixtureReset({
+      const plan = await planFullIntegrationReset({
         env: process.env,
         confirmation,
         store,
+        clerk,
+        r2,
       })
       console.log(JSON.stringify({ mode: 'plan', mutating: false, ...plan }, null, 2))
       return
     }
 
-    const result = await executeIntegrationFixtureReset({
+    const result = await executeFullIntegrationReset({
       env: process.env,
       confirmation,
       fixtureSetConfirmation,
       gitCommit: currentCommit(),
       store,
+      clerk,
+      r2,
     })
     console.log(JSON.stringify({
       mode: 'execute',
@@ -73,7 +82,7 @@ main().catch(error => {
       blockers: error.blockers,
     }, null, 2))
   } else {
-    console.error(JSON.stringify({ ok: false, error: 'Integration fixture command failed.' }))
+    console.error(JSON.stringify({ ok: false, error: 'Full integration reset command failed.' }))
   }
   process.exitCode = 1
 })

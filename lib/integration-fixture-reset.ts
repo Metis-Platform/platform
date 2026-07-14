@@ -18,6 +18,7 @@ export interface IntegrationFixtureInspection {
   clerkOrgId: string | null
   clerkUserIds: string[]
   r2ObjectCount: number
+  r2ObjectKeys: string[]
   stripeArtifactCount: number
   stableTenantIdConflict: boolean
   databaseRowCounts: Record<string, number>
@@ -58,16 +59,38 @@ export interface IntegrationFixtureStore {
   }): Promise<string>
   replaceFixture(
     manifest: IntegrationFixtureManifest,
-    identity: IntegrationFixtureIdentity
+    identity: IntegrationFixtureIdentity,
+    externalCleanup?: {
+      verifiedEmptyR2Prefix: string
+      replacedClerkIdentity: {
+        previousOrgId: string | null
+        previousUserIds: string[]
+      }
+    }
   ): Promise<Record<string, number>>
   completeResetRun(runId: string, summary: Record<string, number>): Promise<void>
   failResetRun(runId: string, errorCode: string): Promise<void>
 }
 
+export function matchesVerifiedPreviousClerkIdentity(
+  existingOrgId: string,
+  existingUserIds: readonly string[],
+  verification: {
+    previousOrgId: string | null
+    previousUserIds: readonly string[]
+  } | undefined
+): boolean {
+  if (!verification || verification.previousOrgId !== existingOrgId) return false
+  const existing = [...existingUserIds].sort()
+  const verified = [...verification.previousUserIds].sort()
+  return existing.length === verified.length &&
+    existing.every((userId, index) => userId === verified[index])
+}
+
 export class IntegrationResetRefusedError extends Error {
   constructor(
     message: string,
-    readonly blockers: IntegrationResetBlocker[] = []
+    readonly blockers: ReadonlyArray<{ code: string; count: number }> = []
   ) {
     super(message)
     this.name = 'IntegrationResetRefusedError'
@@ -103,6 +126,17 @@ function assertResetPreflight(env: EnvironmentMap, confirmation: string): string
   return required(env, 'METIS_ENVIRONMENT_ID')
 }
 
+export function validateIntegrationResetBoundary(
+  env: EnvironmentMap,
+  confirmation: string
+): { environmentId: string; ownerEmail: string } {
+  const ownerEmail = required(env, 'INTEGRATION_FIXTURE_OWNER_EMAIL').toLowerCase()
+  if (!ownerEmail.includes('@')) {
+    throw new IntegrationResetRefusedError('INTEGRATION_FIXTURE_OWNER_EMAIL must be valid.')
+  }
+  return { environmentId: assertResetPreflight(env, confirmation), ownerEmail }
+}
+
 export function validateIntegrationFixtureResetRequest(input: {
   env: EnvironmentMap
   confirmation: string
@@ -117,13 +151,11 @@ export function validateIntegrationFixtureResetRequest(input: {
     throw new IntegrationResetRefusedError('Fixture-set confirmation does not match.')
   }
 
-  return {
-    environmentId: assertResetPreflight(input.env, input.confirmation),
-    identity: readIntegrationFixtureIdentity(input.env),
-  }
+  const boundary = validateIntegrationResetBoundary(input.env, input.confirmation)
+  return { environmentId: boundary.environmentId, identity: readIntegrationFixtureIdentity(input.env) }
 }
 
-function blockersFor(
+export function integrationResetBlockersFor(
   inspection: IntegrationFixtureInspection,
   manifest: IntegrationFixtureManifest,
   identity: IntegrationFixtureIdentity
@@ -177,7 +209,7 @@ export async function planIntegrationFixtureReset(input: {
     requiredMigration: manifest.requiredMigration,
     existingRows: inspection.databaseRowCounts,
     willReplaceFixtureTenant: inspection.fixtureTenantCount === 1,
-    blockers: blockersFor(inspection, manifest, identity),
+    blockers: integrationResetBlockersFor(inspection, manifest, identity),
   }
 }
 
