@@ -24,6 +24,16 @@ const overridesSchema = z.object({
   landMarketType:  z.enum(['RURAL', 'INFILL']).optional(),
   roadFrontage:    z.enum(['paved', 'unpaved', 'easement_only', 'landlocked']).optional(),
   wetlandsPresent: z.boolean().optional(),
+  manualSourceUrl: z.string().url().max(2048).optional(),
+  manualVerification: z.literal(true).optional(),
+}).superRefine((value, ctx) => {
+  const hasManualFact = [
+    'lotSizeSqFt', 'lotSizeAcres', 'frontageLinearFt', 'lotDepthFt', 'improved', 'zoning', 'floodZone',
+    'assessedValue', 'marketValueEstimate', 'landMarketType', 'roadFrontage', 'wetlandsPresent',
+  ].some(key => value[key as keyof typeof value] !== undefined)
+  if (!hasManualFact) return
+  if (!value.manualSourceUrl) ctx.addIssue({ code: 'custom', path: ['manualSourceUrl'], message: 'A source URL is required for manual parcel facts.' })
+  if (!value.manualVerification) ctx.addIssue({ code: 'custom', path: ['manualVerification'], message: 'Confirm that you verified the manual facts against the supplied source.' })
 })
 
 const requestSchema = z.object({
@@ -91,8 +101,10 @@ export async function POST(req: Request) {
     ? await loadFmrByBedroom(jurisdiction.state, jurisdiction.county)
     : {}
 
+  const { manualSourceUrl, ...manualOverrides } = overrides ?? {}
+  delete manualOverrides.manualVerification
   const parcelOverrides: Partial<ParcelProfile> = {
-    ...overrides,
+    ...manualOverrides,
     purchasePrice: maxBid,
   }
 
@@ -103,6 +115,7 @@ export async function POST(req: Request) {
     jurisdiction?.county,
     cacheRows,
     parcelOverrides,
+    manualSourceUrl,
   )
 
   const investor: InvestorConstraints = {

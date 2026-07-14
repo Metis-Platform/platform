@@ -59,6 +59,8 @@ export default function ResearchForm({ jurisdictions }: Props) {
   const [landMarketType,   setLandMarketType]   = useState<'' | 'RURAL' | 'INFILL'>('')
   const [roadFrontage,     setRoadFrontage]      = useState<'' | 'paved' | 'unpaved' | 'easement_only' | 'landlocked'>('')
   const [wetlandsPresent,  setWetlandsPresent]   = useState<'true' | 'false' | ''>('')
+  const [manualSourceUrl,  setManualSourceUrl]   = useState('')
+  const [manualVerified,   setManualVerified]    = useState(false)
 
   const [data,    setData]    = useState<ResearchResponse | null>(null)
   const [error,   setError]   = useState<string | null>(null)
@@ -97,6 +99,15 @@ export default function ResearchForm({ jurisdictions }: Props) {
       if (landMarketType)  overrides.landMarketType  = landMarketType
       if (roadFrontage)    overrides.roadFrontage    = roadFrontage
       if (wetlandsPresent !== '') overrides.wetlandsPresent = wetlandsPresent === 'true'
+
+      if (Object.keys(overrides).length > 0) {
+        if (!manualSourceUrl || !manualVerified) {
+          setError('Manual parcel facts require a source URL and confirmation that you verified them.')
+          return
+        }
+        overrides.manualSourceUrl = manualSourceUrl
+        overrides.manualVerification = true
+      }
 
       const body: Record<string, unknown> = { apn, fipsCounty }
       if (maxBid)                       body.maxBid = Number(maxBid)
@@ -313,6 +324,20 @@ export default function ResearchForm({ jurisdictions }: Props) {
                   <option value="false">No</option>
                   <option value="true">Yes</option>
                 </select>
+              </div>
+              <div className="sm:col-span-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <label className="block text-xs font-medium text-amber-800 mb-1">Manual evidence URL</label>
+                <input
+                  type="url"
+                  value={manualSourceUrl}
+                  onChange={e => setManualSourceUrl(e.target.value)}
+                  placeholder="https://county.example.gov/parcel/..."
+                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                />
+                <label className="mt-2 flex items-start gap-2 text-xs text-amber-800">
+                  <input type="checkbox" checked={manualVerified} onChange={e => setManualVerified(e.target.checked)} className="mt-0.5" />
+                  I verified the manual facts above against this source. Metis will label them as manually entered.
+                </label>
               </div>
             </div>
           )}
@@ -673,6 +698,9 @@ function ParcelFact({
       <dt className="text-xs text-zinc-400">{label}</dt>
       <dd className="text-sm font-medium text-zinc-800">{value == null ? '—' : String(value)}</dd>
       {provenance && <p className="mt-0.5 text-[11px] text-zinc-400">{PARCEL_FACT_PROVENANCE_LABEL[provenance]}</p>}
+      {provenance === 'MANUAL' && field && parcel?.sources[field]?.sourceUrl && (
+        <a href={parcel.sources[field].sourceUrl} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline">View supplied source</a>
+      )}
     </div>
   )
 }

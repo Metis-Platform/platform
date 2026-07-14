@@ -46,6 +46,7 @@ export function assembleResearchProfile(
   county: string | undefined,
   cacheRows: ParcelDataCache[],
   overrides: Partial<ParcelProfile> = {},
+  manualSourceUrl?: string,
 ): ParcelProfile {
   const now = new Date()
 
@@ -65,7 +66,7 @@ export function assembleResearchProfile(
   const overrideSources: Partial<Record<string, ParcelFieldSource>> = {}
   for (const key of Object.keys(overrides)) {
     if ((overrides as Record<string, unknown>)[key] !== undefined) {
-      overrideSources[key] = { provider: 'manual', retrievedAt: now, ttlHours: 0 }
+      overrideSources[key] = { provider: 'manual', retrievedAt: now, ttlHours: 0, sourceUrl: manualSourceUrl }
     }
   }
 
