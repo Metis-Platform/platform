@@ -12,6 +12,7 @@
     "context:check": "bash scripts/context-check.sh",
     "integration:reset:preflight": "tsx scripts/integration-reset-preflight.ts",
     "e2e:guard": "tsx scripts/e2e-guard.ts",
+    "e2e:readonly": "tsx scripts/e2e-readonly.ts",
     "integration:fixtures:plan": "tsx scripts/integration-fixture-reset.ts",
     "integration:fixtures:reset": "tsx scripts/integration-fixture-reset.ts --execute",
     "integration:full-reset:plan": "tsx scripts/integration-full-reset.ts",
@@ -39,6 +40,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

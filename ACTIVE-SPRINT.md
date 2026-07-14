@@ -42,7 +42,7 @@
 - [ ] **Spreadsheet import safety (#290)** — replace or contain `xlsx`, impose pre-parse limits, and test hostile/oversized files
 - [ ] **Environment lifecycle and reset (#298)** — current stack classification plus guarded database/Clerk/R2 orchestration shipped through #300/#302/#304/#306; remaining: hosted reset rehearsal, versioned Gold-equivalent configuration, release-candidate rebuild, and clean production cutover
 - [ ] **Resettable integration test state (#289)** — deterministic tagged database/Clerk/R2 fixtures and external-service safeguards shipped through #300/#302/#304/#306; remaining: authorized hosted rehearsal, destructive-test gate, browser suite restore, and permanent clean-production boundary
-- [ ] **Playwright feature verification** — named user-story steps, traces, screenshots, requests, console evidence, HTML reports, and GitHub Actions artifacts
+- [ ] **Playwright feature verification** — read-only runner/health check foundation shipped; remaining named UI user stories, traces, screenshots, console evidence, HTML reports, CI artifacts, and the reset-safe mutation suite
 - [ ] **Mutation observability** — structured tenant-safe logs, semantic audit events, and correlation IDs from browser action through server result
 - [ ] **Portable reproducible development (#295)** — one container/bootstrap contract for WSL, macOS, and an approved cloud host; remove root dependence on original WSL paths
 
