@@ -93,6 +93,7 @@ export interface ParcelProfile {
   assessedValue?: number
   assessedYear?: number
   marketValueEstimate?: number
+  landMarketType?: 'RURAL' | 'INFILL'
   comps?: Comp[]
   estimatedArv?: number
   dataCompleteness: number

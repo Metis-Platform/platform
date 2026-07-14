@@ -6,7 +6,7 @@ export interface MaoScenario {
   aggressive: number | null
 }
 
-export type MaoWarningType = 'unbuildable' | 'data_gap'
+export type MaoWarningType = 'unbuildable' | 'data_gap' | 'land_classification'
 
 export interface MaoResult {
   strategy: string
@@ -75,20 +75,44 @@ export function computeMao(parcel: ParcelProfile, exitResults: ExitResult[]): Ma
     })
   }
 
-  // Raw land — always computed when assessed/market value is known
-  const landValue = parcel.assessedValue ?? parcel.marketValueEstimate
+  // Raw land — strategy bands require an explicit market classification.
+  // County assessment remains a clearly labeled fallback until market comps are available.
+  const landValue = parcel.marketValueEstimate ?? parcel.assessedValue
   if (landValue != null) {
+    const valueLabel = parcel.marketValueEstimate != null
+      ? 'Market value estimate'
+      : 'Assessed value proxy'
+    const band = parcel.landMarketType === 'RURAL'
+      ? { label: 'Rural land', conservative: 0.25, moderate: 0.375, aggressive: 0.50, range: '25-50%' }
+      : parcel.landMarketType === 'INFILL'
+        ? { label: 'Infill lot', conservative: 0.40, moderate: 0.55, aggressive: 0.70, range: '40-70%' }
+        : null
+
+    if (!band) {
+      const warning = rawLandWarning
+        ? `${rawLandWarning.warning} Confirm whether this is rural land or an infill lot before calculating a bid ceiling.`
+        : 'Land MAO needs a rural or infill classification before calculating a bid ceiling.'
+      results.push({
+        strategy: 'LAND',
+        label: 'Raw Land — classification needed',
+        scenario: { conservative: null, moderate: null, aggressive: null },
+        basis: `${valueLabel} ${fmtCurrency(landValue)} is available, but Metis will not choose a land discount band for you.`,
+        warning,
+        warningType: rawLandWarning?.warningType ?? 'land_classification',
+      })
+    } else {
     results.push({
       strategy: 'LAND',
-      label: 'Raw Land',
+      label: `Raw Land (${band.label})`,
       scenario: {
-        conservative: landValue * 0.40,
-        moderate:     landValue * 0.60,
-        aggressive:   landValue * 0.80,
+        conservative: roundCurrency(landValue * band.conservative),
+        moderate:     roundCurrency(landValue * band.moderate),
+        aggressive:   roundCurrency(landValue * band.aggressive),
       },
-      basis: `Assessed value ${fmtCurrency(landValue)} × 40-80%`,
+      basis: `${valueLabel} ${fmtCurrency(landValue)} × ${band.range}`,
       ...rawLandWarning,
     })
+    }
   }
 
   // Buy & Hold — requires comparable rent
@@ -127,6 +151,10 @@ export function computeMao(parcel: ParcelProfile, exitResults: ExitResult[]): Ma
 
 function clamp(value: number): number {
   return Math.max(0, value)
+}
+
+function roundCurrency(value: number): number {
+  return Math.round(value * 100) / 100
 }
 
 function fmtCurrency(value: number): string {
