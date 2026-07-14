@@ -1,6 +1,6 @@
 import { projectCapRate, projectLienReturn, projectMonthlyRent, projectNetProfit } from '../projections'
 import type { ExitKey } from '../keys'
-import type { EvalContext, ExitResult, Projection, Verdict } from '../types'
+import type { BuildableEnvelope, EvalContext, ExitResult, Projection, Verdict } from '../types'
 
 export type BaseExitResult = Omit<ExitResult, 'confidence' | 'dataGaps'>
 
@@ -30,8 +30,16 @@ export function result(
   blockers: string[] = [],
   conditions: string[] = [],
   projection?: Projection,
+  buildableEnvelope?: BuildableEnvelope,
 ): BaseExitResult {
-  return { exitKey, verdict, blockers, conditions, ...(projection ? { projection } : {}) }
+  return {
+    exitKey,
+    verdict,
+    blockers,
+    conditions,
+    ...(projection ? { projection } : {}),
+    ...(buildableEnvelope ? { buildableEnvelope } : {}),
+  }
 }
 
 export function range(mid: number, spread = 0.15): { low: number; mid: number; high: number } {
@@ -52,6 +60,22 @@ export function purchasePrice(ctx: EvalContext): number {
 
 export function minLotSize(ctx: EvalContext): number | undefined {
   return ctx.jurisdiction.minLotSizeSqFt(ctx.parcel.zoning)
+}
+
+export function buildableEnvelope(ctx: EvalContext): BuildableEnvelope | undefined {
+  const frontage = ctx.parcel.frontageLinearFt
+  const depth = ctx.parcel.lotDepthFt
+  const setbacks = ctx.jurisdiction.setbackFeet(ctx.parcel.zoning)
+  if (frontage == null || depth == null || setbacks?.front == null || setbacks.side == null || setbacks.rear == null) return undefined
+
+  const widthFt = Math.max(0, frontage - setbacks.side * 2)
+  const depthFt = Math.max(0, depth - setbacks.front - setbacks.rear)
+  return {
+    widthFt,
+    depthFt,
+    areaSqFt: widthFt * depthFt,
+    setbacks: { front: setbacks.front, side: setbacks.side, rear: setbacks.rear },
+  }
 }
 
 export function isFloodBuildRisk(ctx: EvalContext): boolean {

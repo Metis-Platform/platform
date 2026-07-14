@@ -26,6 +26,7 @@ describe('Volusia canonical parcel 2340282', () => {
       'Lot frontage is smaller than jurisdiction minimum width',
     ]))
     expect(builder?.conditions.join(' ')).toContain('nonconforming-lot eligibility')
+    expect(builder?.buildableEnvelope).toMatchObject({ widthFt: 34, depthFt: 55, areaSqFt: 1870 })
     expect(builder?.verdict).not.toBe('NOT_VIABLE')
   })
 })
