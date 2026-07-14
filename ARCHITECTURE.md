@@ -94,6 +94,16 @@ Authority verification operations/UI, content snapshot archival, contradiction h
 transitions, and researched legacy migration remain part of the national jurisdiction intelligence
 initiative (#296).
 
+Source authority decisions are made only through the super-admin review workflow. Each verify,
+reject, or reset action atomically appends a `JurisdictionSourceAuthorityReview` containing the
+source URL, office type, content hash, exact source version, evidence URL/explanation, authenticated
+reviewer, and server timestamp, then updates `JurisdictionSourceUrl` as the current projection. The
+review requires an exact `updatedAt` match so a crawler refresh or concurrent decision forces a new
+review. Verification requires an allowed authority class, named owner, and HTTP(S) authority
+evidence; discovery method, hostname, office type, AI output, and model confidence never verify a
+source. Changing source authority affects future claim reviews only and never rewrites existing
+claims.
+
 ---
 
 ## Background jobs

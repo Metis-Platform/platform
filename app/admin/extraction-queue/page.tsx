@@ -2,21 +2,28 @@ import { isSuperAdmin } from '@/lib/admin-auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { ExtractionQueueClient } from './ExtractionQueueClient'
-import type { ExtractionStatus } from '@/app/generated/prisma'
+import { SourceAuthorityReviewClient } from './SourceAuthorityReviewClient'
+import type {
+  ExtractionStatus,
+  JurisdictionSourceAuthorityStatus,
+} from '@/app/generated/prisma'
 
 type Props = {
-  searchParams: Promise<{ status?: string; section?: string }>
+  searchParams: Promise<{ status?: string; section?: string; sourceStatus?: string }>
 }
 
 export default async function ExtractionQueuePage({ searchParams }: Props) {
   if (!(await isSuperAdmin())) redirect('/')
 
-  const { status = 'PENDING', section } = await searchParams
+  const { status = 'PENDING', section, sourceStatus = 'UNVERIFIED' } = await searchParams
   const statusFilter = ['PENDING', 'APPROVED', 'REJECTED'].includes(status)
     ? (status as ExtractionStatus)
     : 'PENDING'
+  const sourceStatusFilter = ['UNVERIFIED', 'VERIFIED', 'REJECTED', 'ALL'].includes(sourceStatus)
+    ? sourceStatus
+    : 'UNVERIFIED'
 
-  const [candidates, pendingCount, sourceUrlCount, fetchedCount] = await Promise.all([
+  const [candidates, pendingCount, sourceUrlCount, fetchedCount, sources] = await Promise.all([
     db.extractionCandidate.findMany({
       where: {
         status: statusFilter,
@@ -32,6 +39,28 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
     db.extractionCandidate.count({ where: { status: 'PENDING' } }),
     db.jurisdictionSourceUrl.count(),
     db.jurisdictionSourceUrl.count({ where: { lastFetchedAt: { not: null } } }),
+    db.jurisdictionSourceUrl.findMany({
+      where: sourceStatusFilter === 'ALL'
+        ? {}
+        : { authorityStatus: sourceStatusFilter as JurisdictionSourceAuthorityStatus },
+      include: {
+        jurisdiction: { select: { county: true, state: true } },
+        authorityReviews: {
+          orderBy: { reviewedAt: 'desc' },
+          take: 3,
+          select: {
+            id: true,
+            decision: true,
+            explanation: true,
+            evidenceUrl: true,
+            reviewedAt: true,
+            reviewedBy: true,
+          },
+        },
+      },
+      orderBy: [{ updatedAt: 'asc' }, { createdAt: 'asc' }],
+      take: 100,
+    }),
   ])
 
   const allSections = Array.from(new Set(
@@ -63,11 +92,31 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
         </div>
       </div>
 
+      <SourceAuthorityReviewClient
+        sources={sources.map(source => ({
+          ...source,
+          lastFetchedAt: source.lastFetchedAt?.toISOString() ?? null,
+          updatedAt: source.updatedAt.toISOString(),
+          createdAt: source.createdAt.toISOString(),
+          authorityVerifiedAt: source.authorityVerifiedAt?.toISOString() ?? null,
+          authorityReviews: source.authorityReviews.map(review => ({
+            ...review,
+            reviewedAt: review.reviewedAt.toISOString(),
+          })),
+        }))}
+        sourceStatusFilter={sourceStatusFilter}
+        candidateStatusFilter={statusFilter}
+        sectionFilter={section ?? ''}
+      />
+
+      <div className="my-8 border-t border-zinc-200" />
+
       <ExtractionQueueClient
         candidates={candidates}
         pendingCount={pendingCount}
         statusFilter={statusFilter}
         sectionFilter={section ?? ''}
+        sourceStatusFilter={sourceStatusFilter}
         allSections={allSections}
       />
     </div>

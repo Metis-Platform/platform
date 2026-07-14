@@ -6,15 +6,11 @@ import {
   type ResearchStrategy,
 } from './jurisdiction-research'
 import type { JurisdictionProfileSection } from './jurisdiction-profile'
+import type { JurisdictionAuthorityClass } from './jurisdiction-authority'
 
 export const JURISDICTION_QUESTION_SCHEMA_VERSION = '2026-07-14.v1' as const
 
 export type JurisdictionClaimRisk = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-export type JurisdictionAuthorityClass =
-  | 'LOCAL_OFFICIAL'
-  | 'STATE_OFFICIAL_OR_STATUTE'
-  | 'FEDERAL_OFFICIAL'
-  | 'MARKET_DATA'
 
 export type JurisdictionEvidenceRequirement =
   | 'SOURCE_URL'

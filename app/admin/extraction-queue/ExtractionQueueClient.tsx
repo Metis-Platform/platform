@@ -21,6 +21,7 @@ type Props = {
   pendingCount: number
   statusFilter: string
   sectionFilter: string
+  sourceStatusFilter: string
   allSections: string[]
 }
 
@@ -35,6 +36,7 @@ export function ExtractionQueueClient({
   pendingCount: initialPendingCount,
   statusFilter,
   sectionFilter,
+  sourceStatusFilter,
   allSections,
 }: Props) {
   const router = useRouter()
@@ -52,6 +54,7 @@ export function ExtractionQueueClient({
     const params = new URLSearchParams()
     if (key !== 'status') params.set('status', statusFilter)
     if (key !== 'section') { if (sectionFilter) params.set('section', sectionFilter) }
+    if (sourceStatusFilter) params.set('sourceStatus', sourceStatusFilter)
     if (value) params.set(key, value)
     startTransition(() => router.push(`/admin/extraction-queue?${params}`))
   }

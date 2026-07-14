@@ -170,6 +170,7 @@ model Jurisdiction {
   sourceUrls           JurisdictionSourceUrl[]
   extractionCandidates ExtractionCandidate[]
   claims               JurisdictionClaim[]
+  sourceAuthorityReviews JurisdictionSourceAuthorityReview[]
   auctionSaleFeeds     AuctionSaleFeed[]
 
   @@unique([state, county])
@@ -227,12 +228,38 @@ model JurisdictionSourceUrl {
   authorityVerifiedAt DateTime?
   authorityVerifiedBy String?
   createdAt           DateTime                          @default(now())
+  updatedAt           DateTime                          @updatedAt
 
-  candidates    ExtractionCandidate[]
-  claimEvidence JurisdictionClaimEvidence[]
+  candidates       ExtractionCandidate[]
+  claimEvidence    JurisdictionClaimEvidence[]
+  authorityReviews JurisdictionSourceAuthorityReview[]
 
   @@unique([jurisdictionId, officeType, url])
   @@index([jurisdictionId])
+}
+
+// Append-only operator decisions. The source row above is only the current authority projection.
+model JurisdictionSourceAuthorityReview {
+  id                String                            @id @default(cuid())
+  jurisdictionId    String
+  jurisdiction      Jurisdiction                      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  sourceUrlId       String?
+  sourceUrlRecord   JurisdictionSourceUrl?             @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  sourceUrl         String
+  officeType        String
+  sourceContentHash String?
+  sourceUpdatedAt   DateTime
+  decision          JurisdictionSourceAuthorityStatus
+  authorityClass    String?
+  authorityOwner    String?
+  evidenceUrl       String?
+  explanation       String                            @db.Text
+  reviewedAt        DateTime                          @default(now())
+  reviewedBy        String
+
+  @@index([jurisdictionId, reviewedAt])
+  @@index([sourceUrlId, reviewedAt])
+  @@index([decision, reviewedAt])
 }
 
 model ExtractionCandidate {

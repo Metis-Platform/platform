@@ -1,0 +1,8 @@
+export const JURISDICTION_AUTHORITY_CLASSES = [
+  'LOCAL_OFFICIAL',
+  'STATE_OFFICIAL_OR_STATUTE',
+  'FEDERAL_OFFICIAL',
+  'MARKET_DATA',
+] as const
+
+export type JurisdictionAuthorityClass = typeof JURISDICTION_AUTHORITY_CLASSES[number]
