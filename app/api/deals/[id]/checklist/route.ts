@@ -3,6 +3,10 @@ import { getCurrentUser, hasRole } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { computeMissingItems } from '@/lib/checklists/instantiate'
 import { buildJurisdictionChecklistTemplate } from '@/lib/jurisdiction-checklist'
+import {
+  buildResearchProfile,
+  retainActiveClaimBackedResearchFields,
+} from '@/lib/jurisdiction-research'
 
 export async function POST(
   _req: NextRequest,
@@ -20,7 +24,19 @@ export async function POST(
   const deal = await db.deal.findUnique({
     where: { id: dealId, tenantId: tenant.id },
     include: {
-      property:    { include: { jurisdiction: { include: { profile: true } } } },
+      property: {
+        include: {
+          jurisdiction: {
+            include: {
+              profile: true,
+              claims: {
+                where: { supersededByClaim: null },
+                select: { id: true, section: true, fieldKey: true },
+              },
+            },
+          },
+        },
+      },
       taxLien:     true,
       taxDeed:     true,
       foreclosure: true,
@@ -29,7 +45,12 @@ export async function POST(
   })
   if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-  const template = buildJurisdictionChecklistTemplate(deal.strategyType, deal.property.jurisdiction.profile)
+  const jurisdiction = deal.property.jurisdiction
+  const profile = retainActiveClaimBackedResearchFields(
+    buildResearchProfile(jurisdiction.profile),
+    jurisdiction.claims,
+  )
+  const template = buildJurisdictionChecklistTemplate(deal.strategyType, profile)
   if (!template) {
     return NextResponse.json({ error: 'No checklist template for this strategy' }, { status: 422 })
   }

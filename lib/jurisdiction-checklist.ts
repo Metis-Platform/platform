@@ -1,5 +1,10 @@
 import type { Priority, StrategyType, TaskType } from '@/app/generated/prisma'
-import { buildResearchProfile, type ResearchProfile, type ResearchProfileField } from './jurisdiction-research'
+import {
+  buildResearchProfile,
+  retainClaimBackedResearchFields,
+  type ResearchProfile,
+  type ResearchProfileField,
+} from './jurisdiction-research'
 import type { ChecklistTemplate } from './checklists/types'
 
 type ProfileSource = Parameters<typeof buildResearchProfile>[0]
@@ -165,7 +170,7 @@ export function renderJurisdictionChecklistTitle(
   verifyLabel: string,
   office = 'the relevant county office',
 ): RenderResult {
-  const profile = buildResearchProfile(profileSource)
+  const profile = retainClaimBackedResearchFields(buildResearchProfile(profileSource))
   let missing = false
   const text = template.replace(/\{\{([^}]+)\}\}/g, (_match, rawExpression: string) => {
     const resolved = resolvePlaceholder(profile, rawExpression.trim())
@@ -214,4 +219,3 @@ export function buildJurisdictionChecklistTemplate(
     }),
   }
 }
-

@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import {
   blockContradictoryResearchFields,
   buildResearchProfile,
+  retainActiveClaimBackedResearchFields,
 } from '@/lib/jurisdiction-research'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { syncUserToDatabase } from '@/lib/sync-user'
@@ -110,9 +111,10 @@ export default async function JurisdictionDetailPage({
     }),
   ])
   const claimsById = new Map(activeClaims.map(claim => [claim.id, claim]))
+  const activeResearchProfile = retainActiveClaimBackedResearchFields(researchProfile, activeClaims)
   const contradictoryFields = pendingCandidates.flatMap(candidate => {
     if (!isJurisdictionProfileSection(candidate.section)) return []
-    const projectedClaimId = researchProfile[candidate.section][candidate.fieldKey]?.claimId
+    const projectedClaimId = activeResearchProfile[candidate.section][candidate.fieldKey]?.claimId
     const claim = projectedClaimId ? claimsById.get(projectedClaimId) : null
     if (
       !claim ||
@@ -189,7 +191,7 @@ export default async function JurisdictionDetailPage({
 
       <JurisdictionResearchHub
         jurisdictionId={jurisdiction.id}
-        profile={blockContradictoryResearchFields(researchProfile, contradictoryFields)}
+        profile={blockContradictoryResearchFields(activeResearchProfile, contradictoryFields)}
         trackedPropertyCount={trackedPropertyCount}
         timezone={jurisdiction.timezone}
         activeRuleSet={activeRuleSet ? {

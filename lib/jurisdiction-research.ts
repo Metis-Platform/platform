@@ -22,6 +22,12 @@ export type ResearchProfileField = Omit<ProfileField, 'citation'> & {
 
 export type ResearchProfile = Record<JurisdictionProfileSection, Record<string, ResearchProfileField>>
 
+export type ActiveResearchClaim = {
+  id: string
+  section: string
+  fieldKey: string
+}
+
 export const RESEARCH_STRATEGIES: { key: ResearchStrategy; label: string }[] = [
   { key: 'TAX_LIEN', label: 'Tax Lien' },
   { key: 'TAX_DEED', label: 'Tax Deed' },
@@ -144,6 +150,45 @@ export function buildResearchProfile(profile: {
 } | null | undefined): ResearchProfile {
   return Object.fromEntries(
     JURISDICTION_PROFILE_SECTIONS.map((section) => [section, profileSection(profile?.[section])])
+  ) as ResearchProfile
+}
+
+/**
+ * Investor decision surfaces fail closed: legacy profile JSON remains available
+ * to administrators for migration, but only fields projected from an active
+ * append-only claim may be presented as jurisdiction research.
+ */
+export function retainActiveClaimBackedResearchFields(
+  profile: ResearchProfile,
+  activeClaims: ActiveResearchClaim[],
+): ResearchProfile {
+  const activeClaimByField = new Map(
+    activeClaims.map((claim) => [`${claim.section}.${claim.fieldKey}`, claim.id]),
+  )
+
+  return Object.fromEntries(
+    JURISDICTION_PROFILE_SECTIONS.map((section) => [
+      section,
+      Object.fromEntries(
+        Object.entries(profile[section]).filter(([fieldKey, field]) =>
+          Boolean(
+            field.claimId &&
+            activeClaimByField.get(`${section}.${fieldKey}`) === field.claimId,
+          ),
+        ),
+      ),
+    ]),
+  ) as ResearchProfile
+}
+
+export function retainClaimBackedResearchFields(profile: ResearchProfile): ResearchProfile {
+  return Object.fromEntries(
+    JURISDICTION_PROFILE_SECTIONS.map((section) => [
+      section,
+      Object.fromEntries(
+        Object.entries(profile[section]).filter(([, field]) => Boolean(field.claimId)),
+      ),
+    ]),
   ) as ResearchProfile
 }
 

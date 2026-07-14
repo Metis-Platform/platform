@@ -33,7 +33,11 @@ import T12Section from './T12Section'
 import BusinessPlanSection from './BusinessPlanSection'
 import SensitivitySection from './SensitivitySection'
 import { RentRollSchema, T12FinancialsSchema, BusinessPlanSchema } from '@/lib/multifamily-schemas'
-import { buildResearchProfile, type ResearchStrategy } from '@/lib/jurisdiction-research'
+import {
+  buildResearchProfile,
+  retainActiveClaimBackedResearchFields,
+  type ResearchStrategy,
+} from '@/lib/jurisdiction-research'
 import { hasJurisdictionChecklistTemplate } from '@/lib/jurisdiction-checklist'
 import JurisdictionContextPanel from './JurisdictionContextPanel'
 import ExitOptionsPanel from './ExitOptionsPanel'
@@ -53,7 +57,19 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
     db.deal.findUnique({
       where: { id, tenantId: tenant.id },
       include: {
-        property: { include: { jurisdiction: { include: { profile: true } } } },
+        property: {
+          include: {
+            jurisdiction: {
+              include: {
+                profile: true,
+                claims: {
+                  where: { supersededByClaim: null },
+                  select: { id: true, section: true, fieldKey: true },
+                },
+              },
+            },
+          },
+        },
         taxLien: true, taxDeed: true, foreclosure: true, land: true,
         fixFlip: { include: { contractorContact: true } },
         buyHold: { include: { tenantContact: true, propertyManagerContact: true } },
@@ -807,7 +823,10 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         strategy={deal.strategyType as ResearchStrategy}
         status={deal.status}
         jurisdiction={{ id: jur.id, county: jur.county, stateName: jur.stateName }}
-        profile={buildResearchProfile(jur.profile)}
+        profile={retainActiveClaimBackedResearchFields(
+          buildResearchProfile(jur.profile),
+          jur.claims,
+        )}
         events={dealEvents}
         section8InPlay={isSection8}
       />
