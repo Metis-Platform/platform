@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { ComposableMap, Geographies, Geography, ZoomableGroup, type Geography as Geo } from 'react-simple-maps'
+import { useMemo, useState } from 'react'
+import { geoAlbersUsa, geoPath } from 'd3-geo'
+import { feature } from 'topojson-client'
+import type { FeatureCollection, Geometry, GeoJsonProperties } from 'geojson'
 import { STATE_INFO } from '@/lib/state-info'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const statesJson = require('us-atlas/states-10m.json')
@@ -36,8 +38,16 @@ const FILL_HOVER: Record<string, string> = {
   NOT_ACTIVE:      '#e4e4e7', // zinc-200
 }
 
-type Position = { coordinates: [number, number]; zoom: number }
 type Tooltip  = { x: number; y: number; text: string }
+type Drag = { x: number; y: number; offsetX: number; offsetY: number }
+
+const WIDTH = 975
+const HEIGHT = 610
+
+function stateFeatures(): FeatureCollection<Geometry, GeoJsonProperties> {
+  // us-atlas is untyped JSON, so topojson-client cannot infer its object kind.
+  return feature(statesJson, statesJson.objects.states) as unknown as FeatureCollection<Geometry, GeoJsonProperties>
+}
 
 export function USStateMap({
   selectedState,
@@ -46,77 +56,78 @@ export function USStateMap({
   selectedState: string
   onStateClick: (abbr: string) => void
 }) {
-  const [position, setPosition] = useState<Position>({ coordinates: [-97, 38], zoom: 1 })
+  const [zoom, setZoom] = useState(1)
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [drag, setDrag] = useState<Drag | null>(null)
   const [tooltip, setTooltip]   = useState<Tooltip | null>(null)
+  const [hoveredState, setHoveredState] = useState<string | null>(null)
+  const states = useMemo(() => stateFeatures().features, [])
+  const pathFor = useMemo(() => {
+    const projection = geoAlbersUsa().fitSize([WIDTH, HEIGHT], stateFeatures())
+    return geoPath(projection)
+  }, [])
 
   function fill(abbr: string)      { return FILL[STATE_INFO[abbr]?.investmentType  ?? 'NOT_ACTIVE'] }
   function fillHover(abbr: string) { return FILL_HOVER[STATE_INFO[abbr]?.investmentType ?? 'NOT_ACTIVE'] }
 
   return (
     <div className="relative select-none">
-      <ComposableMap projection="geoAlbersUsa" style={{ width: '100%', height: 'auto' }}>
-        <ZoomableGroup
-          zoom={position.zoom}
-          center={position.coordinates}
-          onMoveEnd={(pos: { coordinates: [number, number]; zoom: number }) => setPosition(pos)}
-          minZoom={1}
-          maxZoom={8}
-        >
-          <Geographies geography={statesJson}>
-            {({ geographies }: { geographies: Geo[] }) =>
-              geographies.map((geo: Geo) => {
-                const abbr = FIPS[String(geo.id).padStart(2, '0')]
-                if (!abbr) return null
-                const selected = selectedState === abbr
-
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    onClick={() => onStateClick(abbr)}
-                    onMouseEnter={(e: React.MouseEvent) => {
-                      const info = STATE_INFO[abbr]
-                      setTooltip({
-                        x: e.clientX,
-                        y: e.clientY,
-                        text: `${info?.stateName ?? abbr} — ${info?.investmentLabel ?? 'N/A'}${info?.interestRate ? ` · ${info.interestRate}` : ''}`,
-                      })
-                    }}
-                    onMouseMove={(e: React.MouseEvent) => {
-                      setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)
-                    }}
-                    onMouseLeave={() => setTooltip(null)}
-                    style={{
-                      default: {
-                        fill: fill(abbr),
-                        stroke: selected ? '#1e293b' : '#ffffff',
-                        strokeWidth: selected ? 1.5 / position.zoom : 0.5 / position.zoom,
-                        outline: 'none',
-                        cursor: 'pointer',
-                      },
-                      hover: {
-                        fill: fillHover(abbr),
-                        stroke: selected ? '#1e293b' : '#94a3b8',
-                        strokeWidth: selected ? 1.5 / position.zoom : 0.75 / position.zoom,
-                        outline: 'none',
-                        cursor: 'pointer',
-                      },
-                      pressed: { fill: fillHover(abbr), outline: 'none' },
-                    }}
-                  />
-                )
-              })
-            }
-          </Geographies>
-        </ZoomableGroup>
-      </ComposableMap>
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        className="h-auto w-full touch-none"
+        onWheel={event => {
+          event.preventDefault()
+          setZoom(current => Math.max(1, Math.min(8, current * (event.deltaY > 0 ? 0.8 : 1.25))))
+        }}
+        onPointerDown={event => {
+          event.currentTarget.setPointerCapture(event.pointerId)
+          setDrag({ x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y })
+        }}
+        onPointerMove={event => {
+          if (!drag) return
+          const bounds = event.currentTarget.getBoundingClientRect()
+          setOffset({
+            x: drag.offsetX + ((event.clientX - drag.x) * WIDTH) / bounds.width,
+            y: drag.offsetY + ((event.clientY - drag.y) * HEIGHT) / bounds.height,
+          })
+        }}
+        onPointerUp={() => setDrag(null)}
+      >
+        <g transform={`translate(${offset.x} ${offset.y}) scale(${zoom})`}>
+          {states.map(geo => {
+            const abbr = FIPS[String(geo.id).padStart(2, '0')]
+            if (!abbr) return null
+            const selected = selectedState === abbr
+            const path = pathFor(geo)
+            if (!path) return null
+            return (
+              <path
+                key={String(geo.id)}
+                d={path}
+                fill={hoveredState === abbr ? fillHover(abbr) : fill(abbr)}
+                stroke={selected ? '#1e293b' : '#ffffff'}
+                strokeWidth={(selected ? 1.5 : 0.5) / zoom}
+                className="cursor-pointer outline-none transition-colors"
+                onClick={() => onStateClick(abbr)}
+                onMouseEnter={event => {
+                  setHoveredState(abbr)
+                  const info = STATE_INFO[abbr]
+                  setTooltip({ x: event.clientX, y: event.clientY, text: `${info?.stateName ?? abbr} — ${info?.investmentLabel ?? 'N/A'}${info?.interestRate ? ` · ${info.interestRate}` : ''}` })
+                }}
+                onMouseMove={event => setTooltip(current => current ? { ...current, x: event.clientX, y: event.clientY } : null)}
+                onMouseLeave={() => { setHoveredState(null); setTooltip(null) }}
+              />
+            )
+          })}
+        </g>
+      </svg>
 
       {/* Zoom controls */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-1">
         {[
-          { label: '+', action: () => setPosition(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, 8) })) },
-          { label: '−', action: () => setPosition(p => ({ ...p, zoom: Math.max(p.zoom / 1.5, 1) })) },
-          { label: '↺', action: () => setPosition({ coordinates: [-97, 38], zoom: 1 }), title: 'Reset' },
+          { label: '+', action: () => setZoom(current => Math.min(current * 1.5, 8)) },
+          { label: '−', action: () => setZoom(current => Math.max(current / 1.5, 1)) },
+          { label: '↺', action: () => { setZoom(1); setOffset({ x: 0, y: 0 }) }, title: 'Reset' },
         ].map(({ label, action, title }) => (
           <button
             key={label}
