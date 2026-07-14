@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateE2eCoverage } from './e2e-coverage'
+import { missingE2eCoverageSpecs, validateE2eCoverage } from './e2e-coverage'
 
 describe('E2E coverage contract', () => {
   it('requires correlation evidence for mutation stories', () => {
@@ -13,5 +13,13 @@ describe('E2E coverage contract', () => {
       id: 'mutation', risk: 'high', mode: 'mutation', spec: 'e2e/mutation.spec.ts', status: 'blocked', notes: 'Needs QA.',
       evidence: { fixtureSet: 'integration-v1', responseHeader: 'x-request-id', auditAction: 'MUTATION' },
     }] }).success).toBe(true)
+  })
+
+  it('reports a declared spec that does not exist', () => {
+    const coverage = validateE2eCoverage({ version: 1, stories: [{
+      id: 'readonly', risk: 'low', mode: 'read-only', spec: 'e2e/missing.spec.ts', status: 'active', notes: 'Read-only.',
+    }] })
+    expect(coverage.success).toBe(true)
+    if (coverage.success) expect(missingE2eCoverageSpecs(coverage.data, () => false)).toEqual(['e2e/missing.spec.ts'])
   })
 })
