@@ -3,25 +3,41 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { ExtractionQueueClient } from './ExtractionQueueClient'
 import { SourceAuthorityReviewClient } from './SourceAuthorityReviewClient'
+import { ClaimFreshnessReviewClient } from './ClaimFreshnessReviewClient'
 import type {
   ExtractionStatus,
   JurisdictionSourceAuthorityStatus,
 } from '@/app/generated/prisma'
+import { claimFreshnessStatus } from '@/lib/jurisdiction-claim-freshness'
+import { getJurisdictionQuestion } from '@/lib/jurisdiction-question-library'
 
 type Props = {
-  searchParams: Promise<{ status?: string; section?: string; sourceStatus?: string }>
+  searchParams: Promise<{
+    status?: string
+    section?: string
+    sourceStatus?: string
+    freshnessStatus?: string
+  }>
 }
 
 export default async function ExtractionQueuePage({ searchParams }: Props) {
   if (!(await isSuperAdmin())) redirect('/')
 
-  const { status = 'PENDING', section, sourceStatus = 'UNVERIFIED' } = await searchParams
+  const {
+    status = 'PENDING',
+    section,
+    sourceStatus = 'UNVERIFIED',
+    freshnessStatus = 'STALE',
+  } = await searchParams
   const statusFilter = ['PENDING', 'APPROVED', 'REJECTED'].includes(status)
     ? (status as ExtractionStatus)
     : 'PENDING'
   const sourceStatusFilter = ['UNVERIFIED', 'VERIFIED', 'REJECTED', 'ALL'].includes(sourceStatus)
     ? sourceStatus
     : 'UNVERIFIED'
+  const freshnessStatusFilter = ['CURRENT', 'REVIEW_DUE', 'STALE'].includes(freshnessStatus)
+    ? freshnessStatus as 'CURRENT' | 'REVIEW_DUE' | 'STALE'
+    : 'STALE'
 
   const [candidates, pendingCount, sourceUrlCount, fetchedCount, sources] = await Promise.all([
     db.extractionCandidate.findMany({
@@ -71,6 +87,92 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
     })).map(c => c.section)
   )).sort()
 
+  const now = new Date()
+  const freshnessRows = await db.jurisdictionClaimFreshness.findMany({
+    where: {
+      claim: { supersededByClaim: null },
+      ...(freshnessStatusFilter === 'CURRENT'
+        ? { reviewDueAt: { gt: now } }
+        : freshnessStatusFilter === 'REVIEW_DUE'
+          ? { reviewDueAt: { lte: now }, staleAt: { gt: now } }
+          : { staleAt: { lte: now } }),
+    },
+    include: {
+      claim: {
+        include: {
+          jurisdiction: { select: { county: true, state: true } },
+          evidence: { select: { sourceUrlId: true, contentHash: true, sourceUrl: true } },
+          reReviews: {
+            orderBy: { reviewedAt: 'desc' },
+            take: 3,
+            select: {
+              id: true,
+              explanation: true,
+              evidenceRetrievedAt: true,
+              reviewedAt: true,
+              reviewedBy: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [{ staleAt: 'asc' }, { reviewDueAt: 'asc' }],
+    take: 50,
+  })
+
+  const freshnessClaims = await Promise.all(freshnessRows.map(async row => {
+    const evidencePairs = row.claim.evidence.flatMap(evidence =>
+      evidence.sourceUrlId && evidence.contentHash
+        ? [{ sourceUrlId: evidence.sourceUrlId, contentHash: evidence.contentHash }]
+        : []
+    )
+    const eligibleSnapshot = row.claim.risk !== 'UNKNOWN' &&
+      row.claim.volatility !== 'UNKNOWN' && evidencePairs.length > 0
+      ? await db.jurisdictionEvidenceSnapshot.findFirst({
+          where: {
+            jurisdictionId: row.claim.jurisdictionId,
+            retrievedAt: { gt: row.lastEvidenceRetrievedAt },
+            OR: evidencePairs,
+          },
+          orderBy: { retrievedAt: 'desc' },
+          select: {
+            id: true,
+            sourceUrl: true,
+            retrievedAt: true,
+            contentHash: true,
+          },
+        })
+      : null
+    const question = getJurisdictionQuestion(row.claim.section, row.claim.fieldKey)
+    return {
+      id: row.claim.id,
+      jurisdiction: row.claim.jurisdiction,
+      label: question?.label ?? `${row.claim.section}.${row.claim.fieldKey}`,
+      section: row.claim.section,
+      fieldKey: row.claim.fieldKey,
+      value: row.claim.value,
+      verificationState: row.claim.verificationState,
+      risk: row.claim.risk,
+      volatility: row.claim.volatility,
+      status: claimFreshnessStatus(row, now),
+      lastEvidenceRetrievedAt: row.lastEvidenceRetrievedAt.toISOString(),
+      reviewDueAt: row.reviewDueAt.toISOString(),
+      staleAt: row.staleAt.toISOString(),
+      policyVersion: row.policyVersion,
+      freshnessUpdatedAt: row.updatedAt.toISOString(),
+      sourceUrl: row.claim.evidence[0]?.sourceUrl ?? null,
+      eligibleSnapshot: eligibleSnapshot ? {
+        ...eligibleSnapshot,
+        retrievedAt: eligibleSnapshot.retrievedAt.toISOString(),
+      } : null,
+      reReviews: row.claim.reReviews.map(review => ({
+        ...review,
+        evidenceRetrievedAt: review.evidenceRetrievedAt.toISOString(),
+        reviewedAt: review.reviewedAt.toISOString(),
+      })),
+    }
+  }))
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -107,6 +209,17 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
         sourceStatusFilter={sourceStatusFilter}
         candidateStatusFilter={statusFilter}
         sectionFilter={section ?? ''}
+        freshnessStatusFilter={freshnessStatusFilter}
+      />
+
+      <div className="my-8 border-t border-zinc-200" />
+
+      <ClaimFreshnessReviewClient
+        claims={freshnessClaims}
+        freshnessStatusFilter={freshnessStatusFilter}
+        sourceStatusFilter={sourceStatusFilter}
+        candidateStatusFilter={statusFilter}
+        sectionFilter={section ?? ''}
       />
 
       <div className="my-8 border-t border-zinc-200" />
@@ -118,6 +231,7 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
         sectionFilter={section ?? ''}
         sourceStatusFilter={sourceStatusFilter}
         allSections={allSections}
+        freshnessStatusFilter={freshnessStatusFilter}
       />
     </div>
   )

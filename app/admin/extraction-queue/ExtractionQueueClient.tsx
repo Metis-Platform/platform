@@ -22,6 +22,7 @@ type Props = {
   statusFilter: string
   sectionFilter: string
   sourceStatusFilter: string
+  freshnessStatusFilter: string
   allSections: string[]
 }
 
@@ -37,6 +38,7 @@ export function ExtractionQueueClient({
   statusFilter,
   sectionFilter,
   sourceStatusFilter,
+  freshnessStatusFilter,
   allSections,
 }: Props) {
   const router = useRouter()
@@ -55,6 +57,7 @@ export function ExtractionQueueClient({
     if (key !== 'status') params.set('status', statusFilter)
     if (key !== 'section') { if (sectionFilter) params.set('section', sectionFilter) }
     if (sourceStatusFilter) params.set('sourceStatus', sourceStatusFilter)
+    params.set('freshnessStatus', freshnessStatusFilter)
     if (value) params.set(key, value)
     startTransition(() => router.push(`/admin/extraction-queue?${params}`))
   }

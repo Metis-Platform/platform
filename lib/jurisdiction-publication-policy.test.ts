@@ -28,7 +28,9 @@ describe('jurisdiction question library', () => {
     }
     expect(new Set(JURISDICTION_QUESTIONS.map(question => question.id)).size)
       .toBe(JURISDICTION_QUESTIONS.length)
-    expect(JURISDICTION_QUESTION_SCHEMA_VERSION).toBe('2026-07-14.v1')
+    expect(JURISDICTION_QUESTION_SCHEMA_VERSION).toBe('2026-07-14.v2')
+    expect(JURISDICTION_QUESTIONS.every(question => question.volatility)).toBe(true)
+    expect(getJurisdictionQuestion('zoning', 'minimumLotSizeSqft')?.volatility).toBe('STATIC')
   })
 
   it('requires individual human review for every high-risk and critical question', () => {
