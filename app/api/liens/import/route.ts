@@ -5,8 +5,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
-import { parseCsv, rowsToObjects } from '@/lib/csv'
-import * as XLSX from 'xlsx'
+import { assertCsvUpload, ImportCsvError, parseImportCsv } from '@/lib/import-csv'
 
 // ---------------------------------------------------------------------------
 // Status types
@@ -51,27 +50,13 @@ export type ImportRow = {
 }
 
 // ---------------------------------------------------------------------------
-// File parsing — CSV, XLSX, or XLS
+// File parsing — CSV only. XLS/XLSX is intentionally not accepted because the
+// previously used parser has unresolved high-severity advisories for untrusted files.
 // ---------------------------------------------------------------------------
 
 async function parseFile(file: File): Promise<Record<string, string>[]> {
-  const ext = file.name.split('.').pop()?.toLowerCase()
-  if (ext === 'xlsx' || ext === 'xls') {
-    const buf = Buffer.from(await file.arrayBuffer())
-    const workbook = XLSX.read(buf, { type: 'buffer' })
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
-    return rows.map(row => {
-      const obj: Record<string, string> = {}
-      for (const [k, v] of Object.entries(row)) {
-        obj[k.toLowerCase().replace(/\s+/g, '_')] = String(v)
-      }
-      return obj
-    })
-  }
-  const text = await file.text()
-  const rawRows = parseCsv(text)
-  return rowsToObjects(rawRows)
+  assertCsvUpload(file)
+  return parseImportCsv(await file.text())
 }
 
 // ---------------------------------------------------------------------------
@@ -118,15 +103,15 @@ export async function POST(req: NextRequest) {
   const file = formData.get('file')
   if (!(file instanceof File)) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-  const ext = file.name.split('.').pop()?.toLowerCase()
-  if (!['csv', 'xlsx', 'xls'].includes(ext ?? '')) {
-    return NextResponse.json({ error: 'Unsupported file type. Please upload a CSV, XLS, or XLSX file.' }, { status: 400 })
+  let objects: Record<string, string>[]
+  try {
+    objects = await parseFile(file)
+  } catch (error) {
+    if (error instanceof ImportCsvError) return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ error: 'Unable to read the CSV file. Check its format and try again.' }, { status: 400 })
   }
 
-  const objects = await parseFile(file)
-
   if (objects.length === 0) return NextResponse.json({ error: 'File has no data rows' }, { status: 400 })
-  if (objects.length > 500) return NextResponse.json({ error: 'Max 500 rows per import' }, { status: 400 })
 
   const states = [...new Set(objects.map(o => (o.state ?? '').toUpperCase()))]
   const jurisdictions = await db.jurisdiction.findMany({
