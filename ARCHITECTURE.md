@@ -103,6 +103,14 @@ authorities. Queue ordering is deterministic: parcel research requests, tracked-
 availability, blocked claims, then critical untrusted fields. Registry breadth never substitutes
 for decision-grade coverage.
 
+On-demand county research separates global execution from tenant demand. `JurisdictionResearchWork`
+is one shared, non-verdict work item per canonical county; `JurisdictionResearchDemand` is unique
+per tenant and county. A request never publishes claims or exposes another tenant's demand. The
+investor-visible state is derived, fail-closed, from work, sources, pending candidates, evidence-
+backed verified claims, freshness, and contradictions: `UNKNOWN`, `DISCOVERING`, `PRELIMINARY`,
+`REVIEW_REQUIRED`, `VERIFIED`, `STALE`, or `BLOCKED`. Operators can pause or resume execution but
+cannot manually mark a county verified.
+
 The extraction pipeline archives the exact UTF-8 Markdown representation supplied by Jina Reader
 and reviewed by the model. It does not mislabel that transformed representation as the original
 county HTML or document. Bytes are stored in R2 under a SHA-256 content-addressed key using a

@@ -15,6 +15,9 @@ import {
   extractedClaimValue,
 } from '@/lib/jurisdiction-claim-contradiction'
 import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
+import { deriveJurisdictionCoverageState } from '@/lib/jurisdiction-research-state'
+import { JURISDICTION_QUESTIONS } from '@/lib/jurisdiction-question-library'
+import { claimFreshnessStatus } from '@/lib/jurisdiction-claim-freshness'
 
 type Links = Record<string, unknown>
 
@@ -80,6 +83,8 @@ export default async function JurisdictionDetailPage({
         orderBy: [{ isActive: 'desc' }, { effectiveDate: 'desc' }],
         include: { rules: { orderBy: [{ sortOrder: 'asc' }, { offsetDays: 'asc' }] } },
       },
+      researchWork: true,
+      researchDemands: { where: { tenantId: synced.tenant.id }, select: { id: true } },
     },
   })
 
@@ -90,7 +95,7 @@ export default async function JurisdictionDetailPage({
     Object.values(section).flatMap(field => field.claimId ? [field.claimId] : []),
   )
 
-  const [trackedPropertyCount, pendingCandidates, activeClaims] = await Promise.all([
+  const [trackedPropertyCount, pendingCandidates, activeClaims, sourceCount] = await Promise.all([
     db.property.count({
       where: {
         jurisdictionId: jurisdiction.id,
@@ -107,8 +112,18 @@ export default async function JurisdictionDetailPage({
         id: { in: projectedClaimIds },
         supersededByClaim: null,
       },
-      select: { id: true, section: true, fieldKey: true, value: true, normalizedUnit: true },
+      select: {
+        id: true,
+        section: true,
+        fieldKey: true,
+        value: true,
+        normalizedUnit: true,
+        verificationState: true,
+        sourceAuthorityStatus: true,
+        freshness: { select: { reviewDueAt: true, staleAt: true } },
+      },
     }),
+    db.jurisdictionSourceUrl.count({ where: { jurisdictionId: jurisdiction.id } }),
   ])
   const claimsById = new Map(activeClaims.map(claim => [claim.id, claim]))
   const activeResearchProfile = retainActiveClaimBackedResearchFields(researchProfile, activeClaims)
@@ -126,6 +141,21 @@ export default async function JurisdictionDetailPage({
   })
 
   const stateInfo = getStateInfo(jurisdiction.state)
+  const coverageState = deriveJurisdictionCoverageState({
+    workStatus: jurisdiction.researchWork?.status ?? null,
+    sourceCount,
+    requiredQuestionCount: JURISDICTION_QUESTIONS.length,
+    verifiedCurrentClaimCount: activeClaims.filter(claim =>
+      claim.verificationState === 'VERIFIED' && claim.sourceAuthorityStatus === 'VERIFIED',
+    ).length,
+    staleClaimCount: activeClaims.filter(claim =>
+      claim.verificationState === 'STALE' ||
+      !claim.freshness ||
+      claimFreshnessStatus(claim.freshness) === 'STALE',
+    ).length,
+    blockedClaimCount: contradictoryFields.length,
+    pendingCandidateCount: pendingCandidates.length,
+  })
   const links = linkEntries(jurisdiction.links)
   const activeRuleSet = jurisdiction.ruleSets.find((ruleSet) => ruleSet.isActive) ?? null
 
@@ -194,6 +224,8 @@ export default async function JurisdictionDetailPage({
         profile={blockContradictoryResearchFields(activeResearchProfile, contradictoryFields)}
         trackedPropertyCount={trackedPropertyCount}
         timezone={jurisdiction.timezone}
+        coverageState={coverageState}
+        hasResearchDemand={jurisdiction.researchDemands.length > 0}
         activeRuleSet={activeRuleSet ? {
           name: activeRuleSet.name,
           effectiveDate: activeRuleSet.effectiveDate.toISOString(),
