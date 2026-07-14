@@ -156,6 +156,14 @@ export interface ExitResult {
   conditions: string[]
   dataGaps: DataGap[]
   projection?: Projection
+  buildableEnvelope?: BuildableEnvelope
+}
+
+export interface BuildableEnvelope {
+  widthFt: number
+  depthFt: number
+  areaSqFt: number
+  setbacks: { front: number; side: number; rear: number }
 }
 
 export interface EvalContext {

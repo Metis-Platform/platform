@@ -78,4 +78,14 @@ describe('exit evaluators registry', () => {
     expect(result.blockers).toContain('Lot frontage is smaller than jurisdiction minimum width')
     expect(result.conditions.join(' ')).toContain('nonconforming-lot eligibility')
   })
+
+  it('blocks vacant construction when setbacks leave no buildable envelope', () => {
+    const result = EXIT_REGISTRY.find(entry => entry.exitKey === 'VACANT_SELL_TO_BUILDER')!.evaluate(ctx({
+      frontageLinearFt: 10,
+      lotDepthFt: 40,
+    }))
+    expect(result.verdict).toBe('NOT_VIABLE')
+    expect(result.blockers).toContain('Jurisdiction setbacks leave no buildable envelope')
+    expect(result.buildableEnvelope).toMatchObject({ widthFt: 0, depthFt: 0, areaSqFt: 0 })
+  })
 })

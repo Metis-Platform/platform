@@ -593,6 +593,12 @@ function ExitCard({ result }: { result: ExitResult }) {
         </ul>
       )}
 
+      {result.buildableEnvelope && (
+        <p className="mt-3 text-xs text-zinc-500">
+          Estimated buildable envelope: {result.buildableEnvelope.widthFt} × {result.buildableEnvelope.depthFt} ft ({result.buildableEnvelope.areaSqFt.toLocaleString()} sq ft)
+        </p>
+      )}
+
       {result.dataGaps.length > 0 && result.verdict === 'INSUFFICIENT_DATA' && (
         <p className="mt-2 text-xs text-zinc-400">
           Needs: {result.dataGaps.map(g => g.label ?? g.field).join(', ')}
