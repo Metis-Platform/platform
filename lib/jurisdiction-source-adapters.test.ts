@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { discoverJurisdictionSources } from './jurisdiction-source-adapters'
+import { discoverJurisdictionSources, persistDiscoveredJurisdictionSources } from './jurisdiction-source-adapters'
 
 describe('jurisdiction source adapters', () => {
   it('fails closed for unsupported states', () => {
@@ -13,5 +13,15 @@ describe('jurisdiction source adapters', () => {
     expect(result.status).toBe('DISCOVERED')
     expect(result.sources[0]).toMatchObject({ officeType: 'assessor', adapterId: 'fl-county-offices-v1' })
     expect(result.sources[0].authorityRationale).toContain('authority review')
+  })
+
+  it('persists only source identity through a create-only boundary', async () => {
+    const created: unknown[] = []
+    await persistDiscoveredJurisdictionSources({
+      jurisdictionId: 'jurisdiction-1',
+      sources: discoverJurisdictionSources({ state: 'FL', requestedOfficeTypes: ['assessor'] }).sources,
+      createSource: async source => { created.push(source) },
+    })
+    expect(created).toEqual([{ jurisdictionId: 'jurisdiction-1', officeType: 'assessor', url: 'https://www.myfloridacfo.com/' }])
   })
 })
