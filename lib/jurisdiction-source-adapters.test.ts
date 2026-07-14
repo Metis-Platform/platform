@@ -29,6 +29,21 @@ describe('jurisdiction source adapters', () => {
     expect(result.sources.some(source => source.url === 'https://www.myfloridacfo.com/')).toBe(false)
   })
 
+  it('keeps a structurally different state county candidate scoped to unincorporated authority', () => {
+    const result = discoverJurisdictionSources({
+      state: 'AZ', county: 'Maricopa', requestedOfficeTypes: ['assessor', 'recorder', 'planning_zoning', 'building'], now: new Date('2026-07-14T00:00:00Z'),
+    })
+
+    expect(result.sources).toEqual([
+      expect.objectContaining({ adapterId: 'az-maricopa-county-offices-v1', officeType: 'assessor', url: 'https://www.mcassessor.maricopa.gov/assessor/' }),
+      expect.objectContaining({ adapterId: 'az-maricopa-county-offices-v1', officeType: 'recorder', url: 'https://recorder.maricopa.gov/recording/document-search.html' }),
+      expect.objectContaining({ adapterId: 'az-maricopa-county-offices-v1', officeType: 'planning_zoning' }),
+      expect.objectContaining({ adapterId: 'az-maricopa-county-offices-v1', officeType: 'building' }),
+    ])
+    expect(result.sources.every(source => source.candidateScope === 'COUNTY_OFFICE_CANDIDATE')).toBe(true)
+    expect(result.sources.every(source => source.authorityRationale.includes('unincorporated Maricopa County'))).toBe(true)
+  })
+
   it('queues discovery metadata without creating an authority source record', async () => {
     const created: unknown[] = []
     const sources = discoverJurisdictionSources({ state: 'FL', requestedOfficeTypes: ['assessor'], now: new Date('2026-07-14T00:00:00Z') }).sources

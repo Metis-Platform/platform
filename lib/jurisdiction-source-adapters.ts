@@ -4,6 +4,7 @@ export type JurisdictionAdapter = {
   county?: string
   officeTypes: string[]
   authorityOwner: string
+  scopeNote?: string
   sourceUrl?: string
   sourceUrls?: Partial<Record<string, string>>
 }
@@ -43,6 +44,21 @@ const ADAPTERS: JurisdictionAdapter[] = [
       building: 'https://www.volusia.org/services/growth-and-resource-management/building-and-zoning/',
     },
   },
+  {
+    id: 'az-maricopa-county-offices-v1',
+    state: 'AZ',
+    county: 'Maricopa',
+    officeTypes: ['assessor', 'recorder', 'gis', 'planning_zoning', 'building'],
+    authorityOwner: 'Maricopa County constitutional offices and government',
+    scopeNote: 'Planning and building candidates apply to unincorporated Maricopa County; resolve a parcel municipality before relying on them.',
+    sourceUrls: {
+      assessor: 'https://www.mcassessor.maricopa.gov/assessor/',
+      recorder: 'https://recorder.maricopa.gov/recording/document-search.html',
+      gis: 'https://maps.mcassessor.maricopa.gov/',
+      planning_zoning: 'https://www.maricopa.gov/2733/Planning-Development',
+      building: 'https://www.maricopa.gov/2733/Planning-Development',
+    },
+  },
 ]
 
 export function adaptersForState(state: string) {
@@ -79,7 +95,7 @@ export function discoverJurisdictionSources(input: {
         officeType,
         url: adapter.sourceUrls?.[officeType] ?? adapter.sourceUrl!,
         authorityOwner: adapter.authorityOwner,
-        authorityRationale: 'Registry capability is a discovery lead only; authority review is required before extraction or claim publication.',
+        authorityRationale: `Registry capability is a discovery lead only; authority review is required before extraction or claim publication.${adapter.scopeNote ? ` ${adapter.scopeNote}` : ''}`,
         candidateScope: adapter.sourceUrls?.[officeType] ? 'COUNTY_OFFICE_CANDIDATE' : 'DISCOVERY_ENTRYPOINT',
         discoveredAt: now,
       })),
