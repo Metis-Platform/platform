@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { assertCsvUpload, exceedsDeclaredCsvUploadSize, ImportCsvError, parseImportCsv } from '@/lib/import-csv'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 // ---------------------------------------------------------------------------
 // Status types
@@ -15,6 +16,7 @@ const IMPORTABLE_STATUSES = ['LEAD', 'ACTIVE', 'NOT_WON', 'REDEEMED', 'FORECLOSU
 type ImportStatus = typeof IMPORTABLE_STATUSES[number]
 
 const STATUS_VALID_MSG = `Valid values: ${IMPORTABLE_STATUSES.join(', ')}`
+const IMPORT_REQUEST_ACTION = 'LIEN_IMPORT_REQUEST'
 
 const dealStatusMap: Record<ImportStatus, DealStatus> = {
   LEAD:                   DealStatus.LEAD,
@@ -153,6 +155,20 @@ export async function POST(req: NextRequest) {
     }
 
     return { rowNum, raw: obj, valid: true, errors: [], data: { ...data, effectiveStatus } }
+  })
+
+  await db.auditEvent.create({
+    data: {
+      tenantId: tenant.id,
+      userId: synced.user.id,
+      requestId: requestIdFromHeaders(req.headers),
+      action: IMPORT_REQUEST_ACTION,
+      meta: {
+        mode: preview ? 'preview' : 'import',
+        totalRows: rows.length,
+        validRows: rows.filter(row => row.valid).length,
+      },
+    },
   })
 
   if (preview) {

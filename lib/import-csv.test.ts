@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { escapeSpreadsheetFormula, exceedsDeclaredCsvUploadSize, IMPORT_CSV_LIMITS, ImportCsvError, parseImportCsv } from './import-csv'
+import { assertCsvUpload, escapeSpreadsheetFormula, exceedsDeclaredCsvUploadSize, IMPORT_CSV_LIMITS, ImportCsvError, parseImportCsv } from './import-csv'
 
 describe('safe CSV imports', () => {
+  it('rejects unsupported and oversized files before text parsing', () => {
+    expect(() => assertCsvUpload(new File(['not a workbook'], 'liens.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }))).toThrow('Only CSV files are supported')
+    expect(() => assertCsvUpload(new File([new Uint8Array(IMPORT_CSV_LIMITS.maxBytes + 1)], 'liens.csv', {
+      type: 'text/csv',
+    }))).toThrow('1 MB or smaller')
+  })
+
   it('rejects row, column, and cell limits before object conversion', () => {
     expect(() => parseImportCsv(`state,county\n${Array(IMPORT_CSV_LIMITS.maxRows + 1).fill('FL,Volusia').join('\n')}`)).toThrow(ImportCsvError)
     expect(() => parseImportCsv(`${Array(IMPORT_CSV_LIMITS.maxColumns + 1).fill('x').join(',')}\n${Array(IMPORT_CSV_LIMITS.maxColumns + 1).fill('x').join(',')}`)).toThrow(ImportCsvError)
