@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { ExtractionQueueClient } from './ExtractionQueueClient'
 import { SourceAuthorityReviewClient } from './SourceAuthorityReviewClient'
+import { SourceDiscoveryLeadClient } from './SourceDiscoveryLeadClient'
 import { ClaimFreshnessReviewClient } from './ClaimFreshnessReviewClient'
 import type {
   ExtractionStatus,
@@ -44,7 +45,7 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
     ? freshnessStatus as 'CURRENT' | 'REVIEW_DUE' | 'STALE'
     : 'STALE'
 
-  const [candidates, pendingCount, sourceUrlCount, fetchedCount, sources] = await Promise.all([
+  const [candidates, pendingCount, sourceUrlCount, fetchedCount, sources, discoveryLeads] = await Promise.all([
     db.extractionCandidate.findMany({
       where: {
         status: statusFilter,
@@ -94,6 +95,12 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
         },
       },
       orderBy: [{ updatedAt: 'asc' }, { createdAt: 'asc' }],
+      take: 100,
+    }),
+    db.jurisdictionSourceDiscoveryLead.findMany({
+      where: { status: 'PENDING_REVIEW' },
+      include: { jurisdiction: { select: { county: true, state: true } } },
+      orderBy: { discoveredAt: 'asc' },
       take: 100,
     }),
   ])
@@ -297,6 +304,9 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
         candidateStatusFilter={statusFilter}
         sectionFilter={section ?? ''}
         freshnessStatusFilter={freshnessStatusFilter}
+      />
+      <SourceDiscoveryLeadClient
+        leads={discoveryLeads.map(lead => ({ ...lead, updatedAt: lead.updatedAt.toISOString() }))}
       />
 
       <div className="my-8 border-t border-zinc-200" />

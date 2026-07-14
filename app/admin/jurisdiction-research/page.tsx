@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import JurisdictionResearchWorkControls from './JurisdictionResearchWorkControls'
+import JurisdictionSourceDiscoveryControls from './JurisdictionSourceDiscoveryControls'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,7 @@ export default async function JurisdictionResearchPage() {
             select: {
               researchDemands: true,
               sourceUrls: true,
+              sourceDiscoveryLeads: { where: { status: 'PENDING_REVIEW' } },
               extractionCandidates: { where: { status: 'PENDING' } },
             },
           },
@@ -43,6 +45,7 @@ export default async function JurisdictionResearchPage() {
               <th className="px-4 py-3">Execution</th>
               <th className="px-4 py-3">Demand</th>
               <th className="px-4 py-3">Sources</th>
+              <th className="px-4 py-3">Leads</th>
               <th className="px-4 py-3">Candidates</th>
               <th className="px-4 py-3">Control</th>
             </tr>
@@ -60,15 +63,17 @@ export default async function JurisdictionResearchPage() {
                 </td>
                 <td className="px-4 py-3">{row.jurisdiction._count.researchDemands}</td>
                 <td className="px-4 py-3">{row.jurisdiction._count.sourceUrls}</td>
+                <td className="px-4 py-3">{row.jurisdiction._count.sourceDiscoveryLeads}</td>
                 <td className="px-4 py-3">{row.jurisdiction._count.extractionCandidates}</td>
                 <td className="px-4 py-3">
                   <JurisdictionResearchWorkControls workId={row.id} status={row.status} />
+                  <JurisdictionSourceDiscoveryControls jurisdictionId={row.jurisdictionId} />
                 </td>
               </tr>
             ))}
             {work.length === 0 && (
               <tr>
-                <td className="px-4 py-8 text-center text-zinc-500" colSpan={6}>
+                <td className="px-4 py-8 text-center text-zinc-500" colSpan={7}>
                   No county research work has been requested.
                 </td>
               </tr>
