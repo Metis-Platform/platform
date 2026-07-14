@@ -3,6 +3,9 @@ import { randomUUID } from 'node:crypto'
 import { db } from './db'
 import type { JurisdictionProfileSection } from './jurisdiction-profile'
 import type { JurisdictionQuestionDefinition } from './jurisdiction-question-library'
+import {
+  calculateClaimFreshness,
+} from './jurisdiction-claim-freshness'
 
 export type SourceAuthorityStatus = 'UNVERIFIED' | 'VERIFIED' | 'REJECTED'
 export type ClaimVerificationState = 'REVIEWED' | 'VERIFIED'
@@ -106,11 +109,16 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
     ? input.extractedValue.confidence
     : 0
   const confidence = Math.min(1, Math.max(0, rawConfidence))
-  const volatility = optionalString(input.extractedValue.volatility) ?? 'static'
+  const volatility = input.question.volatility
   const normalizedUnit = optionalString(input.extractedValue.normalizedUnit)
   const geographicScope = optionalString(input.extractedValue.geographicScope)
   const effectiveAt = optionalDate(input.extractedValue.effectiveAt)
   const value = inputJsonValue(input.extractedValue.value)
+  const freshness = calculateClaimFreshness({
+    volatility,
+    risk: input.question.risk,
+    evidenceRetrievedAt: input.source.retrievedAt,
+  })
 
   // Only known profile attributes cross the trust boundary. Client-supplied provenance is discarded.
   const profileField = {
@@ -122,7 +130,11 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
     ...(geographicScope ? { geographicScope } : {}),
     ...(effectiveAt ? { effectiveAt: effectiveAt.toISOString() } : {}),
     confidence,
-    volatility,
+    volatility: volatility.toLowerCase(),
+    freshnessConfirmedAt: input.source.retrievedAt.toISOString(),
+    reviewDueAt: freshness.reviewDueAt.toISOString(),
+    staleAt: freshness.staleAt.toISOString(),
+    freshnessPolicyVersion: freshness.policyVersion,
     claimId: input.claimId,
     questionId: input.question.id,
     questionSchemaVersion: input.question.schemaVersion,
@@ -156,6 +168,8 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
       sourceAuthorityVerifiedAt: input.source.authorityVerifiedAt ?? undefined,
       sourceAuthorityVerifiedBy: input.source.authorityVerifiedBy ?? undefined,
       verificationState,
+      risk: input.question.risk,
+      volatility,
       geographicScope,
       effectiveAt,
       reviewedAt,
@@ -176,6 +190,14 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
       representationMediaType: input.source.representationMediaType ?? undefined,
       byteLength: input.source.byteLength ?? undefined,
       modelUsed: input.source.modelUsed ?? undefined,
+    },
+    freshness: {
+      claimId: input.claimId,
+      lastEvidenceSnapshotId: input.source.evidenceSnapshotId ?? undefined,
+      lastEvidenceRetrievedAt: input.source.retrievedAt,
+      reviewDueAt: freshness.reviewDueAt,
+      staleAt: freshness.staleAt,
+      policyVersion: freshness.policyVersion,
     },
   }
 }
@@ -300,6 +322,7 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
     await tx.jurisdictionClaim.create({
       data: publication.claim as Prisma.JurisdictionClaimUncheckedCreateInput,
     })
+    await tx.jurisdictionClaimFreshness.create({ data: publication.freshness })
     await tx.jurisdictionClaimEvidence.create({
       data: publication.evidence,
     })

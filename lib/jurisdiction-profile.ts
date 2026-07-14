@@ -22,6 +22,10 @@ export type ProfileField<T = ProfileFieldValue> = {
   confidence: number
   verifiedById?: string
   volatility: 'static' | 'annual' | 'per_sale' | 'quarterly'
+  freshnessConfirmedAt?: string
+  reviewDueAt?: string
+  staleAt?: string
+  freshnessPolicyVersion?: string
 }
 
 export const JURISDICTION_PROFILE_SECTIONS = [

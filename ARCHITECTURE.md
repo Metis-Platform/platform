@@ -66,8 +66,9 @@ Other core entities: `Tenant`, `User`, `Jurisdiction`, `JurisdictionProfile`, `R
 Jurisdiction extraction is a proposal pipeline, not a truth pipeline. Every current research and
 extraction field resolves through the versioned question library in
 `lib/jurisdiction-question-library.ts`; an unknown section/field pair fails closed. The library
-assigns a stable question ID, risk level, expected authority class, required evidence, and batch
-review eligibility.
+assigns a stable question ID, risk level, volatility class, expected authority class, required
+evidence, and batch review eligibility. Volatility is server-owned policy input; AI and client
+payloads cannot choose or extend a claim's review interval.
 
 AI confidence controls review priority only. Extraction cron jobs may create or refresh `PENDING`
 candidates, but may not write `JurisdictionProfile` or mark candidates approved. All forward
@@ -103,8 +104,20 @@ New AI candidates must reference the exact snapshot used for extraction. Claim p
 re-reads that pending candidate and snapshot inside the claim transaction and copies the integrity
 envelope into `JurisdictionClaimEvidence`; route-supplied snapshot provenance is ignored. Legacy AI
 candidates without snapshots fail closed. Direct manual citations remain snapshot-less and
-`REVIEWED`. Claim re-review, contradiction handling, freshness transitions, and researched legacy
-migration remain part of the national jurisdiction intelligence initiative (#296).
+`REVIEWED`.
+
+Every new claim also receives a mutable `JurisdictionClaimFreshness` scheduling projection derived
+from the evidence retrieval time, question volatility/risk, and a versioned server policy. The
+investor UI fails closed when these dates are absent or stale. Freshness is an operational prompt
+to investigate again; it is not evidence that a legal fact is still true. A super-admin may
+reconfirm only against a newer snapshot from the same source whose full content hash is unchanged.
+That transaction uses an exact freshness version, appends an immutable `JurisdictionClaimReReview`
+with copied evidence and authenticated reviewer/time, and advances only the scheduling projection.
+Changed evidence must become a replacement or contradiction review. Claims snapshot both risk and
+volatility so later question-catalog versions cannot change their schedule. Pre-policy claims are
+classified `UNKNOWN`, immediately stale, and cannot be reconfirmed until researched and republished;
+the migration does not fabricate evidence or validity. Contradiction handling, researched legacy
+migration, and coverage workflows remain part of initiative #296.
 
 Source authority decisions are made only through the super-admin review workflow. Each verify,
 reject, or reset action atomically appends a `JurisdictionSourceAuthorityReview` containing the

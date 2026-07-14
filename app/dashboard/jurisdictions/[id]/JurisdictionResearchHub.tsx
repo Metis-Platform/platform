@@ -11,6 +11,7 @@ import {
   type ResearchProfileField,
   type ResearchStrategy,
 } from '@/lib/jurisdiction-research'
+import { claimFreshnessStatus, type ClaimFreshnessStatus } from '@/lib/jurisdiction-claim-freshness'
 
 type RuleRow = {
   id: string
@@ -38,13 +39,6 @@ type ReportTarget = {
   strategy: ResearchStrategy
   field: ResearchFieldDef
 } | null
-
-const VOLATILITY_DAYS: Record<ResearchProfileField['volatility'], number> = {
-  static: 1825,
-  annual: 455,
-  quarterly: 120,
-  per_sale: 60,
-}
 
 function confidenceTone(confidence: number) {
   if (confidence >= 0.85) return 'bg-emerald-500'
@@ -121,11 +115,10 @@ function citationUrl(citation: unknown): string | null {
   return typeof url === 'string' && isSafeExternalUrl(url) ? url : null
 }
 
-function isStale(field: ResearchProfileField) {
-  const verifiedAt = new Date(field.verifiedAt)
-  if (Number.isNaN(verifiedAt.getTime())) return false
-  const ageDays = (Date.now() - verifiedAt.getTime()) / 86_400_000
-  return ageDays > VOLATILITY_DAYS[field.volatility]
+function fieldFreshness(field: ResearchProfileField): ClaimFreshnessStatus | null {
+  if (!field.claimId) return null
+  if (!field.reviewDueAt || !field.staleAt) return 'STALE'
+  return claimFreshnessStatus({ reviewDueAt: field.reviewDueAt, staleAt: field.staleAt })
 }
 
 function numericValue(field: ResearchProfileField | null): number | null {
@@ -306,7 +299,7 @@ function ResearchField({
   onReport: () => void
 }) {
   const hasValue = profileField?.value !== undefined && profileField.value !== null && profileField.value !== ''
-  const stale = profileField ? isStale(profileField) : false
+  const freshness = profileField ? fieldFreshness(profileField) : null
   const sourceUrl = profileField?.sourceUrl && isSafeExternalUrl(profileField.sourceUrl) ? profileField.sourceUrl : null
   const citation = citationLabel(profileField?.citation)
   const citationHref = citationUrl(profileField?.citation)
@@ -340,7 +333,12 @@ function ResearchField({
             ) : (
               <span>Citation: none</span>
             )}
-            {stale && <span className="font-medium text-amber-700">Review due</span>}
+            {freshness === 'REVIEW_DUE' && (
+              <span className="font-medium text-amber-700">Review due</span>
+            )}
+            {freshness === 'STALE' && (
+              <span className="font-medium text-red-700">Stale — re-review required</span>
+            )}
             {reported && <span className="font-medium text-emerald-700">Reported</span>}
           </div>
         </div>

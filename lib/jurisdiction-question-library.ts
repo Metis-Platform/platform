@@ -8,9 +8,10 @@ import {
 import type { JurisdictionProfileSection } from './jurisdiction-profile'
 import type { JurisdictionAuthorityClass } from './jurisdiction-authority'
 
-export const JURISDICTION_QUESTION_SCHEMA_VERSION = '2026-07-14.v1' as const
+export const JURISDICTION_QUESTION_SCHEMA_VERSION = '2026-07-14.v2' as const
 
 export type JurisdictionClaimRisk = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type JurisdictionClaimVolatility = 'STATIC' | 'ANNUAL' | 'QUARTERLY' | 'PER_SALE'
 
 export type JurisdictionEvidenceRequirement =
   | 'SOURCE_URL'
@@ -25,6 +26,7 @@ export interface JurisdictionQuestionDefinition {
   label: string
   strategies: ResearchStrategy[]
   risk: JurisdictionClaimRisk
+  volatility: JurisdictionClaimVolatility
   expectedAuthority: JurisdictionAuthorityClass
   requiredEvidence: JurisdictionEvidenceRequirement[]
   batchReviewAllowed: boolean
@@ -57,6 +59,22 @@ function authorityFor(section: JurisdictionProfileSection): JurisdictionAuthorit
     section === 'wholesale'
   ) return 'STATE_OFFICIAL_OR_STATUTE'
   return 'LOCAL_OFFICIAL'
+}
+
+function volatilityFor(
+  section: JurisdictionProfileSection,
+  fieldKey: string,
+): JurisdictionClaimVolatility {
+  for (const definitions of Object.values(OFFICE_TYPE_FIELDS)) {
+    const definition = definitions.find(field =>
+      field.section === section && field.fieldKey === fieldKey
+    )
+    if (definition) return definition.volatility.toUpperCase() as JurisdictionClaimVolatility
+  }
+  if (/(?:Url|URL|Portal)$/i.test(fieldKey)) return 'STATIC'
+  if (section === 'contacts' || section === 'marketSignals') return 'QUARTERLY'
+  if (section === 'taxSale') return 'ANNUAL'
+  return 'STATIC'
 }
 
 type MutableQuestion = {
@@ -113,6 +131,7 @@ function buildQuestionLibrary(): JurisdictionQuestionDefinition[] {
         label: field.label,
         strategies: [...field.strategies].sort(),
         risk,
+        volatility: volatilityFor(field.section, field.fieldKey),
         expectedAuthority: authorityFor(field.section),
         requiredEvidence: [
           'SOURCE_URL' as const,

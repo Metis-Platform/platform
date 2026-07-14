@@ -36,6 +36,7 @@ type Props = {
   sourceStatusFilter: string
   candidateStatusFilter: string
   sectionFilter: string
+  freshnessStatusFilter: string
 }
 
 function statusTone(status: AuthorityStatus): string {
@@ -64,6 +65,7 @@ export function SourceAuthorityReviewClient({
   sourceStatusFilter,
   candidateStatusFilter,
   sectionFilter,
+  freshnessStatusFilter,
 }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -84,6 +86,7 @@ export function SourceAuthorityReviewClient({
   function changeStatus(value: string) {
     const params = new URLSearchParams({ status: candidateStatusFilter })
     if (sectionFilter) params.set('section', sectionFilter)
+    params.set('freshnessStatus', freshnessStatusFilter)
     if (value) params.set('sourceStatus', value)
     startTransition(() => router.push(`/admin/extraction-queue?${params}`))
   }

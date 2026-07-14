@@ -235,6 +235,7 @@ model JurisdictionSourceUrl {
   claimEvidence    JurisdictionClaimEvidence[]
   authorityReviews JurisdictionSourceAuthorityReview[]
   evidenceSnapshots JurisdictionEvidenceSnapshot[]
+  claimReReviews JurisdictionClaimReReview[]
 
   @@unique([jurisdictionId, officeType, url])
   @@index([jurisdictionId])
@@ -283,6 +284,8 @@ model JurisdictionEvidenceSnapshot {
 
   candidates    ExtractionCandidate[]
   claimEvidence JurisdictionClaimEvidence[]
+  freshnessProjections JurisdictionClaimFreshness[] @relation("FreshnessLastSnapshot")
+  claimReReviews JurisdictionClaimReReview[]
 
   @@index([jurisdictionId, retrievedAt])
   @@index([sourceUrlId, retrievedAt])
@@ -335,6 +338,8 @@ model JurisdictionClaim {
   sourceAuthorityVerifiedAt DateTime?
   sourceAuthorityVerifiedBy String?
   verificationState         JurisdictionClaimVerificationState @default(REVIEWED)
+  risk                      JurisdictionClaimRisk                @default(UNKNOWN)
+  volatility                JurisdictionClaimVolatility          @default(UNKNOWN)
   geographicScope           String?
   effectiveAt               DateTime?
   reviewedAt                DateTime
@@ -345,10 +350,60 @@ model JurisdictionClaim {
   createdAt                 DateTime                           @default(now())
 
   evidence JurisdictionClaimEvidence[]
+  freshness JurisdictionClaimFreshness?
+  reReviews JurisdictionClaimReReview[]
 
   @@index([jurisdictionId, questionId, createdAt])
   @@index([jurisdictionId, section, fieldKey, createdAt])
   @@index([verificationState])
+}
+
+// Mutable scheduling projection. Claim values and re-review decisions remain append-only.
+model JurisdictionClaimFreshness {
+  claimId                 String   @id
+  claim                   JurisdictionClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  lastEvidenceSnapshotId  String?
+  lastEvidenceSnapshot    JurisdictionEvidenceSnapshot? @relation("FreshnessLastSnapshot", fields: [lastEvidenceSnapshotId], references: [id], onDelete: SetNull)
+  lastEvidenceRetrievedAt DateTime
+  reviewDueAt             DateTime
+  staleAt                 DateTime
+  policyVersion           String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([reviewDueAt])
+  @@index([staleAt])
+}
+
+// Append-only human reconfirmations against a newer unchanged evidence snapshot.
+model JurisdictionClaimReReview {
+  id                      String   @id @default(cuid())
+  claimId                 String
+  claim                   JurisdictionClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  evidenceSnapshotId      String
+  evidenceSnapshot        JurisdictionEvidenceSnapshot @relation(fields: [evidenceSnapshotId], references: [id], onDelete: Restrict)
+  sourceUrlId             String?
+  sourceUrlRecord         JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  sourceUrl               String
+  contentHash             String
+  storageKey              String
+  retrievalAdapter        JurisdictionEvidenceRetrievalAdapter
+  representationMediaType String
+  byteLength              Int
+  evidenceRetrievedAt     DateTime
+  decision                JurisdictionClaimReReviewDecision @default(RECONFIRMED)
+  previousReviewDueAt     DateTime
+  previousStaleAt         DateTime
+  nextReviewDueAt         DateTime
+  nextStaleAt             DateTime
+  policyVersion           String
+  explanation             String @db.Text
+  reviewedAt              DateTime @default(now())
+  reviewedBy              String
+
+  @@index([claimId, reviewedAt])
+  @@index([evidenceSnapshotId])
+  @@index([sourceUrlId])
 }
 
 // Evidence is copied at publication time so provenance survives source/candidate cleanup.
@@ -1187,6 +1242,26 @@ enum JurisdictionSourceAuthorityStatus {
 
 enum JurisdictionEvidenceRetrievalAdapter {
   JINA_READER
+}
+
+enum JurisdictionClaimVolatility {
+  UNKNOWN
+  STATIC
+  ANNUAL
+  QUARTERLY
+  PER_SALE
+}
+
+enum JurisdictionClaimRisk {
+  UNKNOWN
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum JurisdictionClaimReReviewDecision {
+  RECONFIRMED
 }
 
 enum JurisdictionClaimVerificationState {

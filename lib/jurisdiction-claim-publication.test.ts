@@ -5,6 +5,7 @@ const { tx, transaction } = vi.hoisted(() => {
   const client = {
     jurisdictionProfile: { upsert: vi.fn() },
     jurisdictionClaim: { findFirst: vi.fn(), create: vi.fn() },
+    jurisdictionClaimFreshness: { create: vi.fn() },
     jurisdictionClaimEvidence: { create: vi.fn() },
     jurisdictionSourceUrl: { findFirst: vi.fn() },
     extractionCandidate: { findFirst: vi.fn(), updateMany: vi.fn() },
@@ -23,6 +24,7 @@ import {
   claimVerificationState,
   publishJurisdictionClaim,
 } from './jurisdiction-claim-publication'
+import { JURISDICTION_FRESHNESS_POLICY_VERSION } from './jurisdiction-claim-freshness'
 
 const question = getJurisdictionQuestion('zoning', 'minimumLotSizeSqft')!
 const reviewedAt = new Date('2026-07-14T00:30:00.000Z')
@@ -103,6 +105,8 @@ describe('jurisdiction claim publication records', () => {
       sourceAuthorityOwner: 'Example County Planning Department',
       sourceAuthorityStatus: 'UNVERIFIED',
       verificationState: 'REVIEWED',
+      risk: 'CRITICAL',
+      volatility: 'STATIC',
       value: 7500,
     })
     expect(publication.evidence).toMatchObject({
@@ -122,7 +126,10 @@ describe('jurisdiction claim publication records', () => {
       claimId: 'claim-2',
       value: 7500,
       sourceAuthorityStatus: 'UNVERIFIED',
+      volatility: 'static',
       verificationState: 'REVIEWED',
+      freshnessConfirmedAt: source.retrievedAt.toISOString(),
+      freshnessPolicyVersion: JURISDICTION_FRESHNESS_POLICY_VERSION,
       verifiedAt: reviewedAt.toISOString(),
       verifiedById: 'clerk-reviewer-1',
     })
@@ -140,6 +147,10 @@ describe('jurisdiction claim publication records', () => {
         verifiedAt: '1999-01-01T00:00:00.000Z',
         verifiedById: 'client-reviewer',
         sourceAuthorityStatus: 'VERIFIED',
+        volatility: 'per_sale',
+        reviewDueAt: '2099-01-01T00:00:00.000Z',
+        staleAt: '2099-02-01T00:00:00.000Z',
+        freshnessPolicyVersion: 'client-policy',
       },
     })
 
@@ -150,6 +161,8 @@ describe('jurisdiction claim publication records', () => {
       verifiedAt: reviewedAt.toISOString(),
       verifiedById: 'clerk-reviewer-1',
       sourceAuthorityStatus: 'UNVERIFIED',
+      volatility: 'static',
+      freshnessPolicyVersion: JURISDICTION_FRESHNESS_POLICY_VERSION,
     })
   })
 
@@ -162,13 +175,19 @@ describe('jurisdiction claim publication records', () => {
     expect(() => buildClaimPublication({
       ...input,
       claimId: 'claim-empty',
-      extractedValue: { confidence: 1 },
+      extractedValue: { confidence: 1, volatility: 'annual' },
     })).toThrow('CLAIM_VALUE_REQUIRED')
     expect(() => buildClaimPublication({
       ...input,
       claimId: 'claim-no-reviewer',
       reviewerId: ' ',
     })).toThrow('REVIEWER_REQUIRED')
+    const withoutClientVolatility = buildClaimPublication({
+      ...input,
+      claimId: 'claim-no-volatility',
+      extractedValue: { value: 7500 },
+    })
+    expect(withoutClientVolatility.claim.volatility).toBe(question.volatility)
   })
 })
 
@@ -190,6 +209,7 @@ describe('atomic claim publication service', () => {
       authorityVerifiedBy: null,
     })
     tx.jurisdictionClaim.create.mockResolvedValue({ id: 'new-claim' })
+    tx.jurisdictionClaimFreshness.create.mockResolvedValue({ claimId: 'new-claim' })
     tx.jurisdictionClaimEvidence.create.mockResolvedValue({ id: 'evidence-1' })
     tx.extractionCandidate.findFirst.mockResolvedValue({
       sourceUrlId: source.sourceUrlId,
@@ -226,6 +246,13 @@ describe('atomic claim publication service', () => {
         candidateId: 'candidate-1',
         evidenceSnapshotId: 'snapshot-1',
         storageKey: source.storageKey,
+      }),
+    })
+    expect(tx.jurisdictionClaimFreshness.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        lastEvidenceSnapshotId: source.evidenceSnapshotId,
+        lastEvidenceRetrievedAt: source.retrievedAt,
+        policyVersion: JURISDICTION_FRESHNESS_POLICY_VERSION,
       }),
     })
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1)
