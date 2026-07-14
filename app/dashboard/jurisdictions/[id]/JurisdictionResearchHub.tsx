@@ -43,6 +43,22 @@ type ReportTarget = {
   field: ResearchFieldDef
 } | null
 
+type ResearchDiscovery = {
+  status: 'DISCOVERED' | 'DISCOVERY_NEEDED'
+  leads: number
+  created: number
+}
+
+export function researchDiscoveryMessage(discovery: ResearchDiscovery) {
+  if (discovery.status === 'DISCOVERY_NEEDED') {
+    return 'Preliminary discovery is needed before county source leads can be queued.'
+  }
+  if (discovery.created > 0) {
+    return `${discovery.created} preliminary county source lead${discovery.created === 1 ? '' : 's'} queued for review. They are not yet verified.`
+  }
+  return `${discovery.leads} preliminary county source lead${discovery.leads === 1 ? '' : 's'} already await review. They are not yet verified.`
+}
+
 function confidenceTone(confidence: number) {
   if (confidence >= 0.85) return 'bg-emerald-500'
   if (confidence >= 0.6) return 'bg-amber-400'
@@ -146,6 +162,7 @@ export default function JurisdictionResearchHub({
   const [reportError, setReportError] = useState<string | null>(null)
   const [researchRequested, setResearchRequested] = useState(hasResearchDemand)
   const [researchRequestError, setResearchRequestError] = useState<string | null>(null)
+  const [researchDiscovery, setResearchDiscovery] = useState<ResearchDiscovery | null>(null)
   const [requestingResearch, startResearchTransition] = useTransition()
 
   const opportunityScore = numericValue(fieldFor(profile, MARKET_SIGNAL_FIELDS[0]))
@@ -193,6 +210,8 @@ export default function JurisdictionResearchHub({
       try {
         const response = await fetch(`/api/jurisdictions/${jurisdictionId}/research-request`, { method: 'POST' })
         if (response.ok) {
+          const result = await response.json() as { discovery?: ResearchDiscovery }
+          setResearchDiscovery(result.discovery ?? null)
           setResearchRequested(true)
         } else {
           setResearchRequestError('Unable to request county research. Try again in a moment.')
@@ -223,6 +242,7 @@ export default function JurisdictionResearchHub({
           </button>
         </div>
         {researchRequestError && <p className="mt-3 text-sm text-red-600">{researchRequestError}</p>}
+        {researchDiscovery && <p className="mt-3 text-sm text-zinc-600">{researchDiscoveryMessage(researchDiscovery)}</p>}
       </section>
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap gap-1 border-b border-zinc-200 pb-4">

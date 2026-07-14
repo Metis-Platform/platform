@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ResearchProfileField } from '@/lib/jurisdiction-research'
-import { provenanceLabel } from './JurisdictionResearchHub'
+import { provenanceLabel, researchDiscoveryMessage } from './JurisdictionResearchHub'
 
 const baseField: ResearchProfileField = {
   value: 'example',
@@ -33,5 +33,10 @@ describe('jurisdiction field provenance labels', () => {
       claimId: 'claim-blocked',
       verificationState: 'BLOCKED',
     })).toBe('Blocked — contradictory evidence requires review')
+  })
+
+  it('labels preliminary discovery without implying verified coverage', () => {
+    expect(researchDiscoveryMessage({ status: 'DISCOVERED', leads: 6, created: 6 })).toBe('6 preliminary county source leads queued for review. They are not yet verified.')
+    expect(researchDiscoveryMessage({ status: 'DISCOVERY_NEEDED', leads: 0, created: 0 })).toContain('Preliminary discovery is needed')
   })
 })
