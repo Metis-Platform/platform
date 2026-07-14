@@ -123,7 +123,23 @@ Database replacement additionally requires the exact fixture-set confirmation:
 npm run integration:fixtures:reset -- --confirm-environment <METIS_ENVIRONMENT_ID> --confirm-fixture metis-e2e-v1
 ```
 
-Both commands require the full integration preflight and provisioned Clerk fixture identity. Replacement is transactional, records a durable `IntegrationResetRun`, deletes only the tagged tenant plus its explicitly owned email events, and recreates the manifest. It refuses to proceed when R2 document keys, Stripe identifiers, fixture identity drift, or stable-ID conflicts indicate that cross-service cleanup is incomplete. This is only the database phase; no hosted reset is authorized until Clerk/R2 orchestration and environment access are complete.
+Both commands require the full integration preflight and provisioned Clerk fixture identity. Replacement is transactional, records a durable `IntegrationResetRun`, deletes only the tagged tenant plus its explicitly owned email events, and recreates the manifest. It refuses to proceed when R2 document keys, Stripe identifiers, fixture identity drift, or stable-ID conflicts indicate that cross-service cleanup is incomplete. These are lower-level database tools; hosted operators use the cross-service commands below.
+
+The read-only full reset plan discovers the exact deterministic Clerk organization slug, Clerk user external ID, and stable tenant R2 prefix. It returns states and counts without secrets or object keys:
+
+```bash
+npm run integration:full-reset:plan -- --confirm-environment <METIS_ENVIRONMENT_ID>
+```
+
+Execution also requires the exact fixture set and a reset-only `INTEGRATION_FIXTURE_OWNER_PASSWORD` secret:
+
+```bash
+npm run integration:full-reset -- --confirm-environment <METIS_ENVIRONMENT_ID> --confirm-fixture metis-e2e-v1
+```
+
+The Clerk Backend API secret must authenticate to an instance ID in `INTEGRATION_ALLOWED_CLERK_INSTANCE_IDS` and outside `PRODUCTION_CLERK_INSTANCE_IDS`; this authenticated check closes the gap left by validating only the publishable-key host. Clerk resources are replaceable only when backend-only metadata exactly matches `metis-fixture:metis-e2e-v1`; a deterministic-name collision without that tag is a hard blocker. The owner is recreated with a deterministic external ID and the new Clerk IDs flow directly into the database fixture, because Clerk IDs are not stable. R2 discovery and deletion are limited independently by both the adapter and orchestrator to `tenants/fixture_metis_e2e_v1_tenant/`; the prefix is re-listed and must be empty before database document rows can be removed. The database transaction also verifies that every prior document key is within that exact prefix and that the prior Clerk IDs match the inspected rotation proof. Stripe identifiers remain a blocker. Every attempt records phase-specific audit failure or one combined success summary, making retries safe after partial external cleanup.
+
+Repository orchestration is implemented, but no hosted mutation is authorized until Vercel/Neon/Clerk administration, allowlisted identities, reset-safe modes, and fixture credentials are independently verified. The first hosted run must begin with the non-mutating plan and be treated as a controlled rehearsal.
 
 Before the first external user, production is provisioned or cut over using a fresh database, clean authentication state, production-only external-service resources, the approved immutable commit, migrations, and reference configuration. Full design and acceptance criteria: issue #298.
 

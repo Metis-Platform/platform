@@ -3,6 +3,7 @@ import { INTEGRATION_FIXTURE_MANIFEST } from '../prisma/fixtures/integration-v1'
 import {
   executeIntegrationFixtureReset,
   IntegrationResetRefusedError,
+  matchesVerifiedPreviousClerkIdentity,
   planIntegrationFixtureReset,
   type IntegrationFixtureInspection,
   type IntegrationFixtureStore,
@@ -41,6 +42,7 @@ const EMPTY_INSPECTION: IntegrationFixtureInspection = {
   clerkOrgId: null,
   clerkUserIds: [],
   r2ObjectCount: 0,
+  r2ObjectKeys: [],
   stripeArtifactCount: 0,
   stableTenantIdConflict: false,
   databaseRowCounts: { tenants: 0 },
@@ -86,6 +88,23 @@ describe('integration fixture manifest', () => {
     expect(INTEGRATION_FIXTURE_MANIFEST.tenant.id).toMatch(/^fixture_metis_e2e_v1_/)
     expect(INTEGRATION_FIXTURE_MANIFEST.property.apn).toBe('2340282')
     expect(INTEGRATION_FIXTURE_MANIFEST.jurisdiction.fips).toBe('12127')
+  })
+})
+
+describe('Clerk rotation verification', () => {
+  it('requires the exact previous organization and complete user set', () => {
+    expect(matchesVerifiedPreviousClerkIdentity('org-old', ['user-b', 'user-a'], {
+      previousOrgId: 'org-old',
+      previousUserIds: ['user-a', 'user-b'],
+    })).toBe(true)
+    expect(matchesVerifiedPreviousClerkIdentity('org-old', ['user-a'], {
+      previousOrgId: 'org-other',
+      previousUserIds: ['user-a'],
+    })).toBe(false)
+    expect(matchesVerifiedPreviousClerkIdentity('org-old', ['user-a', 'unexpected'], {
+      previousOrgId: 'org-old',
+      previousUserIds: ['user-a'],
+    })).toBe(false)
   })
 })
 

@@ -17,6 +17,7 @@ import type {
   IntegrationFixtureInspection,
   IntegrationFixtureStore,
 } from '../lib/integration-fixture-reset'
+import { matchesVerifiedPreviousClerkIdentity } from '../lib/integration-fixture-reset'
 import type { IntegrationFixtureManifest } from './fixtures/integration-v1'
 
 export class PrismaIntegrationFixtureStore implements IntegrationFixtureStore {
@@ -34,6 +35,7 @@ export class PrismaIntegrationFixtureStore implements IntegrationFixtureStore {
           stripeCustomerId: true,
           stripeSubscriptionId: true,
           users: { select: { clerkUserId: true } },
+          documents: { select: { r2Key: true } },
           _count: {
             select: {
               users: true,
@@ -66,6 +68,7 @@ export class PrismaIntegrationFixtureStore implements IntegrationFixtureStore {
       clerkOrgId: fixture?.clerkOrgId ?? null,
       clerkUserIds: fixture?.users.map(user => user.clerkUserId) ?? [],
       r2ObjectCount: counts?.documents ?? 0,
+      r2ObjectKeys: fixture?.documents.map(document => document.r2Key) ?? [],
       stripeArtifactCount:
         Number(Boolean(fixture?.stripeCustomerId)) + Number(Boolean(fixture?.stripeSubscriptionId)),
       stableTenantIdConflict: Boolean(
@@ -111,7 +114,14 @@ export class PrismaIntegrationFixtureStore implements IntegrationFixtureStore {
 
   async replaceFixture(
     manifest: IntegrationFixtureManifest,
-    identity: IntegrationFixtureIdentity
+    identity: IntegrationFixtureIdentity,
+    externalCleanup?: {
+      verifiedEmptyR2Prefix: string
+      replacedClerkIdentity: {
+        previousOrgId: string | null
+        previousUserIds: string[]
+      }
+    }
   ): Promise<Record<string, number>> {
     return this.prisma.$transaction(async tx => {
       const existing = await tx.tenant.findUnique({
@@ -122,20 +132,33 @@ export class PrismaIntegrationFixtureStore implements IntegrationFixtureStore {
           stripeCustomerId: true,
           stripeSubscriptionId: true,
           users: { select: { clerkUserId: true } },
-          _count: { select: { documents: true } },
+          documents: { select: { r2Key: true } },
         },
       })
 
       if (existing) {
-        const identityDrift =
-          existing.id !== manifest.tenant.id ||
+        const tenantIdDrift = existing.id !== manifest.tenant.id
+        const clerkIdentityDrift =
           existing.clerkOrgId !== identity.clerkOrgId ||
           existing.users.some(user => user.clerkUserId !== identity.clerkUserId)
+        const clerkRotationIsVerified = matchesVerifiedPreviousClerkIdentity(
+          existing.clerkOrgId,
+          existing.users.map(user => user.clerkUserId),
+          externalCleanup?.replacedClerkIdentity
+        )
+        const documentScopeIsVerified = existing.documents.every(document =>
+          externalCleanup?.verifiedEmptyR2Prefix === manifest.r2Prefix &&
+          document.r2Key.startsWith(manifest.r2Prefix)
+        )
         const externalStateRemaining =
-          existing._count.documents > 0 ||
+          (existing.documents.length > 0 && !documentScopeIsVerified) ||
           Boolean(existing.stripeCustomerId) ||
           Boolean(existing.stripeSubscriptionId)
-        if (identityDrift || externalStateRemaining) {
+        if (
+          tenantIdDrift ||
+          (clerkIdentityDrift && !clerkRotationIsVerified) ||
+          externalStateRemaining
+        ) {
           throw new Error('Fixture changed after reset planning')
         }
 

@@ -3,6 +3,8 @@ export const INTEGRATION_FIXTURE_MANIFEST = {
   fixtureVersion: '1.0.0',
   requiredMigration: '20260713233000_integration_fixture_reset',
   externalMetadataTag: 'metis-fixture:metis-e2e-v1',
+  clerkExternalId: 'metis-fixture:metis-e2e-v1:owner',
+  r2Prefix: 'tenants/fixture_metis_e2e_v1_tenant/',
   tenant: {
     id: 'fixture_metis_e2e_v1_tenant',
     name: 'Metis Integration Fixture',

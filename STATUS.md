@@ -36,6 +36,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Environment reset safety foundation | Issue #300 adds explicit logical environment identity, an authenticated dashboard designation, and a fail-closed non-destructive reset preflight before any reset implementation or mutation browser suite is allowed. |
 | Runtime side-effect enforcement | Issue #302 centralizes fail-closed cron, email, auction, and AI policy. Guarded environments require explicit enablement; email supports no-send sink or exact-recipient allowlisting. |
 | Deterministic integration database baseline | Issue #304 versions one explicitly tagged fixture tenant and adds dry-run planning plus guarded transactional replacement with durable reset-run auditing. It refuses R2/Stripe orphan risk; hosted execution remains blocked pending Clerk/R2 orchestration and environment access. |
+| Guarded Clerk/R2 reset orchestration | Issue #306 adds count-only cross-service planning, authenticated Clerk instance-ID allow/deny checks, backend-only fixture tags with deterministic lookup/recreation, exact-prefix R2 cleanup with post-delete verification, verified identity rotation into the database transaction, and phase-specific retryable audit outcomes. No hosted mutation has been authorized or run. |
 
 ---
 
@@ -100,7 +101,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | Requires Playwright + browser session (uses JS rendering). Run manually in user session once Playwright is configured. |
 | ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
 | **Manual click-through PR #286** — Land sync/comps/AI summary | No — build/lint/tsc all passed pre-merge | 2026-06-16 | Open a Land deal: click "Sync from research", add 2 comps, click "Generate" on AI summary (needs an Anthropic key in Settings). Not yet manually verified in the live app. |
-| Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not repository work | 2026-07-13 | WSL currently has no Vercel CLI/link. Configure the logical integration identity, verified service allowlists, and reset-safe runtime modes added by #300/#302. Mutation tests remain blocked until #289 adds deterministic fixtures and cross-service reset orchestration. |
+| Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not repository work | 2026-07-13 | WSL currently has no Vercel CLI/link. Configure the logical integration identity, verified service allowlists, reset-safe runtime modes, and fixture credentials. #300/#302/#304/#306 provide the repository guards/orchestration; mutation tests remain blocked until the non-mutating plan and controlled hosted reset rehearsal pass. |
 
 ---
 
