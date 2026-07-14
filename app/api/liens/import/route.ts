@@ -5,7 +5,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
-import { assertCsvUpload, ImportCsvError, parseImportCsv } from '@/lib/import-csv'
+import { assertCsvUpload, exceedsDeclaredCsvUploadSize, ImportCsvError, parseImportCsv } from '@/lib/import-csv'
 
 // ---------------------------------------------------------------------------
 // Status types
@@ -98,6 +98,10 @@ export async function POST(req: NextRequest) {
 
   const url = new URL(req.url)
   const preview = url.searchParams.get('preview') === 'true'
+
+  if (exceedsDeclaredCsvUploadSize(req.headers.get('content-length'))) {
+    return NextResponse.json({ error: 'CSV files must be 1 MB or smaller.' }, { status: 413 })
+  }
 
   const formData = await req.formData()
   const file = formData.get('file')
