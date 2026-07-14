@@ -95,6 +95,14 @@ section and field. The legacy JSON stays in the admin-side projection as migrati
 never rendered or interpolated as an investor fact. See
 `docs/JURISDICTION-LEGACY-INVENTORY-2026-07-13.md`.
 
+The super-admin coverage queue derives operational research debt from the same boundary. A field
+counts as coverage only when the profile claim ID matches the unsuperseded claim for the exact
+county, section, and field. It separately reports legacy JSON, invalid projections, unmapped legacy
+keys, versioned question-catalog gaps, stale/contradicted claims, pending candidates, and verified
+authorities. Queue ordering is deterministic: parcel research requests, tracked-property demand,
+availability, blocked claims, then critical untrusted fields. Registry breadth never substitutes
+for decision-grade coverage.
+
 The extraction pipeline archives the exact UTF-8 Markdown representation supplied by Jina Reader
 and reviewed by the model. It does not mislabel that transformed representation as the original
 county HTML or document. Bytes are stored in R2 under a SHA-256 content-addressed key using a
