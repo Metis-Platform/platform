@@ -168,6 +168,7 @@ model Jurisdiction {
   strategyData         JurisdictionStrategyData[]
   profile              JurisdictionProfile?
   sourceUrls           JurisdictionSourceUrl[]
+  evidenceSnapshots    JurisdictionEvidenceSnapshot[]
   extractionCandidates ExtractionCandidate[]
   claims               JurisdictionClaim[]
   sourceAuthorityReviews JurisdictionSourceAuthorityReview[]
@@ -233,6 +234,7 @@ model JurisdictionSourceUrl {
   candidates       ExtractionCandidate[]
   claimEvidence    JurisdictionClaimEvidence[]
   authorityReviews JurisdictionSourceAuthorityReview[]
+  evidenceSnapshots JurisdictionEvidenceSnapshot[]
 
   @@unique([jurisdictionId, officeType, url])
   @@index([jurisdictionId])
@@ -262,12 +264,40 @@ model JurisdictionSourceAuthorityReview {
   @@index([decision, reviewedAt])
 }
 
+// Append-only retrieval events. The R2 object is immutable and content-addressed;
+// repeated retrievals of unchanged bytes intentionally create distinct rows.
+model JurisdictionEvidenceSnapshot {
+  id                      String                                @id @default(cuid())
+  jurisdictionId          String
+  jurisdiction            Jurisdiction                          @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  sourceUrlId             String?
+  sourceUrlRecord         JurisdictionSourceUrl?                 @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  sourceUrl               String
+  retrievedAt             DateTime
+  retrievalAdapter        JurisdictionEvidenceRetrievalAdapter
+  representationMediaType String
+  contentHash             String
+  storageKey              String
+  byteLength              Int
+  createdAt               DateTime                              @default(now())
+
+  candidates    ExtractionCandidate[]
+  claimEvidence JurisdictionClaimEvidence[]
+
+  @@index([jurisdictionId, retrievedAt])
+  @@index([sourceUrlId, retrievedAt])
+  @@index([contentHash])
+  @@index([storageKey])
+}
+
 model ExtractionCandidate {
   id             String                 @id @default(cuid())
   jurisdictionId String
   jurisdiction   Jurisdiction           @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
   sourceUrlId    String?
   sourceUrl      JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  evidenceSnapshotId String?
+  evidenceSnapshot   JurisdictionEvidenceSnapshot? @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
   section        String
   fieldKey       String
   extractedValue Json
@@ -330,16 +360,23 @@ model JurisdictionClaimEvidence {
   sourceUrlRecord JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
   candidateId     String?
   candidate       ExtractionCandidate?   @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  evidenceSnapshotId String?
+  evidenceSnapshot   JurisdictionEvidenceSnapshot? @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
   sourceUrl       String
   sourceSnippet   String                 @db.Text
   retrievedAt     DateTime
   contentHash     String?
+  storageKey      String?
+  retrievalAdapter JurisdictionEvidenceRetrievalAdapter?
+  representationMediaType String?
+  byteLength      Int?
   modelUsed       String?
   createdAt       DateTime               @default(now())
 
   @@index([claimId])
   @@index([sourceUrlId])
   @@index([candidateId])
+  @@index([evidenceSnapshotId])
 }
 
 model AuctionSaleFeed {
@@ -1146,6 +1183,10 @@ enum JurisdictionSourceAuthorityStatus {
   UNVERIFIED
   VERIFIED
   REJECTED
+}
+
+enum JurisdictionEvidenceRetrievalAdapter {
+  JINA_READER
 }
 
 enum JurisdictionClaimVerificationState {
