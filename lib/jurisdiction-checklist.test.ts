@@ -13,6 +13,7 @@ describe('jurisdiction checklist interpolation', () => {
         taxSale: {
           redemptionPeriodMonths: {
             value: 24,
+            claimId: 'claim-redemption-period',
             verifiedAt: '2026-06-15T00:00:00.000Z',
             confidence: 0.95,
             volatility: 'static',
@@ -37,6 +38,7 @@ describe('jurisdiction checklist interpolation', () => {
         contacts: {
           buildingPermits: {
             value: { name: 'Building Division', website: 'https://example.test/permits' },
+            claimId: 'claim-building-permits',
             verifiedAt: '2026-06-15T00:00:00.000Z',
             confidence: 0.9,
             volatility: 'annual',
@@ -67,6 +69,29 @@ describe('jurisdiction checklist interpolation', () => {
     })
   })
 
+  it('turns legacy values without claim provenance into verification tasks', () => {
+    const result = renderJurisdictionChecklistTitle(
+      'Confirm redemption period: {{taxSale.redemptionPeriodMonths}} months',
+      {
+        taxSale: {
+          redemptionPeriodMonths: {
+            value: 24,
+            verifiedAt: '2026-06-15T00:00:00.000Z',
+            confidence: 1,
+            volatility: 'static',
+          },
+        },
+      },
+      'redemption period',
+      'tax collector',
+    )
+
+    expect(result).toEqual({
+      text: 'Verify redemption period with tax collector',
+      missing: true,
+    })
+  })
+
   it('builds sparse-profile checklists for every strategy', () => {
     const strategies = ['TAX_LIEN', 'TAX_DEED', 'FORECLOSURE', 'LAND', 'WHOLESALE', 'FIX_FLIP', 'BUY_HOLD', 'MULTIFAMILY'] as const
 
@@ -78,4 +103,3 @@ describe('jurisdiction checklist interpolation', () => {
     }
   })
 })
-

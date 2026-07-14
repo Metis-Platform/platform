@@ -88,8 +88,12 @@ quoted evidence, retrieval time, content hash, and model/candidate links into
 `JurisdictionClaimEvidence`, and updates `JurisdictionProfile` as the current read projection with
 the durable claim ID. Replacing a field creates a new claim linked to the prior claim; it does not
 overwrite history. Source authority is re-read and candidate version is checked inside the same
-transaction, preventing stale review races. Legacy profile JSON is not assigned fabricated claims
-and the county UI labels it `Legacy — provenance unavailable` rather than verified.
+transaction, preventing stale review races. Legacy profile JSON is not assigned fabricated claims.
+Investor jurisdiction hubs, deal context, and generated due-diligence checklists fail closed: they
+retain only fields whose projected claim ID resolves to the active append-only claim for that exact
+section and field. The legacy JSON stays in the admin-side projection as migration input, but it is
+never rendered or interpolated as an investor fact. See
+`docs/JURISDICTION-LEGACY-INVENTORY-2026-07-13.md`.
 
 The extraction pipeline archives the exact UTF-8 Markdown representation supplied by Jina Reader
 and reviewed by the model. It does not mislabel that transformed representation as the original
