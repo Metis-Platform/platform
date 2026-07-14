@@ -7,6 +7,16 @@ const mutationEvidenceSchema = z.object({
   auditAction: z.string().min(1),
 })
 
+const mutationJourneySchema = z.object({
+  entryPoint: z.string().startsWith('/'),
+  actions: z.array(z.object({
+    userAction: z.string().min(1),
+    expectedRequest: z.string().min(1),
+  })).min(1),
+  persistedOutcome: z.string().min(1),
+  cleanup: z.string().min(1),
+})
+
 const storySchema = z.object({
   id: z.string().min(1),
   risk: z.enum(['low', 'medium', 'high', 'critical']),
@@ -15,9 +25,13 @@ const storySchema = z.object({
   status: z.string().min(1),
   notes: z.string().min(1),
   evidence: mutationEvidenceSchema.optional(),
+  journey: mutationJourneySchema.optional(),
 }).superRefine((story, context) => {
   if (story.mode === 'mutation' && !story.evidence) {
     context.addIssue({ code: 'custom', message: 'Mutation stories require fixture and audit correlation evidence.' })
+  }
+  if (story.mode === 'mutation' && !story.journey) {
+    context.addIssue({ code: 'custom', message: 'Mutation stories require a click/save-to-persisted-outcome journey contract.' })
   }
 })
 
