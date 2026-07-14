@@ -10,6 +10,11 @@ import type {
 } from '@/app/generated/prisma'
 import { claimFreshnessStatus } from '@/lib/jurisdiction-claim-freshness'
 import { getJurisdictionQuestion } from '@/lib/jurisdiction-question-library'
+import {
+  claimValuesConflict,
+  extractedClaimValue,
+} from '@/lib/jurisdiction-claim-contradiction'
+import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
 
 type Props = {
   searchParams: Promise<{
@@ -48,6 +53,20 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
       include: {
         jurisdiction: { select: { county: true, state: true } },
         sourceUrl: { select: { url: true, officeType: true } },
+        contradictionReviews: {
+          orderBy: { reviewedAt: 'desc' },
+          take: 3,
+          select: {
+            id: true,
+            decision: true,
+            explanation: true,
+            existingValue: true,
+            proposedValue: true,
+            reviewedAt: true,
+            reviewedBy: true,
+            replacementClaimId: true,
+          },
+        },
       },
       orderBy: [{ confidence: 'desc' }, { createdAt: 'asc' }],
       take: 100,
@@ -86,6 +105,74 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
       distinct: ['section'],
     })).map(c => c.section)
   )).sort()
+
+  const candidateProfiles = candidates.length > 0
+    ? await db.jurisdictionProfile.findMany({
+        where: { jurisdictionId: { in: [...new Set(candidates.map(c => c.jurisdictionId))] } },
+      })
+    : []
+  const profilesByJurisdiction = new Map(
+    candidateProfiles.map(profile => [profile.jurisdictionId, profile]),
+  )
+  const projectedClaimIds = candidates.flatMap(candidate => {
+    if (!isJurisdictionProfileSection(candidate.section)) return []
+    const profile = profilesByJurisdiction.get(candidate.jurisdictionId)
+    const sectionFields = (profile?.[candidate.section] ?? {}) as Record<string, unknown>
+    const claimId = (sectionFields[candidate.fieldKey] as { claimId?: unknown } | undefined)?.claimId
+    return typeof claimId === 'string' ? [claimId] : []
+  })
+  const activeClaims = projectedClaimIds.length > 0
+    ? await db.jurisdictionClaim.findMany({
+        where: {
+          id: { in: projectedClaimIds },
+          supersededByClaim: null,
+        },
+        select: {
+          id: true,
+          jurisdictionId: true,
+          section: true,
+          fieldKey: true,
+          value: true,
+          normalizedUnit: true,
+        },
+      })
+    : []
+  const claimsById = new Map(activeClaims.map(claim => [claim.id, claim]))
+  const candidateRows = candidates.map(candidate => {
+    const profile = profilesByJurisdiction.get(candidate.jurisdictionId)
+    const sectionFields = isJurisdictionProfileSection(candidate.section)
+      ? (profile?.[candidate.section] ?? {}) as Record<string, unknown>
+      : {}
+    const projectedClaimId = (
+      sectionFields[candidate.fieldKey] as { claimId?: unknown } | undefined
+    )?.claimId
+    const projectedClaim = typeof projectedClaimId === 'string'
+      ? claimsById.get(projectedClaimId) ?? null
+      : null
+    const currentClaim = projectedClaim &&
+      projectedClaim.jurisdictionId === candidate.jurisdictionId &&
+      projectedClaim.section === candidate.section &&
+      projectedClaim.fieldKey === candidate.fieldKey
+      ? projectedClaim
+      : null
+    const proposed = extractedClaimValue(candidate.extractedValue)
+    return {
+      ...candidate,
+      updatedAt: candidate.updatedAt.toISOString(),
+      contradictionReviews: candidate.contradictionReviews.map(review => ({
+        ...review,
+        reviewedAt: review.reviewedAt.toISOString(),
+      })),
+      currentClaim: currentClaim ? {
+        id: currentClaim.id,
+        value: currentClaim.value,
+        normalizedUnit: currentClaim.normalizedUnit,
+      } : null,
+      potentialContradiction: Boolean(
+        currentClaim && claimValuesConflict(currentClaim, proposed),
+      ),
+    }
+  })
 
   const now = new Date()
   const freshnessRows = await db.jurisdictionClaimFreshness.findMany({
@@ -225,7 +312,7 @@ export default async function ExtractionQueuePage({ searchParams }: Props) {
       <div className="my-8 border-t border-zinc-200" />
 
       <ExtractionQueueClient
-        candidates={candidates}
+        candidates={candidateRows}
         pendingCount={pendingCount}
         statusFilter={statusFilter}
         sectionFilter={section ?? ''}

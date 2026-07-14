@@ -171,6 +171,7 @@ model Jurisdiction {
   evidenceSnapshots    JurisdictionEvidenceSnapshot[]
   extractionCandidates ExtractionCandidate[]
   claims               JurisdictionClaim[]
+  claimContradictionReviews JurisdictionClaimContradictionReview[]
   sourceAuthorityReviews JurisdictionSourceAuthorityReview[]
   auctionSaleFeeds     AuctionSaleFeed[]
 
@@ -236,6 +237,7 @@ model JurisdictionSourceUrl {
   authorityReviews JurisdictionSourceAuthorityReview[]
   evidenceSnapshots JurisdictionEvidenceSnapshot[]
   claimReReviews JurisdictionClaimReReview[]
+  claimContradictionReviews JurisdictionClaimContradictionReview[]
 
   @@unique([jurisdictionId, officeType, url])
   @@index([jurisdictionId])
@@ -286,6 +288,7 @@ model JurisdictionEvidenceSnapshot {
   claimEvidence JurisdictionClaimEvidence[]
   freshnessProjections JurisdictionClaimFreshness[] @relation("FreshnessLastSnapshot")
   claimReReviews JurisdictionClaimReReview[]
+  claimContradictionReviews JurisdictionClaimContradictionReview[]
 
   @@index([jurisdictionId, retrievedAt])
   @@index([sourceUrlId, retrievedAt])
@@ -314,6 +317,7 @@ model ExtractionCandidate {
   updatedAt      DateTime               @updatedAt
 
   claimEvidence JurisdictionClaimEvidence[]
+  contradictionReviews JurisdictionClaimContradictionReview[]
 
   @@index([jurisdictionId])
   @@index([status])
@@ -352,6 +356,8 @@ model JurisdictionClaim {
   evidence JurisdictionClaimEvidence[]
   freshness JurisdictionClaimFreshness?
   reReviews JurisdictionClaimReReview[]
+  contradictionReviewsAsExisting JurisdictionClaimContradictionReview[] @relation("ContradictionExistingClaim")
+  contradictionReviewsAsReplacement JurisdictionClaimContradictionReview[] @relation("ContradictionReplacementClaim")
 
   @@index([jurisdictionId, questionId, createdAt])
   @@index([jurisdictionId, section, fieldKey, createdAt])
@@ -404,6 +410,54 @@ model JurisdictionClaimReReview {
   @@index([claimId, reviewedAt])
   @@index([evidenceSnapshotId])
   @@index([sourceUrlId])
+}
+
+// Append-only operator decisions for a pending candidate that disagreed with the active claim.
+model JurisdictionClaimContradictionReview {
+  id                          String   @id @default(cuid())
+  jurisdictionId              String
+  jurisdiction                Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  questionId                  String
+  questionSchemaVersion       String
+  section                     String
+  fieldKey                    String
+  existingClaimId             String
+  existingClaim               JurisdictionClaim @relation("ContradictionExistingClaim", fields: [existingClaimId], references: [id], onDelete: Cascade)
+  replacementClaimId          String?
+  replacementClaim            JurisdictionClaim? @relation("ContradictionReplacementClaim", fields: [replacementClaimId], references: [id], onDelete: SetNull)
+  candidateId                 String?
+  candidate                   ExtractionCandidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  candidateReferenceId        String
+  candidateUpdatedAt          DateTime
+  evidenceSnapshotId          String?
+  evidenceSnapshot            JurisdictionEvidenceSnapshot? @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
+  evidenceSnapshotReferenceId String
+  sourceUrlId                 String?
+  sourceUrlRecord             JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  existingValue               Json
+  proposedValue               Json
+  existingNormalizedUnit      String?
+  proposedNormalizedUnit      String?
+  sourceUrl                   String
+  sourceSnippet               String   @db.Text
+  evidenceRetrievedAt         DateTime
+  contentHash                 String
+  storageKey                  String
+  retrievalAdapter            JurisdictionEvidenceRetrievalAdapter
+  representationMediaType     String
+  byteLength                  Int
+  modelUsed                   String
+  decision                    JurisdictionClaimContradictionDecision
+  explanation                 String   @db.Text
+  reviewedAt                  DateTime @default(now())
+  reviewedBy                  String
+  createdAt                   DateTime @default(now())
+
+  @@index([jurisdictionId, section, fieldKey, reviewedAt])
+  @@index([existingClaimId, reviewedAt])
+  @@index([replacementClaimId])
+  @@index([candidateId])
+  @@index([evidenceSnapshotId])
 }
 
 // Evidence is copied at publication time so provenance survives source/candidate cleanup.
@@ -1262,6 +1316,12 @@ enum JurisdictionClaimRisk {
 
 enum JurisdictionClaimReReviewDecision {
   RECONFIRMED
+}
+
+enum JurisdictionClaimContradictionDecision {
+  REPLACED_CURRENT
+  REJECTED_CHALLENGE
+  NOT_COMPARABLE
 }
 
 enum JurisdictionClaimVerificationState {

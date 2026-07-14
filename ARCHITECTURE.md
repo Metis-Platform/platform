@@ -116,8 +116,19 @@ with copied evidence and authenticated reviewer/time, and advances only the sche
 Changed evidence must become a replacement or contradiction review. Claims snapshot both risk and
 volatility so later question-catalog versions cannot change their schedule. Pre-policy claims are
 classified `UNKNOWN`, immediately stale, and cannot be reconfirmed until researched and republished;
-the migration does not fabricate evidence or validity. Contradiction handling, researched legacy
-migration, and coverage workflows remain part of initiative #296.
+the migration does not fabricate evidence or validity. Researched legacy migration and coverage
+workflows remain part of initiative #296.
+
+A pending candidate whose canonical value or normalized unit differs from the claim ID in the
+current `JurisdictionProfile` projection is an unresolved potential contradiction. It is not an
+automatic finding that either source is wrong: scope, effective date, authority, or an exception
+may explain the difference. Investor reads overlay the affected field as `BLOCKED` while that
+candidate remains pending. Batch review and direct replacement fail closed. A super-admin must
+choose replacement, rejected challenge, or not comparable and provide an explanation. The server
+locks the current projection, checks exact candidate and claim versions, and appends a
+`JurisdictionClaimContradictionReview` containing both values, the immutable evidence envelope,
+reviewer, and server time. Replacement additionally creates the next immutable claim in the same
+transaction. Resolution history never rewrites the prior claim or relies on AI confidence.
 
 Source authority decisions are made only through the super-admin review workflow. Each verify,
 reject, or reset action atomically appends a `JurisdictionSourceAuthorityReview` containing the

@@ -146,3 +146,20 @@ export function buildResearchProfile(profile: {
     JURISDICTION_PROFILE_SECTIONS.map((section) => [section, profileSection(profile?.[section])])
   ) as ResearchProfile
 }
+
+export function blockContradictoryResearchFields(
+  profile: ResearchProfile,
+  fields: Array<{ section: JurisdictionProfileSection; fieldKey: string }>,
+): ResearchProfile {
+  if (fields.length === 0) return profile
+  const next = { ...profile }
+  for (const { section, fieldKey } of fields) {
+    const field = next[section][fieldKey]
+    if (!field?.claimId) continue
+    next[section] = {
+      ...next[section],
+      [fieldKey]: { ...field, verificationState: 'BLOCKED' },
+    }
+  }
+  return next
+}
