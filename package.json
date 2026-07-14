@@ -11,6 +11,7 @@
     "env:check": "tsx scripts/env-check.ts",
     "context:check": "bash scripts/context-check.sh",
     "integration:reset:preflight": "tsx scripts/integration-reset-preflight.ts",
+    "e2e:guard": "tsx scripts/e2e-guard.ts",
     "integration:fixtures:plan": "tsx scripts/integration-fixture-reset.ts",
     "integration:fixtures:reset": "tsx scripts/integration-fixture-reset.ts --execute",
     "integration:full-reset:plan": "tsx scripts/integration-full-reset.ts",

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "stories": [
+    {
+      "id": "platform-health-readonly",
+      "risk": "low",
+      "mode": "read-only",
+      "spec": "e2e/health.spec.ts",
+      "status": "planned",
+      "notes": "May run only against an explicitly supplied non-production URL."
+    },
+    {
+      "id": "investor-create-save-delete-deal",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires successful integration preflight and deterministic fixture reset."
+    }
+  ]
+}
