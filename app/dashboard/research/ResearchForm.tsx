@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { EXIT_META } from '@/lib/exit-engine/keys'
 import type { ExitResult, ParcelProfile, Verdict } from '@/lib/exit-engine/types'
 import type { MaoResult } from '@/lib/mao/calculator'
+import { researchDealHref } from '@/lib/research-deal-handoff'
 
 type Jurisdiction = {
   id: string
@@ -491,7 +492,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
                 If you bid and win, create a deal from this parcel to track it through closing and execution.
               </p>
               <Link
-                href={`/dashboard/deals/new?jid=${data.jurisdiction.id}`}
+                href={researchDealHref(data.jurisdiction.id, data.parcel.apn)}
                 className="inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
               >
                 Create deal for this parcel
