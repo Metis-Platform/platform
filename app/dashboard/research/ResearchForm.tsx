@@ -6,6 +6,7 @@ import { EXIT_META } from '@/lib/exit-engine/keys'
 import type { ExitResult, ParcelProfile, Verdict } from '@/lib/exit-engine/types'
 import type { MaoResult } from '@/lib/mao/calculator'
 import { researchDealHref } from '@/lib/research-deal-handoff'
+import { PARCEL_FACT_PROVENANCE_LABEL, parcelFactProvenance } from '@/lib/parcel/provenance'
 
 type Jurisdiction = {
   id: string
@@ -390,14 +391,14 @@ export default function ResearchForm({ jurisdictions }: Props) {
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3">
               <ParcelFact label="APN" value={data.parcel.apnRaw} />
               <ParcelFact label="County" value={data.jurisdiction ? `${data.jurisdiction.county}, ${data.jurisdiction.state}` : undefined} />
-              <ParcelFact label="Improved" value={data.parcel.improved == null ? undefined : data.parcel.improved ? 'Yes' : 'No — vacant lot'} />
-              <ParcelFact label="Lot size" value={data.parcel.lotSizeSqFt != null ? `${data.parcel.lotSizeSqFt.toLocaleString()} sq ft` : undefined} />
-              <ParcelFact label="Zoning" value={data.parcel.zoning} />
-              <ParcelFact label="Flood zone" value={data.parcel.floodZone} />
-              <ParcelFact label="Road frontage" value={data.parcel.roadFrontage} />
-              <ParcelFact label="Assessed value" value={data.parcel.assessedValue != null ? fmtCurrency(data.parcel.assessedValue) : undefined} />
-              <ParcelFact label="Market estimate" value={data.parcel.marketValueEstimate != null ? fmtCurrency(data.parcel.marketValueEstimate) : undefined} />
-              <ParcelFact label="Wetlands" value={data.parcel.wetlandsPresent == null ? undefined : data.parcel.wetlandsPresent ? 'Yes' : 'No'} />
+              <ParcelFact label="Improved" field="improved" parcel={data.parcel} value={data.parcel.improved == null ? undefined : data.parcel.improved ? 'Yes' : 'No — vacant lot'} />
+              <ParcelFact label="Lot size" field="lotSizeSqFt" parcel={data.parcel} value={data.parcel.lotSizeSqFt != null ? `${data.parcel.lotSizeSqFt.toLocaleString()} sq ft` : undefined} />
+              <ParcelFact label="Zoning" field="zoning" parcel={data.parcel} value={data.parcel.zoning} />
+              <ParcelFact label="Flood zone" field="floodZone" parcel={data.parcel} value={data.parcel.floodZone} />
+              <ParcelFact label="Road frontage" field="roadFrontage" parcel={data.parcel} value={data.parcel.roadFrontage} />
+              <ParcelFact label="Assessed value" field="assessedValue" parcel={data.parcel} value={data.parcel.assessedValue != null ? fmtCurrency(data.parcel.assessedValue) : undefined} />
+              <ParcelFact label="Market estimate" field="marketValueEstimate" parcel={data.parcel} value={data.parcel.marketValueEstimate != null ? fmtCurrency(data.parcel.marketValueEstimate) : undefined} />
+              <ParcelFact label="Wetlands" field="wetlandsPresent" parcel={data.parcel} value={data.parcel.wetlandsPresent == null ? undefined : data.parcel.wetlandsPresent ? 'Yes' : 'No'} />
             </dl>
             {data.parcel.dataCompleteness < 0.5 && (
               <p className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
@@ -653,12 +654,25 @@ function BidComparison({ bid, mao }: { bid: number; mao: MaoResult }) {
   )
 }
 
-function ParcelFact({ label, value }: { label: string; value: string | number | boolean | undefined }) {
-  if (value == null) return null
+function ParcelFact({
+  label,
+  field,
+  parcel,
+  value,
+}: {
+  label: string
+  field?: string
+  parcel?: ParcelProfile
+  value: string | number | boolean | undefined
+}) {
+  const provenance = field && parcel
+    ? parcelFactProvenance(field, parcel.sources[field], value)
+    : undefined
   return (
     <div>
       <dt className="text-xs text-zinc-400">{label}</dt>
-      <dd className="text-sm font-medium text-zinc-800">{String(value)}</dd>
+      <dd className="text-sm font-medium text-zinc-800">{value == null ? '—' : String(value)}</dd>
+      {provenance && <p className="mt-0.5 text-[11px] text-zinc-400">{PARCEL_FACT_PROVENANCE_LABEL[provenance]}</p>}
     </div>
   )
 }
