@@ -195,6 +195,10 @@ model JurisdictionSourceDiscoveryLead {
   authorityOwner     String?
   authorityRationale String                            @db.Text
   status             JurisdictionSourceDiscoveryStatus @default(PENDING_REVIEW)
+  promotedSourceUrlId String?
+  promotedSourceUrl   JurisdictionSourceUrl?           @relation("DiscoveryLeadPromotion", fields: [promotedSourceUrlId], references: [id], onDelete: SetNull)
+  promotedAt          DateTime?
+  promotedBy          String?
   discoveredAt       DateTime
   createdAt          DateTime                          @default(now())
   updatedAt          DateTime                          @updatedAt
@@ -295,6 +299,7 @@ model JurisdictionSourceUrl {
   evidenceSnapshots JurisdictionEvidenceSnapshot[]
   claimReReviews JurisdictionClaimReReview[]
   claimContradictionReviews JurisdictionClaimContradictionReview[]
+  discoveryLeadPromotions JurisdictionSourceDiscoveryLead[] @relation("DiscoveryLeadPromotion")
 
   @@unique([jurisdictionId, officeType, url])
   @@index([jurisdictionId])
