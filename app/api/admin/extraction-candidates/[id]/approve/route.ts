@@ -4,6 +4,10 @@ import { currentUser } from '@clerk/nextjs/server'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
+import {
+  evaluateJurisdictionPublication,
+  reviewedProfileField,
+} from '@/lib/jurisdiction-publication-policy'
 
 export async function POST(
   req: Request,
@@ -14,7 +18,10 @@ export async function POST(
   const { id } = await params
   const candidate = await db.extractionCandidate.findUnique({
     where: { id },
-    include: { jurisdiction: { select: { county: true, state: true } } },
+    include: {
+      jurisdiction: { select: { county: true, state: true } },
+      sourceUrl: { select: { url: true } },
+    },
   })
   if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (candidate.status !== 'PENDING') {
@@ -29,9 +36,34 @@ export async function POST(
 
   // If the reviewer edited the value, merge it into the extracted field
   const extractedValue = candidate.extractedValue as Record<string, unknown>
-  const fieldToWrite = body.value !== undefined
+  const proposedField = body.value !== undefined
     ? { ...extractedValue, value: body.value }
     : extractedValue
+
+  const user = await currentUser()
+  const reviewerId = user?.id ?? ''
+  const reviewerLabel = user?.emailAddresses.find(e => e.id === user.primaryEmailAddressId)
+    ?.emailAddress ?? reviewerId
+  const decision = evaluateJurisdictionPublication({
+    section: candidate.section,
+    fieldKey: candidate.fieldKey,
+    mode: 'HUMAN_SINGLE',
+    evidence: {
+      sourceUrl: candidate.sourceUrl?.url ?? String(proposedField.sourceUrl ?? ''),
+      sourceSnippet: candidate.sourceSnippet ?? String(proposedField.citation ?? ''),
+      reviewerId,
+    },
+  })
+  if (!decision.allowed) {
+    return NextResponse.json({ error: decision.code }, { status: 422 })
+  }
+  const reviewedAt = new Date()
+  const fieldToWrite = reviewedProfileField({
+    extractedValue: proposedField,
+    question: decision.question,
+    reviewerId,
+    reviewedAt,
+  })
 
   // Ensure profile exists
   await db.jurisdictionProfile.upsert({
@@ -55,16 +87,12 @@ export async function POST(
     WHERE "jurisdictionId" = ${candidate.jurisdictionId}
   `
 
-  const user = await currentUser()
-  const reviewerEmail = user?.emailAddresses.find(e => e.id === user.primaryEmailAddressId)
-    ?.emailAddress ?? 'admin'
-
   const updated = await db.extractionCandidate.update({
     where: { id },
     data: {
       status: 'APPROVED',
-      reviewedAt: new Date(),
-      reviewedBy: reviewerEmail,
+      reviewedAt,
+      reviewedBy: reviewerLabel,
       extractedValue: fieldToWrite as object,
     },
   })

@@ -61,6 +61,27 @@ Other core entities: `Tenant`, `User`, `Jurisdiction`, `JurisdictionProfile`, `R
 - Extraction results cached in `Document.extractedData` — never re-extracted on second call.
 - Copilot is session-only (no DB persistence); structured JSON system prompt with deal context.
 
+### Jurisdiction intelligence publication boundary
+
+Jurisdiction extraction is a proposal pipeline, not a truth pipeline. Every current research and
+extraction field resolves through the versioned question library in
+`lib/jurisdiction-question-library.ts`; an unknown section/field pair fails closed. The library
+assigns a stable question ID, risk level, expected authority class, required evidence, and batch
+review eligibility.
+
+AI confidence controls review priority only. Extraction cron jobs may create or refresh `PENDING`
+candidates, but may not write `JurisdictionProfile` or mark candidates approved. All forward
+publication paths use `lib/jurisdiction-publication-policy.ts` and require a source URL, quoted
+source evidence, and an authenticated reviewer. High- and critical-risk facts require individual
+review; only low- and medium-risk facts may use the human batch-review path. The server owns the
+review timestamp and reviewer ID and stamps the question schema version and authority class.
+
+`REVIEWED` means a human accepted the sourced claim; it does not mean the source has yet been
+independently validated as authoritative. Persisted source-authority validation, claim history,
+contradiction handling, freshness transitions, and migration of legacy profile JSON remain part of
+the national jurisdiction intelligence initiative (#296). Existing fields are never silently
+relabeled verified by this publication boundary.
+
 ---
 
 ## Background jobs

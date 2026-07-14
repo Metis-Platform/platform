@@ -46,6 +46,7 @@ export function ExtractionQueueClient({
   const [batchMinConf, setBatchMinConf] = useState(85)
   const [batchLoading, setBatchLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   function changeFilter(key: string, value: string) {
     const params = new URLSearchParams()
@@ -60,6 +61,7 @@ export function ExtractionQueueClient({
   }
 
   async function approve(id: string, editedValue?: string) {
+    setActionError(null)
     setActionLoading(id)
     const body: Record<string, unknown> = {}
     if (editedValue !== undefined) {
@@ -74,6 +76,9 @@ export function ExtractionQueueClient({
       setCandidates(prev => prev.filter(c => c.id !== id))
       setPendingCount(prev => Math.max(0, prev - 1))
       setEditingId(null)
+    } else {
+      const result = await res.json().catch(() => ({})) as { error?: string }
+      setActionError(result.error ?? 'Candidate could not be approved.')
     }
     setActionLoading(null)
   }
@@ -89,18 +94,32 @@ export function ExtractionQueueClient({
   }
 
   async function batchApprove() {
+    setActionError(null)
     setBatchLoading(true)
-    await fetch('/api/admin/extraction-queue/batch-approve', {
+    const response = await fetch('/api/admin/extraction-queue/batch-approve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ minConfidence: batchMinConf / 100, section: sectionFilter || undefined }),
     })
+    const result = await response.json().catch(() => ({})) as { blocked?: number; errors?: number }
+    if (!response.ok) {
+      setActionError('Batch review failed.')
+    } else if ((result.blocked ?? 0) > 0 || (result.errors ?? 0) > 0) {
+      setActionError(
+        `${result.blocked ?? 0} field(s) require individual review; ${result.errors ?? 0} failed.`
+      )
+    }
     setBatchLoading(false)
     refresh()
   }
 
   return (
     <div className="space-y-4">
+      {actionError && (
+        <div role="alert" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {actionError}
+        </div>
+      )}
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
@@ -132,7 +151,7 @@ export function ExtractionQueueClient({
         <div className="ml-auto flex items-center gap-2">
           {statusFilter === 'PENDING' && (
             <>
-              <label className="text-xs font-medium text-zinc-500">Batch approve ≥</label>
+              <label className="text-xs font-medium text-zinc-500">Batch review eligible ≥</label>
               <select
                 value={batchMinConf}
                 onChange={e => setBatchMinConf(Number(e.target.value))}
@@ -147,7 +166,7 @@ export function ExtractionQueueClient({
                 disabled={batchLoading || candidates.length === 0}
                 className="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
               >
-                {batchLoading ? 'Approving…' : 'Batch Approve'}
+                {batchLoading ? 'Reviewing…' : 'Approve eligible'}
               </button>
             </>
           )}

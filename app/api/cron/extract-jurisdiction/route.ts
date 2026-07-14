@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server'
-import { Prisma } from '@/app/generated/prisma'
 import { db } from '@/lib/db'
 import {
   buildExtractionPrompt,
   getPlatformAnthropic,
   hashContent,
   parseExtractionResponse,
-  AUTO_PUBLISH_CONFIDENCE,
   HAIKU_MODEL,
   SONNET_MODEL,
   SONNET_FALLBACK_CONFIDENCE,
   type ExtractionResult,
 } from '@/lib/jurisdiction-extraction'
-import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
+import { evaluateJurisdictionPublication } from '@/lib/jurisdiction-publication-policy'
 import { guardCronRequest } from '@/lib/cron-guard'
 
 export const dynamic = 'force-dynamic'
@@ -76,34 +74,6 @@ async function runExtraction(
   }
 
   return results
-}
-
-async function publishField(
-  jurisdictionId: string,
-  section: string,
-  fieldKey: string,
-  fieldValue: object,
-): Promise<void> {
-  if (!isJurisdictionProfileSection(section)) return
-
-  // Ensure profile exists
-  await db.jurisdictionProfile.upsert({
-    where: { jurisdictionId },
-    update: {},
-    create: { jurisdictionId },
-  })
-
-  await db.$queryRaw`
-    UPDATE "JurisdictionProfile"
-    SET ${Prisma.raw(`"${section}"`)} = jsonb_set(
-      COALESCE(${Prisma.raw(`"${section}"`)}, '{}'::jsonb),
-      ARRAY[${fieldKey}],
-      ${JSON.stringify(fieldValue)}::jsonb,
-      true
-    ),
-    "updatedAt" = NOW()
-    WHERE "jurisdictionId" = ${jurisdictionId}
-  `
 }
 
 export async function GET(req: Request): Promise<NextResponse> {
@@ -178,65 +148,40 @@ export async function GET(req: Request): Promise<NextResponse> {
     const now = new Date().toISOString()
 
     for (const result of results) {
+      const publication = evaluateJurisdictionPublication({
+        section: result.section,
+        fieldKey: result.fieldKey,
+        mode: 'AI_AUTO',
+        evidence: {
+          sourceUrl: sourceUrl.url,
+          sourceSnippet: result.sourceSnippet,
+        },
+      })
+      if (!publication.question) {
+        console.error(
+          `[extract-jurisdiction] unregistered field ${result.section}.${result.fieldKey}`
+        )
+        stats.errors++
+        continue
+      }
+
       const profileField = {
         value: result.value,
         sourceUrl: sourceUrl.url,
         citation: result.sourceSnippet,
-        verifiedAt: now,
+        retrievedAt: now,
         confidence: result.confidence,
         volatility: result.volatility,
+        questionId: publication.question.id,
+        questionSchemaVersion: publication.question.schemaVersion,
+        authorityClass: publication.question.expectedAuthority,
+        verificationState: 'CANDIDATE',
       }
 
       const modelUsed = result.confidence >= SONNET_FALLBACK_CONFIDENCE + 0.1 ? HAIKU_MODEL : SONNET_MODEL
 
-      if (result.confidence >= AUTO_PUBLISH_CONFIDENCE) {
-        // Auto-publish directly to JurisdictionProfile
-        try {
-          await publishField(sourceUrl.jurisdictionId, result.section, result.fieldKey, profileField)
-        } catch (err) {
-          console.error(`[extract-jurisdiction] publish failed ${county} ${state} ${result.section}.${result.fieldKey}: ${err}`)
-          stats.errors++
-          continue
-        }
-
-        // Record as APPROVED candidate for audit trail
-        await db.extractionCandidate.upsert({
-          where: {
-            // Use a composite by deleting existing PENDING first and inserting
-            id: (await db.extractionCandidate.findFirst({
-              where: {
-                jurisdictionId: sourceUrl.jurisdictionId,
-                section: result.section,
-                fieldKey: result.fieldKey,
-                status: 'PENDING',
-              },
-              select: { id: true },
-            }))?.id ?? '',
-          },
-          update: {
-            extractedValue: profileField,
-            confidence: result.confidence,
-            sourceSnippet: result.sourceSnippet,
-            modelUsed,
-            status: 'APPROVED',
-            reviewedAt: new Date(),
-          },
-          create: {
-            jurisdictionId: sourceUrl.jurisdictionId,
-            sourceUrlId: sourceUrl.id,
-            section: result.section,
-            fieldKey: result.fieldKey,
-            extractedValue: profileField,
-            confidence: result.confidence,
-            sourceSnippet: result.sourceSnippet,
-            modelUsed,
-            status: 'APPROVED',
-            reviewedAt: new Date(),
-          },
-        })
-        stats.published++
-      } else {
-        // Queue for admin review
+      if (!publication.allowed) {
+        // Model confidence controls queue priority only; it never establishes authority.
         const existing = await db.extractionCandidate.findFirst({
           where: {
             jurisdictionId: sourceUrl.jurisdictionId,
@@ -273,6 +218,10 @@ export async function GET(req: Request): Promise<NextResponse> {
           })
         }
         stats.extracted++
+      } else {
+        // No v1 questions permit AI auto-publication. This branch is explicit so a future
+        // policy change cannot bypass a deliberate publication implementation/review.
+        stats.errors++
       }
     }
 

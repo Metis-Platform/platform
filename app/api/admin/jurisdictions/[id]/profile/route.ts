@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { Prisma, type JurisdictionProfile } from '@/app/generated/prisma'
+import { currentUser } from '@clerk/nextjs/server'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import {
@@ -9,12 +10,17 @@ import {
   type JurisdictionProfileSection,
   type ProfileField,
 } from '@/lib/jurisdiction-profile'
+import {
+  evaluateJurisdictionPublication,
+  reviewedProfileField,
+} from '@/lib/jurisdiction-publication-policy'
 
 const profileFieldSchema = z.object({
   value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.record(z.string(), z.unknown())]),
   sourceUrl: z.string().url().optional(),
   citation: z.string().optional(),
-  verifiedAt: z.string().datetime(),
+  // Accepted for backwards-compatible clients, but the server replaces it with review time.
+  verifiedAt: z.string().datetime().optional(),
   confidence: z.number().min(0).max(1),
   verifiedById: z.string().optional(),
   volatility: z.enum(['static', 'annual', 'per_sale', 'quarterly']),
@@ -69,12 +75,32 @@ export async function PATCH(
   if (!profile) return NextResponse.json({ error: 'Jurisdiction not found' }, { status: 404 })
 
   const section = parsed.data.section as JurisdictionProfileSection
+  const user = await currentUser()
+  const reviewerId = user?.id ?? ''
+  const decision = evaluateJurisdictionPublication({
+    section,
+    fieldKey: parsed.data.fieldKey,
+    mode: 'HUMAN_SINGLE',
+    evidence: {
+      sourceUrl: parsed.data.field.sourceUrl,
+      sourceSnippet: parsed.data.field.citation,
+      reviewerId,
+    },
+  })
+  if (!decision.allowed) {
+    return NextResponse.json({ error: decision.code }, { status: 422 })
+  }
+  const field = reviewedProfileField({
+    extractedValue: parsed.data.field,
+    question: decision.question,
+    reviewerId,
+  }) as ProfileField
   const updatedSections = applyProfileFieldUpdate(
     { [section]: profile[section] as Record<string, ProfileField> },
     {
       section,
       fieldKey: parsed.data.fieldKey,
-      field: parsed.data.field as ProfileField,
+      field,
     }
   )
 
