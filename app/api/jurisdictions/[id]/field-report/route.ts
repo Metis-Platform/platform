@@ -5,6 +5,7 @@ import { Prisma } from '@/app/generated/prisma'
 import { db } from '@/lib/db'
 import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
 import { syncUserToDatabase } from '@/lib/sync-user'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const reportSchema = z.object({
   strategy: z.string().min(1).max(40),
@@ -39,6 +40,7 @@ export async function POST(
     data: {
       tenantId: synced.tenant.id,
       userId,
+      requestId: requestIdFromHeaders(req.headers),
       action: 'JURISDICTION_PROFILE_FLAGGED',
       meta: {
         jurisdictionId: jurisdiction.id,
@@ -50,4 +52,3 @@ export async function POST(
 
   return NextResponse.json({ ok: true })
 }
-

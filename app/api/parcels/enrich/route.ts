@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { normalizeApn } from '@/lib/parcel/apn'
 import { enrichParcel } from '@/lib/parcel/enrich'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const enrichSchema = z.object({
   dealId: z.string().min(1).optional(),
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
     data: {
       tenantId: tenant.id,
       userId: synced.user.id,
+      requestId: requestIdFromHeaders(req.headers),
       action: RATE_LIMIT_ACTION,
       meta: { apn: apn.normalized, fipsCounty: apn.fipsCounty },
     },

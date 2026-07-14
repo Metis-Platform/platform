@@ -8,6 +8,7 @@ import { buildJurisdictionFacts } from '@/lib/exit-engine/jurisdiction-facts'
 import { evaluateExits } from '@/lib/exit-engine/engine'
 import { assembleResearchProfile } from '@/lib/parcel/research-profile'
 import { computeMao } from '@/lib/mao/calculator'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types'
 
 const overridesSchema = z.object({
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
     data: {
       tenantId: tenant.id,
       userId:   synced.user.id,
+      requestId: requestIdFromHeaders(req.headers),
       action:   RATE_LIMIT_ACTION,
       meta:     { apn: normalized.normalized, fipsCounty: normalized.fipsCounty },
     },
