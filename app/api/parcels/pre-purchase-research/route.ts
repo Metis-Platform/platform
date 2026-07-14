@@ -20,6 +20,8 @@ const overridesSchema = z.object({
   zoning:          z.string().max(30).optional(),
   floodZone:       z.string().max(20).optional(),
   assessedValue:   z.coerce.number().positive().optional(),
+  marketValueEstimate: z.coerce.number().positive().optional(),
+  landMarketType:  z.enum(['RURAL', 'INFILL']).optional(),
   roadFrontage:    z.enum(['paved', 'unpaved', 'easement_only', 'landlocked']).optional(),
   wetlandsPresent: z.boolean().optional(),
 })

@@ -54,6 +54,8 @@ export default function ResearchForm({ jurisdictions }: Props) {
   const [zoning,           setZoning]            = useState('')
   const [floodZone,        setFloodZone]         = useState('')
   const [assessedValue,    setAssessedValue]     = useState('')
+  const [marketValueEstimate, setMarketValueEstimate] = useState('')
+  const [landMarketType,   setLandMarketType]   = useState<'' | 'RURAL' | 'INFILL'>('')
   const [roadFrontage,     setRoadFrontage]      = useState<'' | 'paved' | 'unpaved' | 'easement_only' | 'landlocked'>('')
   const [wetlandsPresent,  setWetlandsPresent]   = useState<'true' | 'false' | ''>('')
 
@@ -90,6 +92,8 @@ export default function ResearchForm({ jurisdictions }: Props) {
       if (zoning)          overrides.zoning          = zoning
       if (floodZone)       overrides.floodZone       = floodZone
       if (assessedValue)   overrides.assessedValue   = Number(assessedValue)
+      if (marketValueEstimate) overrides.marketValueEstimate = Number(marketValueEstimate)
+      if (landMarketType)  overrides.landMarketType  = landMarketType
       if (roadFrontage)    overrides.roadFrontage    = roadFrontage
       if (wetlandsPresent !== '') overrides.wetlandsPresent = wetlandsPresent === 'true'
 
@@ -261,6 +265,29 @@ export default function ResearchForm({ jurisdictions }: Props) {
                 />
               </div>
               <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Market value estimate ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={marketValueEstimate}
+                  onChange={e => setMarketValueEstimate(e.target.value)}
+                  placeholder="From land comps"
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Land market type</label>
+                <select
+                  value={landMarketType}
+                  onChange={e => setLandMarketType(e.target.value as '' | 'RURAL' | 'INFILL')}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+                >
+                  <option value="">Unknown — do not calculate</option>
+                  <option value="RURAL">Rural land</option>
+                  <option value="INFILL">Infill lot</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-medium text-zinc-500 mb-1">Road frontage</label>
                 <select
                   value={roadFrontage}
@@ -343,6 +370,14 @@ export default function ResearchForm({ jurisdictions }: Props) {
               </p>
             </div>
           )}
+          {rawLandMao?.warningType === 'land_classification' && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+              <p className="text-sm font-semibold text-amber-800">Raw land MAO needs a market classification</p>
+              <p className="mt-1 text-xs text-amber-700">
+                Choose rural land or an infill lot and enter a market-value estimate. Metis will not choose a discount band for you.
+              </p>
+            </div>
+          )}
 
           {/* Parcel summary */}
           <section className="rounded-xl border border-zinc-200 bg-white p-6">
@@ -383,7 +418,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
                 {data.mao.map(m => (
                   <div key={m.strategy} className={`rounded-lg border p-4 ${
                     m.warningType === 'unbuildable' ? 'border-red-200 bg-red-50'
-                    : m.warningType === 'data_gap' ? 'border-amber-200 bg-amber-50'
+                    : m.warningType === 'data_gap' || m.warningType === 'land_classification' ? 'border-amber-200 bg-amber-50'
                     : 'border-zinc-200 bg-zinc-50'
                   }`}>
                     <div className="mb-3 flex items-center justify-between">
@@ -396,6 +431,11 @@ export default function ResearchForm({ jurisdictions }: Props) {
                       {m.warningType === 'data_gap' && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
                           Data incomplete
+                        </span>
+                      )}
+                      {m.warningType === 'land_classification' && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                          Classification needed
                         </span>
                       )}
                     </div>
