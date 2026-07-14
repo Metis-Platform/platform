@@ -13,11 +13,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { id } = await params
-  const jurisdiction = await db.jurisdiction.findUnique({ where: { id }, select: { state: true } })
+  const jurisdiction = await db.jurisdiction.findUnique({ where: { id }, select: { state: true, county: true } })
   if (!jurisdiction) return NextResponse.json({ error: 'Jurisdiction not found' }, { status: 404 })
 
   const discovery = discoverJurisdictionSources({
     state: jurisdiction.state,
+    county: jurisdiction.county,
     requestedOfficeTypes: parsed.data.officeTypes ?? officeTypes.options,
   })
   let created = 0
