@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import {
   CONTACT_FIELDS,
   MARKET_SIGNAL_FIELDS,
@@ -12,6 +12,7 @@ import {
   type ResearchStrategy,
 } from '@/lib/jurisdiction-research'
 import { claimFreshnessStatus, type ClaimFreshnessStatus } from '@/lib/jurisdiction-claim-freshness'
+import type { JurisdictionCoverageState } from '@/lib/jurisdiction-research-state'
 
 type RuleRow = {
   id: string
@@ -33,6 +34,8 @@ type Props = {
   trackedPropertyCount: number
   timezone: string
   activeRuleSet: ActiveRuleSet
+  coverageState: JurisdictionCoverageState
+  hasResearchDemand: boolean
 }
 
 type ReportTarget = {
@@ -132,6 +135,8 @@ export default function JurisdictionResearchHub({
   trackedPropertyCount,
   timezone,
   activeRuleSet,
+  coverageState,
+  hasResearchDemand,
 }: Props) {
   const [activeStrategy, setActiveStrategy] = useState<ResearchStrategy>('TAX_LIEN')
   const [reportTarget, setReportTarget] = useState<ReportTarget>(null)
@@ -139,6 +144,9 @@ export default function JurisdictionResearchHub({
   const [submitting, setSubmitting] = useState(false)
   const [submittedField, setSubmittedField] = useState<string | null>(null)
   const [reportError, setReportError] = useState<string | null>(null)
+  const [researchRequested, setResearchRequested] = useState(hasResearchDemand)
+  const [researchRequestError, setResearchRequestError] = useState<string | null>(null)
+  const [requestingResearch, startResearchTransition] = useTransition()
 
   const opportunityScore = numericValue(fieldFor(profile, MARKET_SIGNAL_FIELDS[0]))
   const saturationScore = numericValue(fieldFor(profile, MARKET_SIGNAL_FIELDS[1]))
@@ -179,8 +187,43 @@ export default function JurisdictionResearchHub({
     setSubmitting(false)
   }
 
+  function requestCountyResearch() {
+    startResearchTransition(async () => {
+      setResearchRequestError(null)
+      try {
+        const response = await fetch(`/api/jurisdictions/${jurisdictionId}/research-request`, { method: 'POST' })
+        if (response.ok) {
+          setResearchRequested(true)
+        } else {
+          setResearchRequestError('Unable to request county research. Try again in a moment.')
+        }
+      } catch {
+        setResearchRequestError('Unable to request county research. Try again in a moment.')
+      }
+    })
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+      <section className="lg:col-span-2 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900">County research coverage</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Current state: {labelize(coverageState)}. Missing fields remain unavailable until evidence-backed claims are reviewed.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={requestCountyResearch}
+            disabled={researchRequested || requestingResearch}
+            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {researchRequested ? 'Research requested' : requestingResearch ? 'Requesting…' : 'Request county research'}
+          </button>
+        </div>
+        {researchRequestError && <p className="mt-3 text-sm text-red-600">{researchRequestError}</p>}
+      </section>
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap gap-1 border-b border-zinc-200 pb-4">
           {RESEARCH_STRATEGIES.map((strategy) => (
