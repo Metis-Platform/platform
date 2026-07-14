@@ -11,3 +11,18 @@ export const sourceDiscoveryPromotionSchema = z.object({
 })
 
 export type SourceDiscoveryPromotionInput = z.output<typeof sourceDiscoveryPromotionSchema>
+
+export function requiresReplacementSourceUrl(input: {
+  candidateScope: 'DISCOVERY_ENTRYPOINT' | 'COUNTY_OFFICE_CANDIDATE'
+  leadUrl: string
+  sourceUrl: string
+}) {
+  if (input.candidateScope !== 'DISCOVERY_ENTRYPOINT') return false
+  return canonicalSourceUrl(input.leadUrl) === canonicalSourceUrl(input.sourceUrl)
+}
+
+function canonicalSourceUrl(value: string) {
+  const url = new URL(value)
+  url.hash = ''
+  return url.toString()
+}
