@@ -15,7 +15,51 @@
       "mode": "mutation",
       "spec": "e2e/deal-lifecycle.spec.ts",
       "status": "blocked-by-289",
-      "notes": "Requires successful integration preflight and deterministic fixture reset."
+      "notes": "Requires successful integration preflight and deterministic fixture reset.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_CREATED"
+      }
+    },
+    {
+      "id": "investor-request-parcel-enrichment",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/parcel-enrich.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated fixture parcel and correlation with the enrichment audit event.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "PARCEL_ENRICH_REQUEST"
+      }
+    },
+    {
+      "id": "investor-run-pre-purchase-research",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/pre-purchase-research.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated fixture parcel, disabled AI/auction side effects, and correlation with the research audit event.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "PRE_PURCHASE_RESEARCH"
+      }
+    },
+    {
+      "id": "investor-submit-jurisdiction-field-report",
+      "risk": "medium",
+      "mode": "mutation",
+      "spec": "e2e/jurisdiction-field-report.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated jurisdiction fixture and correlation with the field-report audit event.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "JURISDICTION_PROFILE_FLAGGED"
+      }
     }
   ]
 }
