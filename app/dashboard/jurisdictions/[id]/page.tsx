@@ -2,10 +2,18 @@ import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { buildResearchProfile } from '@/lib/jurisdiction-research'
+import {
+  blockContradictoryResearchFields,
+  buildResearchProfile,
+} from '@/lib/jurisdiction-research'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import JurisdictionResearchHub from './JurisdictionResearchHub'
+import {
+  claimValuesConflict,
+  extractedClaimValue,
+} from '@/lib/jurisdiction-claim-contradiction'
+import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
 
 type Links = Record<string, unknown>
 
@@ -76,11 +84,43 @@ export default async function JurisdictionDetailPage({
 
   if (!jurisdiction) notFound()
 
-  const trackedPropertyCount = await db.property.count({
-    where: {
-      jurisdictionId: jurisdiction.id,
-      tenantId: synced.tenant.id,
-    },
+  const researchProfile = buildResearchProfile(jurisdiction.profile)
+  const projectedClaimIds = Object.values(researchProfile).flatMap(section =>
+    Object.values(section).flatMap(field => field.claimId ? [field.claimId] : []),
+  )
+
+  const [trackedPropertyCount, pendingCandidates, activeClaims] = await Promise.all([
+    db.property.count({
+      where: {
+        jurisdictionId: jurisdiction.id,
+        tenantId: synced.tenant.id,
+      },
+    }),
+    db.extractionCandidate.findMany({
+      where: { jurisdictionId: jurisdiction.id, status: 'PENDING' },
+      select: { section: true, fieldKey: true, extractedValue: true },
+    }),
+    db.jurisdictionClaim.findMany({
+      where: {
+        jurisdictionId: jurisdiction.id,
+        id: { in: projectedClaimIds },
+        supersededByClaim: null,
+      },
+      select: { id: true, section: true, fieldKey: true, value: true, normalizedUnit: true },
+    }),
+  ])
+  const claimsById = new Map(activeClaims.map(claim => [claim.id, claim]))
+  const contradictoryFields = pendingCandidates.flatMap(candidate => {
+    if (!isJurisdictionProfileSection(candidate.section)) return []
+    const projectedClaimId = researchProfile[candidate.section][candidate.fieldKey]?.claimId
+    const claim = projectedClaimId ? claimsById.get(projectedClaimId) : null
+    if (
+      !claim ||
+      claim.section !== candidate.section ||
+      claim.fieldKey !== candidate.fieldKey ||
+      !claimValuesConflict(claim, extractedClaimValue(candidate.extractedValue))
+    ) return []
+    return [{ section: candidate.section, fieldKey: candidate.fieldKey }]
   })
 
   const stateInfo = getStateInfo(jurisdiction.state)
@@ -149,7 +189,7 @@ export default async function JurisdictionDetailPage({
 
       <JurisdictionResearchHub
         jurisdictionId={jurisdiction.id}
-        profile={buildResearchProfile(jurisdiction.profile)}
+        profile={blockContradictoryResearchFields(researchProfile, contradictoryFields)}
         trackedPropertyCount={trackedPropertyCount}
         timezone={jurisdiction.timezone}
         activeRuleSet={activeRuleSet ? {

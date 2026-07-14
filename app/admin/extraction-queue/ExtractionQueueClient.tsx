@@ -2,6 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  claimValuesConflict,
+  extractedClaimValue,
+} from '@/lib/jurisdiction-claim-contradiction'
 
 type Candidate = {
   id: string
@@ -12,8 +16,25 @@ type Candidate = {
   sourceSnippet: string | null
   modelUsed: string
   status: string
+  updatedAt: string
   jurisdiction: { county: string; state: string }
   sourceUrl: { url: string; officeType: string } | null
+  currentClaim: {
+    id: string
+    value: unknown
+    normalizedUnit: string | null
+  } | null
+  potentialContradiction: boolean
+  contradictionReviews: Array<{
+    id: string
+    decision: string
+    explanation: string
+    existingValue: unknown
+    proposedValue: unknown
+    reviewedAt: string
+    reviewedBy: string
+    replacementClaimId: string | null
+  }>
 }
 
 type Props = {
@@ -32,6 +53,27 @@ function confidenceColor(c: number) {
   return 'text-red-700 bg-red-50 border-red-200'
 }
 
+function formatReviewDate(value: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(value))
+}
+
+function actionErrorMessage(code: string | undefined, fallback: string): string {
+  if (code === 'STALE_CLAIM_CONTRADICTION' || code === 'CANDIDATE_NOT_PENDING') {
+    return 'The candidate or current claim changed. Refresh the queue before deciding.'
+  }
+  if (code === 'CLAIM_CONTRADICTION_RESOLUTION_REQUIRED') {
+    return 'This evidence conflicts with the current claim and requires an explicit resolution.'
+  }
+  if (code === 'CLAIM_CONTRADICTION_EVIDENCE_REQUIRED') {
+    return 'The conflicting evidence snapshot is incomplete and cannot be resolved.'
+  }
+  return code ?? fallback
+}
+
 export function ExtractionQueueClient({
   candidates: initialCandidates,
   pendingCount: initialPendingCount,
@@ -47,6 +89,7 @@ export function ExtractionQueueClient({
   const [pendingCount, setPendingCount] = useState(initialPendingCount)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [resolutionExplanation, setResolutionExplanation] = useState('')
   const [batchMinConf, setBatchMinConf] = useState(85)
   const [batchLoading, setBatchLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -66,35 +109,83 @@ export function ExtractionQueueClient({
     startTransition(() => router.refresh())
   }
 
-  async function approve(id: string, editedValue?: string) {
+  async function approve(candidate: Candidate, editedValue?: string) {
     setActionError(null)
-    setActionLoading(id)
+    setActionLoading(candidate.id)
     const body: Record<string, unknown> = {}
+    let proposedValue = extractedClaimValue(candidate.extractedValue)
     if (editedValue !== undefined) {
       try { body.value = JSON.parse(editedValue) } catch { body.value = editedValue }
+      proposedValue = { ...proposedValue, value: body.value }
     }
-    const res = await fetch(`/api/admin/extraction-candidates/${id}/approve`, {
+    const currentClaim = candidate.currentClaim
+    const contradiction = currentClaim && claimValuesConflict(
+      currentClaim,
+      proposedValue,
+    )
+    if (contradiction) {
+      if (resolutionExplanation.trim().length < 10) {
+        setActionError('Explain the conflicting evidence before replacing the current claim.')
+        setActionLoading(null)
+        return
+      }
+      body.contradiction = {
+        expectedCurrentClaimId: currentClaim.id,
+        expectedCandidateUpdatedAt: candidate.updatedAt,
+        explanation: resolutionExplanation,
+      }
+    }
+    const res = await fetch(`/api/admin/extraction-candidates/${candidate.id}/approve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
     if (res.ok) {
-      setCandidates(prev => prev.filter(c => c.id !== id))
+      setCandidates(prev => prev.filter(c => c.id !== candidate.id))
       setPendingCount(prev => Math.max(0, prev - 1))
       setEditingId(null)
+      setResolutionExplanation('')
     } else {
       const result = await res.json().catch(() => ({})) as { error?: string }
-      setActionError(result.error ?? 'Candidate could not be approved.')
+      setActionError(actionErrorMessage(result.error, 'Candidate could not be approved.'))
     }
     setActionLoading(null)
   }
 
-  async function reject(id: string) {
-    setActionLoading(id)
-    const res = await fetch(`/api/admin/extraction-candidates/${id}/reject`, { method: 'POST' })
+  async function reject(
+    candidate: Candidate,
+    decision?: 'REJECTED_CHALLENGE' | 'NOT_COMPARABLE',
+  ) {
+    setActionError(null)
+    if (candidate.potentialContradiction && (
+      !decision || resolutionExplanation.trim().length < 10 || !candidate.currentClaim
+    )) {
+      setActionError('Choose a contradiction outcome and provide an explanation of at least 10 characters.')
+      return
+    }
+    setActionLoading(candidate.id)
+    const res = await fetch(`/api/admin/extraction-candidates/${candidate.id}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expectedCandidateUpdatedAt: candidate.updatedAt,
+        ...(decision && candidate.currentClaim ? {
+          contradiction: {
+            expectedCurrentClaimId: candidate.currentClaim.id,
+            decision,
+            explanation: resolutionExplanation,
+          },
+        } : {}),
+      }),
+    })
     if (res.ok) {
-      setCandidates(prev => prev.filter(c => c.id !== id))
+      setCandidates(prev => prev.filter(c => c.id !== candidate.id))
       setPendingCount(prev => Math.max(0, prev - 1))
+      setEditingId(null)
+      setResolutionExplanation('')
+    } else {
+      const result = await res.json().catch(() => ({})) as { error?: string }
+      setActionError(actionErrorMessage(result.error, 'Candidate could not be rejected.'))
     }
     setActionLoading(null)
   }
@@ -202,7 +293,7 @@ export function ExtractionQueueClient({
                 <th className="text-left px-4 py-2.5 font-medium text-zinc-600 text-xs w-40">Source Snippet</th>
                 <th className="text-center px-4 py-2.5 font-medium text-zinc-600 text-xs w-20">Conf.</th>
                 <th className="text-left px-4 py-2.5 font-medium text-zinc-600 text-xs w-20">Model</th>
-                {statusFilter === 'PENDING' && <th className="px-4 py-2.5 text-xs w-44" />}
+                {statusFilter === 'PENDING' && <th className="px-4 py-2.5 text-xs w-64" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -210,6 +301,14 @@ export function ExtractionQueueClient({
                 const extracted = c.extractedValue as Record<string, unknown>
                 const displayValue = JSON.stringify(extracted.value ?? extracted)
                 const isEditing = editingId === c.id
+                let editedClaimValue = extractedClaimValue(c.extractedValue)
+                if (isEditing) {
+                  try { editedClaimValue = { ...editedClaimValue, value: JSON.parse(editValue) } }
+                  catch { editedClaimValue = { ...editedClaimValue, value: editValue } }
+                }
+                const liveContradiction = Boolean(
+                  c.currentClaim && claimValuesConflict(c.currentClaim, editedClaimValue),
+                )
 
                 return (
                   <tr key={c.id} className="hover:bg-zinc-50">
@@ -223,7 +322,7 @@ export function ExtractionQueueClient({
                       <span className="text-zinc-400">{c.section}.</span>{c.fieldKey}
                     </td>
                     <td className="px-4 py-3 text-zinc-800 max-w-xs">
-                      {isEditing ? (
+                      {isEditing && !c.potentialContradiction ? (
                         <input
                           type="text"
                           value={editValue}
@@ -232,7 +331,46 @@ export function ExtractionQueueClient({
                           autoFocus
                         />
                       ) : (
-                        <span className="font-mono text-xs">{displayValue}</span>
+                        <div>
+                          <span className="font-mono text-xs">{displayValue}</span>
+                          {c.potentialContradiction && (
+                            <div className="mt-2 rounded border border-red-200 bg-red-50 p-2 text-xs text-red-800">
+                              <strong>Potential contradiction</strong>
+                              <span className="mt-1 block font-mono">
+                                Current: {JSON.stringify(c.currentClaim?.value)}
+                              </span>
+                              <span className="mt-1 block">
+                                Investors see this field as blocked while the candidate remains pending.
+                              </span>
+                            </div>
+                          )}
+                          {c.contradictionReviews.length > 0 && (
+                            <details className="mt-2 text-xs text-zinc-500">
+                              <summary className="cursor-pointer font-medium">
+                                Contradiction decisions ({c.contradictionReviews.length})
+                              </summary>
+                              <ul className="mt-1 space-y-2 border-l border-zinc-200 pl-2">
+                                {c.contradictionReviews.map(review => (
+                                  <li key={review.id}>
+                                    <strong>{review.decision.toLowerCase().replaceAll('_', ' ')}</strong>
+                                    {' · '}{formatReviewDate(review.reviewedAt)} UTC
+                                    <span className="block">{review.explanation}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </details>
+                          )}
+                        </div>
+                      )}
+                      {isEditing && liveContradiction && (
+                        <textarea
+                          value={resolutionExplanation}
+                          onChange={event => setResolutionExplanation(event.target.value)}
+                          minLength={10}
+                          required
+                          className="mt-2 min-h-20 w-full rounded border border-red-200 px-2 py-1 text-xs"
+                          placeholder="Explain why this conflict should replace, reject, or remain non-comparable."
+                        />
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-500 max-w-xs">
@@ -252,16 +390,34 @@ export function ExtractionQueueClient({
                     </td>
                     {statusFilter === 'PENDING' && (
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           {isEditing ? (
-                            <>
+                            liveContradiction ? <>
                               <button
-                                onClick={() => approve(c.id, editValue)}
+                                onClick={() => approve(c, c.potentialContradiction ? undefined : editValue)}
+                                disabled={actionLoading === c.id || resolutionExplanation.trim().length < 10}
+                                className="px-2 py-1 text-xs font-medium bg-red-700 text-white rounded hover:bg-red-800 disabled:opacity-50"
+                              >Replace</button>
+                              {c.potentialContradiction && <button
+                                onClick={() => reject(c, 'REJECTED_CHALLENGE')}
+                                disabled={actionLoading === c.id || resolutionExplanation.trim().length < 10}
+                                className="px-2 py-1 text-xs border border-red-200 text-red-700 rounded hover:bg-red-50 disabled:opacity-50"
+                              >Reject challenge</button>}
+                              {c.potentialContradiction && <button
+                                onClick={() => reject(c, 'NOT_COMPARABLE')}
+                                disabled={actionLoading === c.id || resolutionExplanation.trim().length < 10}
+                                className="px-2 py-1 text-xs border border-amber-200 text-amber-700 rounded hover:bg-amber-50 disabled:opacity-50"
+                              >Not comparable</button>}
+                              <button
+                                onClick={() => { setEditingId(null); setResolutionExplanation('') }}
+                                className="px-2 py-1 text-xs border border-zinc-200 rounded hover:bg-zinc-50"
+                              >Cancel</button>
+                            </> : <>
+                              <button
+                                onClick={() => approve(c, editValue)}
                                 disabled={actionLoading === c.id}
                                 className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                              >
-                                Save & Approve
-                              </button>
+                              >Save & Approve</button>
                               <button
                                 onClick={() => setEditingId(null)}
                                 className="px-2 py-1 text-xs border border-zinc-200 rounded hover:bg-zinc-50"
@@ -271,26 +427,28 @@ export function ExtractionQueueClient({
                             </>
                           ) : (
                             <>
-                              <button
-                                onClick={() => approve(c.id)}
+                              {!c.potentialContradiction && <button
+                                onClick={() => approve(c)}
                                 disabled={actionLoading === c.id}
                                 className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                              >
-                                {actionLoading === c.id ? '…' : 'Approve'}
-                              </button>
+                              >{actionLoading === c.id ? '…' : 'Approve'}</button>}
                               <button
-                                onClick={() => { setEditingId(c.id); setEditValue(displayValue.replace(/^"|"$/g, '')) }}
+                                onClick={() => {
+                                  setEditingId(c.id)
+                                  setEditValue(displayValue.replace(/^"|"$/g, ''))
+                                  setResolutionExplanation('')
+                                }}
                                 className="px-2 py-1 text-xs border border-zinc-200 rounded hover:bg-zinc-50"
                               >
-                                Edit
+                                {c.potentialContradiction ? 'Resolve' : 'Edit'}
                               </button>
-                              <button
-                                onClick={() => reject(c.id)}
+                              {!c.potentialContradiction && <button
+                                onClick={() => reject(c)}
                                 disabled={actionLoading === c.id}
                                 className="px-2 py-1 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50"
                               >
                                 Reject
-                              </button>
+                              </button>}
                             </>
                           )}
                         </div>

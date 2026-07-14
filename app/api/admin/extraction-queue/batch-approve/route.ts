@@ -103,8 +103,15 @@ export async function POST(req: Request): Promise<NextResponse> {
         },
       })
       approved++
-    } catch {
-      errors++
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'CLAIM_CONTRADICTION_RESOLUTION_REQUIRED'
+      ) {
+        blocked++
+      } else {
+        errors++
+      }
     }
   }
 

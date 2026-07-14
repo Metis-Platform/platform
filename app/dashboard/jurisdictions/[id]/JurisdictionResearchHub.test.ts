@@ -26,4 +26,12 @@ describe('jurisdiction field provenance labels', () => {
       verificationState: 'VERIFIED',
     })).toContain('Verified:')
   })
+
+  it('fails closed when unresolved evidence contradicts the current claim', () => {
+    expect(provenanceLabel({
+      ...baseField,
+      claimId: 'claim-blocked',
+      verificationState: 'BLOCKED',
+    })).toBe('Blocked — contradictory evidence requires review')
+  })
 })

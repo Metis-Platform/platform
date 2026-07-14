@@ -7,6 +7,7 @@ const { tx, transaction } = vi.hoisted(() => {
     jurisdictionClaim: { findFirst: vi.fn(), create: vi.fn() },
     jurisdictionClaimFreshness: { create: vi.fn() },
     jurisdictionClaimEvidence: { create: vi.fn() },
+    jurisdictionClaimContradictionReview: { create: vi.fn() },
     jurisdictionSourceUrl: { findFirst: vi.fn() },
     extractionCandidate: { findFirst: vi.fn(), updateMany: vi.fn() },
     $queryRaw: vi.fn(),
@@ -182,6 +183,12 @@ describe('jurisdiction claim publication records', () => {
       claimId: 'claim-no-reviewer',
       reviewerId: ' ',
     })).toThrow('REVIEWER_REQUIRED')
+    expect(() => buildClaimPublication({
+      ...input,
+      claimId: 'claim-future-evidence',
+      reviewedAt,
+      source: { ...source, retrievedAt: new Date(reviewedAt.getTime() + 1) },
+    })).toThrow('EVIDENCE_RETRIEVED_AT_INVALID')
     const withoutClientVolatility = buildClaimPublication({
       ...input,
       claimId: 'claim-no-volatility',
@@ -197,7 +204,13 @@ describe('atomic claim publication service', () => {
     tx.jurisdictionProfile.upsert.mockResolvedValue({
       zoning: { minimumLotSizeSqft: { claimId: 'claim-1' } },
     })
-    tx.jurisdictionClaim.findFirst.mockResolvedValue({ id: 'claim-1' })
+    tx.jurisdictionClaim.findFirst.mockResolvedValue({
+      id: 'claim-1',
+      questionId: question.id,
+      questionSchemaVersion: question.schemaVersion,
+      value: 7500,
+      normalizedUnit: 'square_feet',
+    })
     tx.jurisdictionSourceUrl.findFirst.mockResolvedValue({
       url: source.url,
       lastFetchedAt: source.retrievedAt,
@@ -211,7 +224,9 @@ describe('atomic claim publication service', () => {
     tx.jurisdictionClaim.create.mockResolvedValue({ id: 'new-claim' })
     tx.jurisdictionClaimFreshness.create.mockResolvedValue({ claimId: 'new-claim' })
     tx.jurisdictionClaimEvidence.create.mockResolvedValue({ id: 'evidence-1' })
+    tx.jurisdictionClaimContradictionReview.create.mockResolvedValue({ id: 'contradiction-1' })
     tx.extractionCandidate.findFirst.mockResolvedValue({
+      updatedAt: source.candidateUpdatedAt,
       sourceUrlId: source.sourceUrlId,
       sourceSnippet: source.snippet,
       modelUsed: source.modelUsed,
@@ -229,7 +244,9 @@ describe('atomic claim publication service', () => {
       },
     })
     tx.extractionCandidate.updateMany.mockResolvedValue({ count: 1 })
-    tx.$queryRaw.mockResolvedValue([])
+    tx.$queryRaw.mockResolvedValue([{
+      sectionFields: { minimumLotSizeSqft: { claimId: 'claim-1' } },
+    }])
   })
 
   it('creates claim, copied evidence, projection, and candidate approval inside one transaction', async () => {
@@ -255,7 +272,7 @@ describe('atomic claim publication service', () => {
         policyVersion: JURISDICTION_FRESHNESS_POLICY_VERSION,
       }),
     })
-    expect(tx.$queryRaw).toHaveBeenCalledTimes(1)
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(2)
     expect(tx.extractionCandidate.updateMany).toHaveBeenCalledWith({
       where: {
         id: 'candidate-1',
@@ -270,6 +287,56 @@ describe('atomic claim publication service', () => {
   it('aborts when the candidate was approved concurrently', async () => {
     tx.extractionCandidate.updateMany.mockResolvedValue({ count: 0 })
     await expect(publishJurisdictionClaim(input)).rejects.toThrow('CANDIDATE_NOT_PENDING')
+  })
+
+  it('blocks a differing value until an exact explained replacement is supplied', async () => {
+    const changed = { ...input, extractedValue: { ...input.extractedValue, value: 8000 } }
+    await expect(publishJurisdictionClaim(changed)).rejects.toThrow(
+      'CLAIM_CONTRADICTION_RESOLUTION_REQUIRED',
+    )
+    expect(tx.jurisdictionClaim.create).not.toHaveBeenCalled()
+
+    const result = await publishJurisdictionClaim({
+      ...changed,
+      contradictionResolution: {
+        decision: 'REPLACED_CURRENT',
+        explanation: 'The newer county evidence establishes the revised minimum.',
+        expectedCurrentClaimId: 'claim-1',
+        expectedCandidateUpdatedAt: source.candidateUpdatedAt,
+      },
+    })
+    expect(tx.jurisdictionClaimContradictionReview.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        existingClaimId: 'claim-1',
+        replacementClaimId: result.claimId,
+        existingValue: 7500,
+        proposedValue: 8000,
+        candidateReferenceId: source.candidateId,
+        evidenceSnapshotReferenceId: source.evidenceSnapshotId,
+        decision: 'REPLACED_CURRENT',
+        reviewedBy: input.reviewerId,
+      }),
+    })
+  })
+
+  it('rejects a replacement resolution against a stale current claim', async () => {
+    await expect(publishJurisdictionClaim({
+      ...input,
+      extractedValue: { ...input.extractedValue, value: 8000 },
+      contradictionResolution: {
+        decision: 'REPLACED_CURRENT',
+        explanation: 'The newer county evidence establishes the revised minimum.',
+        expectedCurrentClaimId: 'older-claim',
+        expectedCandidateUpdatedAt: source.candidateUpdatedAt,
+      },
+    })).rejects.toThrow('STALE_CLAIM_CONTRADICTION')
+    expect(tx.jurisdictionClaim.create).not.toHaveBeenCalled()
+  })
+
+  it('fails closed when the profile points at a missing or already superseded claim', async () => {
+    tx.jurisdictionClaim.findFirst.mockResolvedValue(null)
+    await expect(publishJurisdictionClaim(input)).rejects.toThrow('STALE_CLAIM_PROJECTION')
+    expect(tx.jurisdictionClaim.create).not.toHaveBeenCalled()
   })
 
   it('rejects legacy AI candidates without a snapshot before claim writes', async () => {

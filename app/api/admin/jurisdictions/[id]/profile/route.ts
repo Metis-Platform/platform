@@ -90,21 +90,27 @@ export async function PATCH(
   if (!decision.allowed) {
     return NextResponse.json({ error: decision.code }, { status: 422 })
   }
-  const result = await publishJurisdictionClaim({
-    jurisdictionId: id,
-    section,
-    fieldKey: parsed.data.fieldKey,
-    extractedValue: parsed.data.field,
-    question: decision.question,
-    reviewerId,
-    reviewerLabel,
-    source: {
-      url: parsed.data.field.sourceUrl!,
-      snippet: parsed.data.field.citation!,
-      retrievedAt: new Date(),
-      authorityStatus: 'UNVERIFIED',
-    },
-  })
+  let result: Awaited<ReturnType<typeof publishJurisdictionClaim>>
+  try {
+    result = await publishJurisdictionClaim({
+      jurisdictionId: id,
+      section,
+      fieldKey: parsed.data.fieldKey,
+      extractedValue: parsed.data.field,
+      question: decision.question,
+      reviewerId,
+      reviewerLabel,
+      source: {
+        url: parsed.data.field.sourceUrl!,
+        snippet: parsed.data.field.citation!,
+        retrievedAt: new Date(),
+        authorityStatus: 'UNVERIFIED',
+      },
+    })
+  } catch (error) {
+    const code = error instanceof Error ? error.message : 'PUBLICATION_FAILED'
+    return NextResponse.json({ error: code }, { status: 409 })
+  }
 
   return NextResponse.json({ ok: true, claimId: result.claimId, field: result.profileField })
 }

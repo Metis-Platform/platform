@@ -6,6 +6,7 @@ import type { JurisdictionQuestionDefinition } from './jurisdiction-question-lib
 import {
   calculateClaimFreshness,
 } from './jurisdiction-claim-freshness'
+import { claimValuesConflict } from './jurisdiction-claim-contradiction'
 
 export type SourceAuthorityStatus = 'UNVERIFIED' | 'VERIFIED' | 'REJECTED'
 export type ClaimVerificationState = 'REVIEWED' | 'VERIFIED'
@@ -41,6 +42,12 @@ export interface ClaimPublicationInput {
   reviewerLabel: string
   reviewedAt?: Date
   source: ClaimPublicationSource
+  contradictionResolution?: {
+    decision: 'REPLACED_CURRENT'
+    explanation: string
+    expectedCurrentClaimId: string
+    expectedCandidateUpdatedAt: Date
+  }
 }
 
 function optionalString(value: unknown): string | undefined {
@@ -104,6 +111,12 @@ export function buildClaimPublication(input: ClaimPublicationInput & {
     throw new Error('EVIDENCE_SNAPSHOT_INCOMPLETE')
   }
   const reviewedAt = input.reviewedAt ?? new Date()
+  if (
+    Number.isNaN(input.source.retrievedAt.getTime()) ||
+    input.source.retrievedAt.getTime() > reviewedAt.getTime()
+  ) {
+    throw new Error('EVIDENCE_RETRIEVED_AT_INVALID')
+  }
   const verificationState = claimVerificationState(input.question, input.source)
   const rawConfidence = typeof input.extractedValue.confidence === 'number'
     ? input.extractedValue.confidence
@@ -206,6 +219,7 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
   const reviewedAt = input.reviewedAt ?? new Date()
   return db.$transaction(async tx => {
     let trustedSource = input.source
+    let trustedCandidateUpdatedAt: Date | null = null
     if (input.source.candidateId) {
       const candidate = await tx.extractionCandidate.findFirst({
         where: {
@@ -217,6 +231,7 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
             : {}),
         },
         select: {
+          updatedAt: true,
           sourceUrlId: true,
           sourceSnippet: true,
           modelUsed: true,
@@ -237,6 +252,7 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
         },
       })
       if (!candidate) throw new Error('CANDIDATE_NOT_PENDING')
+      trustedCandidateUpdatedAt = candidate.updatedAt
       const snapshot = candidate.evidenceSnapshot
       if (!snapshot) throw new Error('EVIDENCE_SNAPSHOT_REQUIRED')
       if (
@@ -261,12 +277,19 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
       }
     }
 
-    const profile = await tx.jurisdictionProfile.upsert({
+    await tx.jurisdictionProfile.upsert({
       where: { jurisdictionId: input.jurisdictionId },
       update: {},
       create: { jurisdictionId: input.jurisdictionId },
     })
-    const sectionFields = profile[input.section] as Record<string, unknown>
+    // Serialize publications and contradiction decisions for this jurisdiction projection.
+    const lockedProfiles = await tx.$queryRaw<Array<{ sectionFields: unknown }>>`
+      SELECT ${Prisma.raw(`"${input.section}"`)} AS "sectionFields"
+      FROM "JurisdictionProfile"
+      WHERE "jurisdictionId" = ${input.jurisdictionId}
+      FOR UPDATE
+    `
+    const sectionFields = (lockedProfiles[0]?.sectionFields ?? {}) as Record<string, unknown>
     const projectedClaimId = (sectionFields[input.fieldKey] as { claimId?: unknown } | undefined)?.claimId
     const superseded = typeof projectedClaimId === 'string'
       ? await tx.jurisdictionClaim.findFirst({
@@ -275,10 +298,20 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
             jurisdictionId: input.jurisdictionId,
             section: input.section,
             fieldKey: input.fieldKey,
+            supersededByClaim: null,
           },
-          select: { id: true },
+          select: {
+            id: true,
+            questionId: true,
+            questionSchemaVersion: true,
+            value: true,
+            normalizedUnit: true,
+          },
         })
       : null
+    if (typeof projectedClaimId === 'string' && !superseded) {
+      throw new Error('STALE_CLAIM_PROJECTION')
+    }
 
     // Re-read the mutable source authority record inside the transaction. Route data is only a hint.
     if (trustedSource.sourceUrlId) {
@@ -318,6 +351,42 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
       claimId,
       supersedesClaimId: superseded?.id,
     })
+    const hasContradiction = Boolean(superseded && claimValuesConflict(
+      { value: superseded.value, normalizedUnit: superseded.normalizedUnit },
+      { value: publication.claim.value, normalizedUnit: publication.claim.normalizedUnit },
+    ))
+    const resolution = input.contradictionResolution
+    if (hasContradiction) {
+      if (!resolution) throw new Error('CLAIM_CONTRADICTION_RESOLUTION_REQUIRED')
+      if (resolution.decision !== 'REPLACED_CURRENT') {
+        throw new Error('CLAIM_CONTRADICTION_DECISION_INVALID')
+      }
+      if (resolution.expectedCurrentClaimId !== superseded?.id) {
+        throw new Error('STALE_CLAIM_CONTRADICTION')
+      }
+      if (
+        !trustedCandidateUpdatedAt ||
+        trustedCandidateUpdatedAt.getTime() !== resolution.expectedCandidateUpdatedAt.getTime()
+      ) {
+        throw new Error('STALE_CLAIM_CONTRADICTION')
+      }
+      if (resolution.explanation.trim().length < 10) {
+        throw new Error('CLAIM_CONTRADICTION_EXPLANATION_REQUIRED')
+      }
+      if (
+        !trustedSource.candidateId ||
+        !trustedSource.evidenceSnapshotId ||
+        !trustedSource.contentHash ||
+        !trustedSource.storageKey ||
+        !trustedSource.retrievalAdapter ||
+        !trustedSource.representationMediaType ||
+        !trustedSource.byteLength
+      ) {
+        throw new Error('CLAIM_CONTRADICTION_EVIDENCE_REQUIRED')
+      }
+    } else if (resolution) {
+      throw new Error('CLAIM_CONTRADICTION_NOT_PRESENT')
+    }
 
     await tx.jurisdictionClaim.create({
       data: publication.claim as Prisma.JurisdictionClaimUncheckedCreateInput,
@@ -326,6 +395,44 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
     await tx.jurisdictionClaimEvidence.create({
       data: publication.evidence,
     })
+    if (hasContradiction && superseded && resolution && trustedCandidateUpdatedAt) {
+      await tx.jurisdictionClaimContradictionReview.create({
+        data: {
+          jurisdictionId: input.jurisdictionId,
+          questionId: superseded.questionId,
+          questionSchemaVersion: superseded.questionSchemaVersion,
+          section: input.section,
+          fieldKey: input.fieldKey,
+          existingClaimId: superseded.id,
+          replacementClaimId: claimId,
+          candidateId: trustedSource.candidateId!,
+          candidateReferenceId: trustedSource.candidateId!,
+          candidateUpdatedAt: trustedCandidateUpdatedAt,
+          evidenceSnapshotId: trustedSource.evidenceSnapshotId!,
+          evidenceSnapshotReferenceId: trustedSource.evidenceSnapshotId!,
+          sourceUrlId: trustedSource.sourceUrlId ?? undefined,
+          existingValue: superseded.value === null
+            ? Prisma.JsonNull
+            : inputJsonValue(superseded.value),
+          proposedValue: publication.claim.value,
+          existingNormalizedUnit: superseded.normalizedUnit ?? undefined,
+          proposedNormalizedUnit: publication.claim.normalizedUnit,
+          sourceUrl: trustedSource.url,
+          sourceSnippet: trustedSource.snippet,
+          evidenceRetrievedAt: trustedSource.retrievedAt,
+          contentHash: trustedSource.contentHash!,
+          storageKey: trustedSource.storageKey!,
+          retrievalAdapter: trustedSource.retrievalAdapter!,
+          representationMediaType: trustedSource.representationMediaType!,
+          byteLength: trustedSource.byteLength!,
+          modelUsed: trustedSource.modelUsed ?? 'unknown',
+          decision: 'REPLACED_CURRENT',
+          explanation: resolution.explanation.trim(),
+          reviewedAt,
+          reviewedBy: input.reviewerId,
+        },
+      })
+    }
 
     await tx.$queryRaw`
       UPDATE "JurisdictionProfile"

@@ -73,7 +73,7 @@ export function provenanceLabel(field: ResearchProfileField | null): string {
     case 'VERIFIED': return `Verified: ${date}`
     case 'REVIEWED': return `Reviewed: ${date}`
     case 'STALE': return `Stale — last reviewed ${date}`
-    case 'BLOCKED': return 'Blocked — unresolved evidence'
+    case 'BLOCKED': return 'Blocked — contradictory evidence requires review'
     default: return 'Claim provenance incomplete'
   }
 }
