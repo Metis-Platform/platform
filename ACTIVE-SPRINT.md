@@ -44,7 +44,7 @@
 - [ ] **Resettable integration test state (#289)** — deterministic tagged database/Clerk/R2 fixtures and external-service safeguards shipped through #300/#302/#304/#306; remaining: authorized hosted rehearsal, destructive-test gate, browser suite restore, and permanent clean-production boundary
 - [ ] **Playwright feature verification** — read-only runner/health check foundation shipped; remaining named UI user stories, traces, screenshots, console evidence, HTML reports, CI artifacts, and the reset-safe mutation suite
 - [ ] **Mutation observability** — structured tenant-safe logs, semantic audit events, and correlation IDs from browser action through server result
-- [ ] **Production dependency security (#338)** — PostCSS and Prisma CLI exposure addressed in #339; replace or safely upgrade the `react-simple-maps` D3 2.x dependency chain, then verify the production-only audit is clean.
+- [x] **Production dependency security (#338)** — #339 moved Prisma CLI tooling out of runtime dependencies and patched PostCSS; #340 replaced the vulnerable `react-simple-maps` D3 chain. Combined production-only audit is clean.
 - [ ] **Portable reproducible development (#295)** — one container/bootstrap contract for WSL, macOS, and an approved cloud host; remove root dependence on original WSL paths
 
 ---
