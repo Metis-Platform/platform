@@ -47,6 +47,8 @@ export default function ResearchForm({ jurisdictions }: Props) {
 
   // Manual overrides
   const [lotSqFt,          setLotSqFt]          = useState('')
+  const [frontageFt,       setFrontageFt]       = useState('')
+  const [lotDepthFt,       setLotDepthFt]       = useState('')
   const [improved,         setImproved]          = useState<'true' | 'false' | ''>('')
   const [zoning,           setZoning]            = useState('')
   const [floodZone,        setFloodZone]         = useState('')
@@ -81,6 +83,8 @@ export default function ResearchForm({ jurisdictions }: Props) {
     startTransition(async () => {
       const overrides: Record<string, unknown> = {}
       if (lotSqFt)         overrides.lotSizeSqFt    = Number(lotSqFt)
+      if (frontageFt)      overrides.frontageLinearFt = Number(frontageFt)
+      if (lotDepthFt)      overrides.lotDepthFt = Number(lotDepthFt)
       if (improved !== '') overrides.improved        = improved === 'true'
       if (zoning)          overrides.zoning          = zoning
       if (floodZone)       overrides.floodZone       = floodZone
@@ -203,6 +207,14 @@ export default function ResearchForm({ jurisdictions }: Props) {
                   placeholder="e.g. 7500"
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Frontage (ft)</label>
+                <input type="number" min="0" value={frontageFt} onChange={e => setFrontageFt(e.target.value)} placeholder="e.g. 50" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Lot depth (ft)</label>
+                <input type="number" min="0" value={lotDepthFt} onChange={e => setLotDepthFt(e.target.value)} placeholder="e.g. 100" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-500 mb-1">Improved?</label>

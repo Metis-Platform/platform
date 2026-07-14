@@ -13,6 +13,8 @@ import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types
 const overridesSchema = z.object({
   lotSizeSqFt:     z.coerce.number().positive().optional(),
   lotSizeAcres:    z.coerce.number().positive().optional(),
+  frontageLinearFt:z.coerce.number().positive().optional(),
+  lotDepthFt:      z.coerce.number().positive().optional(),
   improved:        z.boolean().optional(),
   zoning:          z.string().max(30).optional(),
   floodZone:       z.string().max(20).optional(),

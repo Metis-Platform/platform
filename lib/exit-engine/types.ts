@@ -61,6 +61,7 @@ export interface ParcelProfile {
   lotSizeAcres?: number
   netDevelopableAcres?: number
   frontageLinearFt?: number
+  lotDepthFt?: number
   shape?: 'regular' | 'irregular' | 'flag' | 'pipestem'
   topography?: 'flat' | 'sloped' | 'hilly' | 'wetland'
   improved?: boolean
@@ -121,6 +122,7 @@ export interface InvestorConstraints {
 
 export interface JurisdictionFacts {
   minLotSizeSqFt(zoning?: string): number | undefined
+  minLotWidthFt?(zoning?: string): number | undefined
   setbackFeet(zoning?: string): { front?: number; side?: number; rear?: number } | undefined
   allowedUses?(zoning?: string): string[] | undefined
   strAllowed?: boolean
