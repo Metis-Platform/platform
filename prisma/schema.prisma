@@ -169,6 +169,7 @@ model Jurisdiction {
   profile              JurisdictionProfile?
   sourceUrls           JurisdictionSourceUrl[]
   extractionCandidates ExtractionCandidate[]
+  claims               JurisdictionClaim[]
   auctionSaleFeeds     AuctionSaleFeed[]
 
   @@unique([state, county])
@@ -213,16 +214,22 @@ model JurisdictionProfile {
 }
 
 model JurisdictionSourceUrl {
-  id              String       @id @default(cuid())
-  jurisdictionId  String
-  jurisdiction    Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
-  officeType      String // assessor | tax_collector | recorder | gis | planning_zoning | building
-  url             String
-  lastFetchedAt   DateTime?
-  lastContentHash String?
-  createdAt       DateTime     @default(now())
+  id                  String                            @id @default(cuid())
+  jurisdictionId      String
+  jurisdiction        Jurisdiction                      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  officeType          String // assessor | tax_collector | recorder | gis | planning_zoning | building
+  url                 String
+  lastFetchedAt       DateTime?
+  lastContentHash     String?
+  authorityClass      String?
+  authorityOwner      String?
+  authorityStatus     JurisdictionSourceAuthorityStatus @default(UNVERIFIED)
+  authorityVerifiedAt DateTime?
+  authorityVerifiedBy String?
+  createdAt           DateTime                          @default(now())
 
-  candidates ExtractionCandidate[]
+  candidates    ExtractionCandidate[]
+  claimEvidence JurisdictionClaimEvidence[]
 
   @@unique([jurisdictionId, officeType, url])
   @@index([jurisdictionId])
@@ -246,9 +253,66 @@ model ExtractionCandidate {
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
 
+  claimEvidence JurisdictionClaimEvidence[]
+
   @@index([jurisdictionId])
   @@index([status])
   @@index([jurisdictionId, section, fieldKey])
+}
+
+// Append-only fact history. JurisdictionProfile is the current read projection, not provenance truth.
+model JurisdictionClaim {
+  id                        String                             @id @default(cuid())
+  jurisdictionId            String
+  jurisdiction              Jurisdiction                       @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  questionId                String
+  questionSchemaVersion     String
+  section                   String
+  fieldKey                  String
+  value                     Json
+  normalizedUnit            String?
+  expectedAuthorityClass    String
+  sourceAuthorityClass      String?
+  sourceAuthorityOwner      String?
+  sourceAuthorityStatus     JurisdictionSourceAuthorityStatus  @default(UNVERIFIED)
+  sourceAuthorityVerifiedAt DateTime?
+  sourceAuthorityVerifiedBy String?
+  verificationState         JurisdictionClaimVerificationState @default(REVIEWED)
+  geographicScope           String?
+  effectiveAt               DateTime?
+  reviewedAt                DateTime
+  reviewedBy                String
+  supersedesClaimId         String?                            @unique
+  supersedesClaim           JurisdictionClaim?                 @relation("JurisdictionClaimSupersession", fields: [supersedesClaimId], references: [id], onDelete: SetNull)
+  supersededByClaim         JurisdictionClaim?                 @relation("JurisdictionClaimSupersession")
+  createdAt                 DateTime                           @default(now())
+
+  evidence JurisdictionClaimEvidence[]
+
+  @@index([jurisdictionId, questionId, createdAt])
+  @@index([jurisdictionId, section, fieldKey, createdAt])
+  @@index([verificationState])
+}
+
+// Evidence is copied at publication time so provenance survives source/candidate cleanup.
+model JurisdictionClaimEvidence {
+  id              String                 @id @default(cuid())
+  claimId         String
+  claim           JurisdictionClaim      @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  sourceUrlId     String?
+  sourceUrlRecord JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  candidateId     String?
+  candidate       ExtractionCandidate?   @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  sourceUrl       String
+  sourceSnippet   String                 @db.Text
+  retrievedAt     DateTime
+  contentHash     String?
+  modelUsed       String?
+  createdAt       DateTime               @default(now())
+
+  @@index([claimId])
+  @@index([sourceUrlId])
+  @@index([candidateId])
 }
 
 model AuctionSaleFeed {
@@ -1049,6 +1113,20 @@ enum ExtractionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum JurisdictionSourceAuthorityStatus {
+  UNVERIFIED
+  VERIFIED
+  REJECTED
+}
+
+enum JurisdictionClaimVerificationState {
+  REVIEWED
+  VERIFIED
+  STALE
+  BLOCKED
+  SUPERSEDED
 }
 
 enum PlanTier {

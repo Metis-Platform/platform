@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { Prisma } from '@/app/generated/prisma'
 import { currentUser } from '@clerk/nextjs/server'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
-import {
-  evaluateJurisdictionPublication,
-  reviewedProfileField,
-} from '@/lib/jurisdiction-publication-policy'
+import { publishJurisdictionClaim } from '@/lib/jurisdiction-claim-publication'
+import { evaluateJurisdictionPublication } from '@/lib/jurisdiction-publication-policy'
 
 const schema = z.object({
   minConfidence: z.number().min(0).max(1).default(0.85),
@@ -30,7 +27,18 @@ export async function POST(req: Request): Promise<NextResponse> {
       confidence: { gte: minConfidence },
       ...(section ? { section } : {}),
     },
-    include: { sourceUrl: { select: { url: true } } },
+    include: {
+      sourceUrl: {
+        select: {
+          url: true,
+          authorityClass: true,
+          authorityOwner: true,
+          authorityStatus: true,
+          authorityVerifiedAt: true,
+          authorityVerifiedBy: true,
+        },
+      },
+    },
     take: 500,
   })
 
@@ -57,46 +65,41 @@ export async function POST(req: Request): Promise<NextResponse> {
         sourceUrl: candidate.sourceUrl?.url ?? String(fieldValue.sourceUrl ?? ''),
         sourceSnippet: candidate.sourceSnippet ?? String(fieldValue.citation ?? ''),
         reviewerId,
+        sourceAuthorityStatus: candidate.sourceUrl?.authorityStatus,
       },
     })
     if (!decision.allowed) {
       blocked++
       continue
     }
-    const reviewedAt = new Date()
-    const reviewedField = reviewedProfileField({
-      extractedValue: fieldValue,
-      question: decision.question,
-      reviewerId,
-      reviewedAt,
-    })
-
     try {
-      await db.jurisdictionProfile.upsert({
-        where: { jurisdictionId: candidate.jurisdictionId },
-        update: {},
-        create: { jurisdictionId: candidate.jurisdictionId },
-      })
-
-      await db.$queryRaw`
-        UPDATE "JurisdictionProfile"
-        SET ${Prisma.raw(`"${sectionKey}"`)} = jsonb_set(
-          COALESCE(${Prisma.raw(`"${sectionKey}"`)}, '{}'::jsonb),
-          ARRAY[${fieldKey}],
-          ${JSON.stringify(reviewedField)}::jsonb,
-          true
-        ),
-        "updatedAt" = NOW()
-        WHERE "jurisdictionId" = ${candidate.jurisdictionId}
-      `
-
-      await db.extractionCandidate.update({
-        where: { id: candidate.id },
-        data: {
-          status: 'APPROVED',
-          reviewedAt,
-          reviewedBy: reviewerLabel,
-          extractedValue: reviewedField as object,
+      const retrievedAtValue = new Date(String(fieldValue.retrievedAt ?? ''))
+      await publishJurisdictionClaim({
+        jurisdictionId: candidate.jurisdictionId,
+        section: sectionKey,
+        fieldKey,
+        extractedValue: fieldValue,
+        question: decision.question,
+        reviewerId,
+        reviewerLabel,
+        source: {
+          sourceUrlId: candidate.sourceUrlId,
+          candidateId: candidate.id,
+          candidateUpdatedAt: candidate.updatedAt,
+          url: candidate.sourceUrl?.url ?? String(fieldValue.sourceUrl ?? ''),
+          snippet: candidate.sourceSnippet ?? String(fieldValue.citation ?? ''),
+          retrievedAt: Number.isNaN(retrievedAtValue.getTime())
+            ? candidate.updatedAt
+            : retrievedAtValue,
+          contentHash: typeof fieldValue.contentHash === 'string'
+            ? fieldValue.contentHash
+            : undefined,
+          modelUsed: candidate.modelUsed,
+          authorityClass: candidate.sourceUrl?.authorityClass,
+          authorityOwner: candidate.sourceUrl?.authorityOwner,
+          authorityStatus: candidate.sourceUrl?.authorityStatus ?? 'UNVERIFIED',
+          authorityVerifiedAt: candidate.sourceUrl?.authorityVerifiedAt,
+          authorityVerifiedBy: candidate.sourceUrl?.authorityVerifiedBy,
         },
       })
       approved++

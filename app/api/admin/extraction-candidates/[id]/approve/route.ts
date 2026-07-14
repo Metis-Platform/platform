@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
-import { Prisma } from '@/app/generated/prisma'
 import { currentUser } from '@clerk/nextjs/server'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
-import {
-  evaluateJurisdictionPublication,
-  reviewedProfileField,
-} from '@/lib/jurisdiction-publication-policy'
+import { publishJurisdictionClaim } from '@/lib/jurisdiction-claim-publication'
+import { evaluateJurisdictionPublication } from '@/lib/jurisdiction-publication-policy'
 
 export async function POST(
   req: Request,
@@ -20,7 +17,16 @@ export async function POST(
     where: { id },
     include: {
       jurisdiction: { select: { county: true, state: true } },
-      sourceUrl: { select: { url: true } },
+      sourceUrl: {
+        select: {
+          url: true,
+          authorityClass: true,
+          authorityOwner: true,
+          authorityStatus: true,
+          authorityVerifiedAt: true,
+          authorityVerifiedBy: true,
+        },
+      },
     },
   })
   if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -52,50 +58,50 @@ export async function POST(
       sourceUrl: candidate.sourceUrl?.url ?? String(proposedField.sourceUrl ?? ''),
       sourceSnippet: candidate.sourceSnippet ?? String(proposedField.citation ?? ''),
       reviewerId,
+      sourceAuthorityStatus: candidate.sourceUrl?.authorityStatus,
     },
   })
   if (!decision.allowed) {
     return NextResponse.json({ error: decision.code }, { status: 422 })
   }
-  const reviewedAt = new Date()
-  const fieldToWrite = reviewedProfileField({
-    extractedValue: proposedField,
-    question: decision.question,
-    reviewerId,
-    reviewedAt,
-  })
+  const sourceUrl = candidate.sourceUrl?.url ?? String(proposedField.sourceUrl ?? '')
+  const sourceSnippet = candidate.sourceSnippet ?? String(proposedField.citation ?? '')
+  const retrievedAtValue = new Date(String(proposedField.retrievedAt ?? ''))
+  let result: Awaited<ReturnType<typeof publishJurisdictionClaim>>
+  try {
+    result = await publishJurisdictionClaim({
+      jurisdictionId: candidate.jurisdictionId,
+      section: candidate.section,
+      fieldKey: candidate.fieldKey,
+      extractedValue: proposedField,
+      question: decision.question,
+      reviewerId,
+      reviewerLabel,
+      source: {
+        sourceUrlId: candidate.sourceUrlId,
+        candidateId: candidate.id,
+        candidateUpdatedAt: candidate.updatedAt,
+        url: sourceUrl,
+        snippet: sourceSnippet,
+        retrievedAt: Number.isNaN(retrievedAtValue.getTime())
+          ? candidate.updatedAt
+          : retrievedAtValue,
+        contentHash: typeof proposedField.contentHash === 'string'
+          ? proposedField.contentHash
+          : undefined,
+        modelUsed: candidate.modelUsed,
+        authorityClass: candidate.sourceUrl?.authorityClass,
+        authorityOwner: candidate.sourceUrl?.authorityOwner,
+        authorityStatus: candidate.sourceUrl?.authorityStatus ?? 'UNVERIFIED',
+        authorityVerifiedAt: candidate.sourceUrl?.authorityVerifiedAt,
+        authorityVerifiedBy: candidate.sourceUrl?.authorityVerifiedBy,
+      },
+    })
+  } catch (error) {
+    const code = error instanceof Error ? error.message : 'PUBLICATION_FAILED'
+    const status = code === 'SOURCE_REJECTED' ? 422 : 409
+    return NextResponse.json({ error: code }, { status })
+  }
 
-  // Ensure profile exists
-  await db.jurisdictionProfile.upsert({
-    where: { jurisdictionId: candidate.jurisdictionId },
-    update: {},
-    create: { jurisdictionId: candidate.jurisdictionId },
-  })
-
-  // Write field to JurisdictionProfile using jsonb_set
-  const section = candidate.section
-  const fieldKey = candidate.fieldKey
-  await db.$queryRaw`
-    UPDATE "JurisdictionProfile"
-    SET ${Prisma.raw(`"${section}"`)} = jsonb_set(
-      COALESCE(${Prisma.raw(`"${section}"`)}, '{}'::jsonb),
-      ARRAY[${fieldKey}],
-      ${JSON.stringify(fieldToWrite)}::jsonb,
-      true
-    ),
-    "updatedAt" = NOW()
-    WHERE "jurisdictionId" = ${candidate.jurisdictionId}
-  `
-
-  const updated = await db.extractionCandidate.update({
-    where: { id },
-    data: {
-      status: 'APPROVED',
-      reviewedAt,
-      reviewedBy: reviewerLabel,
-      extractedValue: fieldToWrite as object,
-    },
-  })
-
-  return NextResponse.json(updated)
+  return NextResponse.json({ ok: true, claimId: result.claimId })
 }

@@ -9,6 +9,7 @@ export interface JurisdictionPublicationEvidence {
   sourceUrl?: string | null
   sourceSnippet?: string | null
   reviewerId?: string | null
+  sourceAuthorityStatus?: 'UNVERIFIED' | 'VERIFIED' | 'REJECTED' | null
 }
 
 export type JurisdictionPublicationDecision =
@@ -22,6 +23,7 @@ export type JurisdictionPublicationDecision =
         | 'SOURCE_URL_REQUIRED'
         | 'SOURCE_SNIPPET_REQUIRED'
         | 'REVIEWER_REQUIRED'
+        | 'SOURCE_REJECTED'
       question: JurisdictionQuestionDefinition | null
     }
 
@@ -41,6 +43,9 @@ export function evaluateJurisdictionPublication(input: {
   if (input.mode === 'HUMAN_BATCH' && !question.batchReviewAllowed) {
     return { allowed: false, code: 'INDIVIDUAL_REVIEW_REQUIRED', question }
   }
+  if (input.evidence.sourceAuthorityStatus === 'REJECTED') {
+    return { allowed: false, code: 'SOURCE_REJECTED', question }
+  }
   if (!input.evidence.sourceUrl?.trim()) {
     return { allowed: false, code: 'SOURCE_URL_REQUIRED', question }
   }
@@ -51,21 +56,4 @@ export function evaluateJurisdictionPublication(input: {
     return { allowed: false, code: 'REVIEWER_REQUIRED', question }
   }
   return { allowed: true, question }
-}
-
-export function reviewedProfileField(input: {
-  extractedValue: Record<string, unknown>
-  question: JurisdictionQuestionDefinition
-  reviewerId: string
-  reviewedAt?: Date
-}): Record<string, unknown> {
-  return {
-    ...input.extractedValue,
-    questionId: input.question.id,
-    questionSchemaVersion: input.question.schemaVersion,
-    authorityClass: input.question.expectedAuthority,
-    verificationState: 'REVIEWED',
-    verifiedAt: (input.reviewedAt ?? new Date()).toISOString(),
-    verifiedById: input.reviewerId,
-  }
 }
