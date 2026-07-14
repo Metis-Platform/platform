@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { REQUEST_ID_HEADER } from '@/lib/request-correlation'
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -14,21 +15,35 @@ const isPublicRoute = createRouteMatcher([
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])
 
 export default clerkMiddleware(async (auth, req) => {
+  const requestId = crypto.randomUUID()
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set(REQUEST_ID_HEADER, requestId)
+  const next = () => {
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
+    response.headers.set(REQUEST_ID_HEADER, requestId)
+    return response
+  }
+  const withRequestId = (response: NextResponse) => {
+    response.headers.set(REQUEST_ID_HEADER, requestId)
+    return response
+  }
   const { userId, orgId } = await auth()
 
   // Public routes: always allow
-  if (isPublicRoute(req)) return NextResponse.next()
+  if (isPublicRoute(req)) return next()
 
   // Not signed in: redirect to sign-in
   if (!userId) {
     const { redirectToSignIn } = await auth()
-    return redirectToSignIn()
+    return withRequestId(await redirectToSignIn())
   }
 
   // Signed in but no active org: redirect to onboarding
   if (!orgId && !isOnboardingRoute(req)) {
-    return NextResponse.redirect(new URL('/onboarding', req.url))
+    return withRequestId(NextResponse.redirect(new URL('/onboarding', req.url)))
   }
+
+  return next()
 })
 
 export const config = {
