@@ -26,6 +26,7 @@ export interface DataSource {
   provider: ParcelSourceProvider
   retrievedAt: Date
   ttlHours: number
+  sourceUrl?: string
   observedAt?: Date
   ttlDays?: number
 }
