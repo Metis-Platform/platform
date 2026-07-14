@@ -55,3 +55,24 @@ export function discoverJurisdictionSources(input: {
   )
   return { status: sources.length ? 'DISCOVERED' as const : 'DISCOVERY_NEEDED' as const, sources }
 }
+
+export async function queueDiscoveredJurisdictionSources(input: {
+  jurisdictionId: string
+  sources: DiscoveredJurisdictionSource[]
+  createLead: (data: {
+    jurisdictionId: string
+    adapterId: string
+    officeType: string
+    url: string
+    authorityOwner: string
+    authorityRationale: string
+    discoveredAt: Date
+  }) => Promise<unknown>
+}) {
+  if (!input.jurisdictionId.trim()) throw new Error('JURISDICTION_REQUIRED')
+  for (const source of input.sources) {
+    // A discovery lead is not a jurisdiction source record. The latter requires
+    // explicit review because an adapter may return a statewide directory.
+    await input.createLead({ jurisdictionId: input.jurisdictionId, ...source })
+  }
+}
