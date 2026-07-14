@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { IMPORT_CSV_LIMITS, ImportCsvError, parseImportCsv } from './import-csv'
+import { escapeSpreadsheetFormula, exceedsDeclaredCsvUploadSize, IMPORT_CSV_LIMITS, ImportCsvError, parseImportCsv } from './import-csv'
 
 describe('safe CSV imports', () => {
   it('rejects row, column, and cell limits before object conversion', () => {
@@ -12,5 +12,17 @@ describe('safe CSV imports', () => {
     expect(parseImportCsv('state,county,notes\nFL,Volusia,"=HYPERLINK(""https://bad"")"')).toEqual([
       { state: 'FL', county: 'Volusia', notes: '=HYPERLINK("https://bad")' },
     ])
+  })
+
+  it('neutralizes formula-like cells before CSV export', () => {
+    expect(escapeSpreadsheetFormula('=HYPERLINK("https://bad")')).toBe('\'=HYPERLINK("https://bad")')
+    expect(escapeSpreadsheetFormula('+123')).toBe("'+123")
+    expect(escapeSpreadsheetFormula('normal text')).toBe('normal text')
+  })
+
+  it('rejects an oversized declared multipart payload before file parsing', () => {
+    expect(exceedsDeclaredCsvUploadSize(null)).toBe(false)
+    expect(exceedsDeclaredCsvUploadSize(String(IMPORT_CSV_LIMITS.maxBytes + 64_000))).toBe(false)
+    expect(exceedsDeclaredCsvUploadSize(String(IMPORT_CSV_LIMITS.maxBytes + 64_001))).toBe(true)
   })
 })

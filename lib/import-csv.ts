@@ -7,6 +7,8 @@ export const IMPORT_CSV_LIMITS = {
   maxCellLength: 2_000,
 } as const
 
+const MAX_MULTIPART_OVERHEAD_BYTES = 64_000
+
 export class ImportCsvError extends Error {}
 
 export function assertCsvUpload(file: File) {
@@ -19,6 +21,12 @@ export function assertCsvUpload(file: File) {
   if (file.size > IMPORT_CSV_LIMITS.maxBytes) {
     throw new ImportCsvError('CSV files must be 1 MB or smaller.')
   }
+}
+
+export function exceedsDeclaredCsvUploadSize(contentLength: string | null) {
+  if (!contentLength) return false
+  const bytes = Number(contentLength)
+  return Number.isFinite(bytes) && bytes > IMPORT_CSV_LIMITS.maxBytes + MAX_MULTIPART_OVERHEAD_BYTES
 }
 
 export function parseImportCsv(text: string): Record<string, string>[] {

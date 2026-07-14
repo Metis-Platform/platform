@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ImportRow } from '@/app/api/liens/import/route'
+import { escapeSpreadsheetFormula } from '@/lib/import-csv'
 
 type PreviewResult = { rows: ImportRow[]; total: number; valid: number }
 type ImportError   = { rowNum: number; error: string; raw: Record<string, string> }
@@ -13,8 +14,10 @@ type Phase = 'idle' | 'parsing' | 'preview' | 'importing' | 'done'
 const TEMPLATE_HEADERS = ['status', 'state', 'county', 'apn', 'certificate_number', 'face_amount', 'interest_rate', 'issue_date', 'address', 'notes']
 
 function buildErrorCsv(errors: { raw: Record<string, string>; message: string }[]): string {
-  const escape = (v: string) =>
-    v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v
+  const escape = (value: string) => {
+    const v = escapeSpreadsheetFormula(value)
+    return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v
+  }
 
   const rows = errors.map(({ raw, message }) => {
     const originalNotes = raw.notes || ''
@@ -275,7 +278,7 @@ export default function ImportForm() {
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          accept=".csv,text/csv"
           className="hidden"
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }}
         />
@@ -286,8 +289,8 @@ export default function ImportForm() {
             <svg className="mx-auto mb-2 w-8 h-8 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
             </svg>
-            <p className="text-sm text-zinc-500">Drag & drop your CSV, XLS, or XLSX, or <span className="text-blue-600">browse</span></p>
-            <p className="text-xs text-zinc-400 mt-1">Up to 500 liens per file</p>
+            <p className="text-sm text-zinc-500">Drag & drop your CSV, or <span className="text-blue-600">browse</span></p>
+            <p className="text-xs text-zinc-400 mt-1">CSV only — up to 1 MB and 500 liens per file</p>
           </>
         )}
       </div>
