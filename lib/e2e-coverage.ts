@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { z } from 'zod'
 
 const mutationEvidenceSchema = z.object({
@@ -29,4 +29,11 @@ export function validateE2eCoverage(value: unknown) {
 
 export function readE2eCoverage(path = 'e2e/coverage.json') {
   return validateE2eCoverage(JSON.parse(readFileSync(path, 'utf8')))
+}
+
+export function missingE2eCoverageSpecs(
+  coverage: z.infer<typeof coverageSchema>,
+  specExists: (path: string) => boolean = existsSync,
+) {
+  return coverage.stories.filter(story => !specExists(story.spec)).map(story => story.spec)
 }
