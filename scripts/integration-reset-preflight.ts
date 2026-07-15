@@ -1,5 +1,7 @@
 import { evaluateIntegrationResetPreflight } from '../lib/integration-reset-guard'
+import { loadLocalOperatorEnvironment } from '../lib/local-operator-env'
 
+loadLocalOperatorEnvironment()
 const args = process.argv.slice(2)
 const confirmIndex = args.indexOf('--confirm')
 const confirmation = confirmIndex >= 0 ? args[confirmIndex + 1] : undefined
