@@ -9,6 +9,7 @@ import { evaluateExits } from '@/lib/exit-engine/engine'
 import { assembleResearchProfile } from '@/lib/parcel/research-profile'
 import { computeMao } from '@/lib/mao/calculator'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
+import { CensusGeocoderError, resolveGoverningGeography } from '@/lib/geography/census-geocoder'
 import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types'
 
 const overridesSchema = z.object({
@@ -63,6 +64,25 @@ export async function POST(req: Request) {
 
   const { apn, fipsCounty, lat, lon, maxBid, overrides } = parsed.data
   const normalized = normalizeApn(apn, fipsCounty)
+  let governingGeography: Awaited<ReturnType<typeof resolveGoverningGeography>> | null = null
+  let geographyStatus: 'RESOLVED' | 'UNRESOLVED' | 'COORDINATES_NOT_PROVIDED' = 'COORDINATES_NOT_PROVIDED'
+
+  if (lat != null && lon != null) {
+    try {
+      governingGeography = await resolveGoverningGeography({ lat, lon })
+      geographyStatus = 'RESOLVED'
+      if (governingGeography.countyFips !== normalized.fipsCounty) {
+        return NextResponse.json({
+          error: 'Coordinates resolve to a different county than the selected FIPS. Confirm the parcel location before applying county research.',
+          selectedFipsCounty: normalized.fipsCounty,
+          resolvedFipsCounty: governingGeography.countyFips,
+        }, { status: 409 })
+      }
+    } catch (error) {
+      if (!(error instanceof CensusGeocoderError)) throw error
+      geographyStatus = 'UNRESOLVED'
+    }
+  }
 
   await db.auditEvent.create({
     data: {
@@ -142,6 +162,12 @@ export async function POST(req: Request) {
     jurisdiction: jurisdiction
       ? { id: jurisdiction.id, state: jurisdiction.state, county: jurisdiction.county }
       : null,
+    geography: {
+      status: geographyStatus,
+      resolved: governingGeography,
+      // Geography resolution identifies scope; it does not select a zoning or permitting authority.
+      municipalityScope: governingGeography?.municipalityStatus ?? 'UNKNOWN',
+    },
     enrich: {
       cacheHits: enrichResult.cacheHits,
       apiCalls:  enrichResult.apiCalls,
