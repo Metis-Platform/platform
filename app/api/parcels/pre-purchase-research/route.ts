@@ -21,6 +21,7 @@ import {
   type OfficialParcelLocation,
 } from '@/lib/parcel/sources/volusia-property-appraiser'
 import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types'
+import { prePurchaseResearchSnapshotPayload, researchSnapshotExpiry, researchSnapshotJson } from '@/lib/pre-purchase-research-snapshot'
 
 const overridesSchema = z.object({
   lotSizeSqFt:     z.coerce.number().positive().optional(),
@@ -207,6 +208,18 @@ export async function POST(req: Request) {
 
   const exitResults = evaluateExits(ctx)
   const mao = computeMao(parcel, exitResults)
+  const handoff = jurisdiction
+    ? await db.prePurchaseResearchSnapshot.create({
+        data: {
+          tenantId: tenant.id,
+          jurisdictionId: jurisdiction.id,
+          apn: parcel.apn,
+          payload: researchSnapshotJson(prePurchaseResearchSnapshotPayload(parcel, exitResults, mao)) as never,
+          expiresAt: researchSnapshotExpiry(),
+        },
+        select: { id: true, expiresAt: true },
+      })
+    : null
 
   return NextResponse.json({
     parcel,
@@ -215,6 +228,7 @@ export async function POST(req: Request) {
     jurisdiction: jurisdiction
       ? { id: jurisdiction.id, state: jurisdiction.state, county: jurisdiction.county }
       : null,
+    handoff: handoff ? { id: handoff.id, expiresAt: handoff.expiresAt } : null,
     geography: {
       status: geographyStatus,
       resolved: governingGeography,

@@ -23,7 +23,7 @@ const initialFixFlipState: FixFlipFormState = {}
 const initialBuyHoldState: BuyHoldFormState = {}
 const initialMultifamilyState: MultifamilyFormState = {}
 
-type Preselected = { id: string; county: string; stateName: string; state: string; apn?: string } | null
+type Preselected = { id: string; county: string; stateName: string; state: string; apn?: string; researchSnapshotId?: string } | null
 
 /** Dispatcher — renders strategy-specific form without calling lien hooks for other strategies. */
 export function NewLienForm({
@@ -73,10 +73,12 @@ function NewLienFormInner({
   return (
     <form action={formAction} className="bg-white rounded-xl border border-zinc-200 divide-y divide-zinc-100 overflow-hidden">
       <input type="hidden" name="status" value="LEAD" />
+      {preselected?.researchSnapshotId && <input type="hidden" name="researchSnapshotId" value={preselected.researchSnapshotId} />}
 
       {state.message && (
         <div className="px-6 py-4 bg-red-50 text-sm text-red-700">{state.message}</div>
       )}
+      {preselected?.researchSnapshotId && <div className="px-6 py-3 bg-amber-50 text-xs text-amber-800">This deal will retain the preliminary research snapshot and its source labels. It does not verify parcel, zoning, or buildability facts.</div>}
 
       {/* Jurisdiction */}
       <section className="px-6 py-5 space-y-4">

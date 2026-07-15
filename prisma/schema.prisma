@@ -45,6 +45,7 @@ model Tenant {
   modules          TenantModule[]
   workflowRules    TenantWorkflowRule[]
   parcelDataCaches ParcelDataCache[]
+  prePurchaseResearchSnapshots PrePurchaseResearchSnapshot[]
   exitEvaluations  ExitEvaluation[]
   investorProfile  InvestorProfile?
   parcelResearchRequests ParcelResearchRequest[]
@@ -180,6 +181,7 @@ model Jurisdiction {
   researchWork         JurisdictionResearchWork?
   researchDemands      JurisdictionResearchDemand[]
   coverageNotifications JurisdictionCoverageNotification[]
+  prePurchaseResearchSnapshots PrePurchaseResearchSnapshot[]
 
   @@unique([state, county])
 }
@@ -684,6 +686,26 @@ model ParcelDataCache {
   @@unique([tenantId, apnNormalized, fipsCounty, source, field])
   @@index([tenantId, apnNormalized, fipsCounty])
   @@index([expiresAt])
+}
+
+// A bounded, tenant-scoped record of the output shown to an investor before
+// they choose to create a deal. It is evidence, not verified property data.
+model PrePurchaseResearchSnapshot {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jurisdictionId String
+  jurisdiction   Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  apn            String
+  payload        Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  consumedDealId String?
+
+  @@index([tenantId, expiresAt])
+  @@index([tenantId, jurisdictionId, apn])
+  @@index([consumedDealId])
 }
 
 model Contact {
