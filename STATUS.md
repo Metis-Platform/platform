@@ -132,7 +132,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
 | **Manual click-through PR #286** — Land sync/comps/AI summary | No — build/lint/tsc all passed pre-merge | 2026-06-16 | Open a Land deal: click "Sync from research", add 2 comps, click "Generate" on AI summary (needs an Anthropic key in Settings). Not yet manually verified in the live app. |
 | Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not repository work | 2026-07-13 | WSL currently has no Vercel CLI/link. Configure the logical integration identity, verified service allowlists, reset-safe runtime modes, and fixture credentials. #300/#302/#304/#306 provide the repository guards/orchestration; mutation tests remain blocked until the non-mutating plan and controlled hosted reset rehearsal pass. |
-| Restore Vercel preview capacity for PR #366 | Yes — branch protection requires Vercel before the trace-contract PR can merge | 2026-07-14 | Vercel reported `upgradeToPro=build-rate-limit`; application build succeeds locally and GitHub CI is still running. Wait for capacity or adjust the Vercel plan/build-limit configuration, then re-run the preview. |
+| Restore Vercel preview capacity for PR #366 | Yes — branch protection requires Vercel before the trace-contract PR can merge | 2026-07-14 | Vercel reported `upgradeToPro=build-rate-limit`; local verification and the GitHub CI check passed. Wait for capacity or adjust the Vercel plan/build-limit configuration, then re-run the preview. |
 
 ---
 
