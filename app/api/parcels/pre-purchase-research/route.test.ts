@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   jurisdictionFindFirst: vi.fn(),
   fmrFindMany: vi.fn(),
   resolveGoverningGeography: vi.fn(),
+  resolveCensusAddressLocation: vi.fn(),
   resolveOfficialParcelLocation: vi.fn(),
   enrichParcel: vi.fn(),
 }))
@@ -24,6 +25,7 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/parcel/enrich', () => ({ enrichParcel: mocks.enrichParcel }))
 vi.mock('@/lib/geography/census-geocoder', () => ({
   CensusGeocoderError: class CensusGeocoderError extends Error {},
+  resolveCensusAddressLocation: mocks.resolveCensusAddressLocation,
   resolveGoverningGeography: mocks.resolveGoverningGeography,
 }))
 vi.mock('@/lib/parcel/sources/volusia-property-appraiser', () => ({
@@ -39,6 +41,7 @@ describe('pre-purchase research governing geography', () => {
     mocks.syncUserToDatabase.mockResolvedValue({ tenant: { id: 'tenant-1' }, user: { id: 'user-1' } })
     mocks.rateLimitCount.mockResolvedValue(0)
     mocks.resolveOfficialParcelLocation.mockResolvedValue(null)
+    mocks.resolveCensusAddressLocation.mockResolvedValue(null)
     mocks.enrichParcel.mockResolvedValue({ cacheHits: 0, apiCalls: 0, errors: [] })
     mocks.parcelCacheFindMany.mockResolvedValue([])
     mocks.jurisdictionFindFirst.mockResolvedValue(null)
@@ -89,5 +92,37 @@ describe('pre-purchase research governing geography', () => {
     })
     expect(mocks.auditCreate).not.toHaveBeenCalled()
     expect(mocks.resolveOfficialParcelLocation).not.toHaveBeenCalled()
+    expect(mocks.resolveCensusAddressLocation).not.toHaveBeenCalled()
+  })
+
+  it('uses Census address location as a nationwide preliminary fallback', async () => {
+    mocks.resolveCensusAddressLocation.mockResolvedValue({
+      lat: 33.4484, lon: -112.074, matchedAddress: '1 MAIN ST, PHOENIX, AZ, 85001',
+      countyFips: '04013', countyName: 'Maricopa County', sourceUrl: 'https://census.example', retrievedAt: '2026-07-15T00:00:00.000Z',
+    })
+
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST', body: JSON.stringify({ apn: '1234', fipsCounty: '04013', address: '1 Main St, Phoenix, AZ 85001' }),
+    }))
+
+    expect(mocks.resolveGoverningGeography).not.toHaveBeenCalled()
+    await expect(response.json()).resolves.toMatchObject({
+      location: { status: 'CENSUS_ADDRESS', sourceUrl: 'https://census.example', matchedAddress: '1 MAIN ST, PHOENIX, AZ, 85001' },
+      geography: { status: 'RESOLVED' },
+    })
+  })
+
+  it('does not audit when a Census address resolves to another county', async () => {
+    mocks.resolveCensusAddressLocation.mockResolvedValue({
+      lat: 33.4484, lon: -112.074, matchedAddress: '1 MAIN ST, PHOENIX, AZ, 85001',
+      countyFips: '04013', countyName: 'Maricopa County', sourceUrl: 'https://census.example', retrievedAt: '2026-07-15T00:00:00.000Z',
+    })
+
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST', body: JSON.stringify({ apn: '1234', fipsCounty: '12127', address: '1 Main St, Phoenix, AZ 85001' }),
+    }))
+
+    expect(response.status).toBe(409)
+    expect(mocks.auditCreate).not.toHaveBeenCalled()
   })
 })

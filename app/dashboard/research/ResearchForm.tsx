@@ -21,6 +21,11 @@ type ResearchResponse = {
   results: ExitResult[]
   mao: MaoResult[]
   jurisdiction: { id: string; state: string; county: string } | null
+  location?: {
+    status: 'SUPPLIED' | 'OFFICIAL_PARCEL' | 'CENSUS_ADDRESS' | 'UNAVAILABLE' | 'UNRESOLVED'
+    sourceUrl?: string
+    matchedAddress?: string
+  }
   enrich: { cacheHits: number; apiCalls: number; errors: Array<{ source: string; error: string }> }
 }
 
@@ -42,6 +47,7 @@ const VERDICT_BAR: Record<Verdict, string> = {
 
 export default function ResearchForm({ jurisdictions }: Props) {
   const [apn,         setApn]         = useState('')
+  const [address,     setAddress]     = useState('')
   const [fipsCounty,  setFipsCounty]  = useState('')
   const [countyQuery, setCountyQuery] = useState('')
   const [maxBid,      setMaxBid]      = useState('')
@@ -110,6 +116,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
       }
 
       const body: Record<string, unknown> = { apn, fipsCounty }
+      if (address.trim())              body.address = address.trim()
       if (maxBid)                       body.maxBid = Number(maxBid)
       if (Object.keys(overrides).length) body.overrides = overrides
 
@@ -189,6 +196,17 @@ export default function ResearchForm({ jurisdictions }: Props) {
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Property address <span className="font-normal">(optional)</span></label>
+            <input
+              type="text"
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              placeholder="Used only to locate this research request when no official parcel source is available"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            />
+            <p className="mt-1 text-xs text-zinc-400">Sent only for this request to the Census Geocoder. A match is preliminary location evidence, not verified parcel identity or zoning authority.</p>
+          </div>
           <div>
             <label className="block text-xs font-medium text-zinc-500 mb-1">Max Bid ($)</label>
             <input
@@ -425,6 +443,11 @@ export default function ResearchForm({ jurisdictions }: Props) {
               <ParcelFact label="Market estimate" field="marketValueEstimate" parcel={data.parcel} value={data.parcel.marketValueEstimate != null ? fmtCurrency(data.parcel.marketValueEstimate) : undefined} />
               <ParcelFact label="Wetlands" field="wetlandsPresent" parcel={data.parcel} value={data.parcel.wetlandsPresent == null ? undefined : data.parcel.wetlandsPresent ? 'Yes' : 'No'} />
             </dl>
+            {data.location?.status === 'CENSUS_ADDRESS' && (
+              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Location came from your address through the <a href={data.location.sourceUrl} target="_blank" rel="noreferrer" className="underline">Census Geocoder</a>{data.location.matchedAddress ? `: ${data.location.matchedAddress}` : ''}. Verify parcel identity and governing authority before relying on location-dependent conclusions.
+              </p>
+            )}
             {data.parcel.dataCompleteness < 0.5 && (
               <p className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
                 Parcel data is incomplete. Use the &quot;Enter known parcel details&quot; section above to add data you&apos;ve found
