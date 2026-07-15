@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   OfficialParcelLocationError,
+  parcelInteriorPoint,
   resolveOfficialParcelLocation,
   volusiaParcelQueryUrl,
 } from './volusia-property-appraiser'
@@ -15,7 +16,7 @@ const canonicalFeature = {
 }
 
 describe('Volusia Property Appraiser parcel resolver', () => {
-  it('queries a normalized alternate key and returns an official parcel geometry center', async () => {
+  it('queries a normalized alternate key and returns an official parcel interior point', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(response({ features: [canonicalFeature] }))
 
     const result = await resolveOfficialParcelLocation({ apn: '0002340282', fipsCounty: '12127' }, fetchImpl)
@@ -54,5 +55,26 @@ describe('Volusia Property Appraiser parcel resolver', () => {
 
   it('rejects unsafe parcel identifiers before a request can be made', () => {
     expect(() => volusiaParcelQueryUrl("1' OR 1=1")).toThrow(OfficialParcelLocationError)
+  })
+
+  it('uses an interior point when a concave parcel centroid falls outside the parcel', () => {
+    const point = parcelInteriorPoint([[
+      [0, 0], [4, 0], [4, 1], [1, 1], [1, 4], [0, 4], [0, 0],
+    ]])
+
+    expect(point).toEqual({ lat: 2, lon: 0.5 })
+  })
+
+  it('does not return a centroid that falls within an interior hole', () => {
+    const point = parcelInteriorPoint([
+      [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]],
+      [[4, 4], [6, 4], [6, 6], [4, 6], [4, 4]],
+    ])
+
+    expect(point).toEqual({ lat: 2.5, lon: 5 })
+  })
+
+  it('fails closed for degenerate geometry', () => {
+    expect(parcelInteriorPoint([[[0, 0], [1, 1], [2, 2], [0, 0]]])).toBeNull()
   })
 })
