@@ -9,7 +9,12 @@ import { evaluateExits } from '@/lib/exit-engine/engine'
 import { assembleResearchProfile } from '@/lib/parcel/research-profile'
 import { computeMao } from '@/lib/mao/calculator'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
-import { CensusGeocoderError, resolveGoverningGeography } from '@/lib/geography/census-geocoder'
+import {
+  CensusGeocoderError,
+  resolveCensusAddressLocation,
+  resolveGoverningGeography,
+  type CensusAddressLocation,
+} from '@/lib/geography/census-geocoder'
 import {
   OfficialParcelLocationError,
   resolveOfficialParcelLocation,
@@ -45,6 +50,7 @@ const overridesSchema = z.object({
 const requestSchema = z.object({
   apn:        z.string().min(1).max(80),
   fipsCounty: z.string().regex(/^\d{5}$/),
+  address:    z.string().trim().min(5).max(256).optional(),
   lat:        z.number().min(-90).max(90).optional(),
   lon:        z.number().min(-180).max(180).optional(),
   maxBid:     z.coerce.number().positive().optional(),
@@ -67,11 +73,12 @@ export async function POST(req: Request) {
   const parsed = requestSchema.safeParse(await req.json())
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const { apn, fipsCounty, lat, lon, maxBid, overrides } = parsed.data
+  const { apn, fipsCounty, address, lat, lon, maxBid, overrides } = parsed.data
   const normalized = normalizeApn(apn, fipsCounty)
   const hasSuppliedCoordinates = lat != null && lon != null
   let officialParcelLocation: OfficialParcelLocation | null = null
-  let locationStatus: 'SUPPLIED' | 'OFFICIAL_PARCEL' | 'UNAVAILABLE' | 'UNRESOLVED' = hasSuppliedCoordinates
+  let censusAddressLocation: CensusAddressLocation | null = null
+  let locationStatus: 'SUPPLIED' | 'OFFICIAL_PARCEL' | 'CENSUS_ADDRESS' | 'UNAVAILABLE' | 'UNRESOLVED' = hasSuppliedCoordinates
     ? 'SUPPLIED'
     : 'UNAVAILABLE'
 
@@ -88,12 +95,32 @@ export async function POST(req: Request) {
     }
   }
 
-  const resolvedLat = hasSuppliedCoordinates ? lat : officialParcelLocation?.lat
-  const resolvedLon = hasSuppliedCoordinates ? lon : officialParcelLocation?.lon
+  if (!hasSuppliedCoordinates && !officialParcelLocation && address) {
+    try {
+      censusAddressLocation = await resolveCensusAddressLocation(address)
+      locationStatus = 'CENSUS_ADDRESS'
+    } catch (error) {
+      if (!(error instanceof CensusGeocoderError)) throw error
+      locationStatus = 'UNRESOLVED'
+    }
+  }
+
+  const resolvedLat = hasSuppliedCoordinates ? lat : officialParcelLocation?.lat ?? censusAddressLocation?.lat
+  const resolvedLon = hasSuppliedCoordinates ? lon : officialParcelLocation?.lon ?? censusAddressLocation?.lon
   let governingGeography: Awaited<ReturnType<typeof resolveGoverningGeography>> | null = null
   let geographyStatus: 'RESOLVED' | 'UNRESOLVED' | 'COORDINATES_NOT_PROVIDED' = 'COORDINATES_NOT_PROVIDED'
 
-  if (resolvedLat != null && resolvedLon != null) {
+  if (censusAddressLocation) {
+    governingGeography = censusAddressLocation
+    geographyStatus = 'RESOLVED'
+    if (governingGeography.countyFips !== normalized.fipsCounty) {
+      return NextResponse.json({
+        error: 'Address resolves to a different county than the selected FIPS. Confirm the parcel location before applying county research.',
+        selectedFipsCounty: normalized.fipsCounty,
+        resolvedFipsCounty: governingGeography.countyFips,
+      }, { status: 409 })
+    }
+  } else if (resolvedLat != null && resolvedLon != null) {
     try {
       governingGeography = await resolveGoverningGeography({ lat: resolvedLat, lon: resolvedLon })
       geographyStatus = 'RESOLVED'
@@ -196,10 +223,11 @@ export async function POST(req: Request) {
     },
     location: {
       status: locationStatus,
-      sourceUrl: officialParcelLocation?.sourceUrl,
-      retrievedAt: officialParcelLocation?.retrievedAt,
+      sourceUrl: officialParcelLocation?.sourceUrl ?? censusAddressLocation?.sourceUrl,
+      retrievedAt: officialParcelLocation?.retrievedAt ?? censusAddressLocation?.retrievedAt,
       // A returned geometry center only supplies a research coordinate; it is not a zoning or permitting determination.
       parcelId: officialParcelLocation?.parcelId,
+      matchedAddress: censusAddressLocation?.matchedAddress,
     },
     enrich: {
       cacheHits: enrichResult.cacheHits,
