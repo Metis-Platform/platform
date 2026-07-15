@@ -31,4 +31,6 @@ if [[ ! -f .env.local ]]; then
   printf 'Created .env.local from .env.example. Provision non-production development secrets locally before running the app.\n'
 fi
 
-printf 'Bootstrap complete. Next: npm run env:check && npm run context:check\n'
+npx prisma generate
+
+printf 'Bootstrap complete. Next: npm run env:check && npm run context:check && npx tsc --noEmit\n'
