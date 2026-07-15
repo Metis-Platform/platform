@@ -25,6 +25,7 @@ const LeadSchema = z.object({
   auctionDate:   z.string().optional(),
   maxBid:        z.coerce.number().positive('Must be greater than 0').optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
   notes:         z.string().max(2000).optional(),
+  researchSnapshotId: z.string().optional(),
 })
 
 const ActiveSchema = z.object({
@@ -131,6 +132,42 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
   let dealId: string
 
   try {
+    if (data.status === 'LEAD' && data.researchSnapshotId) {
+      const deal = await db.$transaction(async tx => {
+        const claimed = await tx.prePurchaseResearchSnapshot.updateMany({
+          where: {
+            id: data.researchSnapshotId,
+            tenantId: tenant.id,
+            jurisdictionId: data.jurisdictionId,
+            apn: data.apn,
+            consumedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+          data: { consumedAt: new Date() },
+        })
+        if (claimed.count !== 1) throw new Error('Research snapshot is unavailable.')
+
+        const property = await tx.property.upsert({
+          where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn: data.apn, jurisdictionId: data.jurisdictionId } },
+          update: { ...(data.address ? { address: data.address } : {}) },
+          create: { tenantId: tenant.id, jurisdictionId: data.jurisdictionId, apn: data.apn, ...(data.address ? { address: data.address } : {}) },
+        })
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_LIEN, status: DealStatus.LEAD,
+            notes: data.notes || null,
+            taxLien: { create: { auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null, maxBid: data.maxBid ? Number(data.maxBid) : null } },
+          },
+        })
+        await tx.prePurchaseResearchSnapshot.update({ where: { id: data.researchSnapshotId }, data: { consumedDealId: created.id } })
+        return created
+      })
+      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN', status: 'LEAD', researchSnapshotId: data.researchSnapshotId }, userId)
+      dealId = deal.id
+      redirect(`/dashboard/deals/${dealId}`)
+    }
+
     const property = await db.property.upsert({
       where: { tenantId_apn_jurisdictionId: { tenantId: tenant.id, apn: data.apn, jurisdictionId: data.jurisdictionId } },
       update: { ...(data.address ? { address: data.address } : {}) },
