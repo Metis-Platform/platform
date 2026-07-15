@@ -44,6 +44,7 @@ describe('buildJurisdictionFacts', () => {
       zoning_codes: {
         'R-1': {
           minLotSizeSqFt: 6000,
+          minLotWidthFt: 60,
           setbacks: { front: 25 },
           allowedUses: ['duplex'],
         },
@@ -51,6 +52,7 @@ describe('buildJurisdictionFacts', () => {
     }), {})
 
     expect(facts.minLotSizeSqFt('R-1')).toBe(6000)
+    expect(facts.minLotWidthFt?.('R-1')).toBe(60)
     expect(facts.setbackFeet('R-1')).toEqual({ front: 25 })
     expect(facts.allowedUses?.('R-1')).toEqual(['duplex'])
   })
@@ -59,6 +61,7 @@ describe('buildJurisdictionFacts', () => {
     const facts = buildJurisdictionFacts(null, {})
 
     expect(facts.minLotSizeSqFt('R-1')).toBeUndefined()
+    expect(facts.minLotWidthFt?.('R-1')).toBeUndefined()
     expect(facts.setbackFeet('R-1')).toBeUndefined()
     expect(facts.fmr(3)).toBeUndefined()
   })

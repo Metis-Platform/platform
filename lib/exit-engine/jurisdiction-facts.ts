@@ -16,6 +16,7 @@ interface JurisdictionStrategyJson {
   deedQualityPostTaxSale?: 'warranty' | 'special_warranty' | 'quit_claim'
   zoning_codes?: Record<string, {
     minLotSizeSqFt?: number
+    minLotWidthFt?: number
     setbacks?: { front?: number; side?: number; rear?: number }
     allowedUses?: string[]
     strAllowed?: boolean
@@ -35,6 +36,11 @@ export function buildJurisdictionFacts(
       if (!data.minLotSizeByZone) return undefined
       if (!zoning) return data.minLotSizeByZone.default
       return data.minLotSizeByZone[zoning] ?? data.minLotSizeByZone.default
+    },
+
+    minLotWidthFt(zoning?: string): number | undefined {
+      if (!zoning) return undefined
+      return data.zoning_codes?.[zoning]?.minLotWidthFt
     },
 
     setbackFeet(zoning?: string): { front?: number; side?: number; rear?: number } | undefined {

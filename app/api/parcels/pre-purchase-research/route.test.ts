@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   parcelCacheFindMany: vi.fn(),
   jurisdictionFindFirst: vi.fn(),
   fmrFindMany: vi.fn(),
+  researchSnapshotCreate: vi.fn(),
   resolveGoverningGeography: vi.fn(),
   resolveCensusAddressLocation: vi.fn(),
   resolveOfficialParcelLocation: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock('@/lib/db', () => ({
     parcelDataCache: { findMany: mocks.parcelCacheFindMany },
     jurisdiction: { findFirst: mocks.jurisdictionFindFirst },
     fmrRate: { findMany: mocks.fmrFindMany },
+    prePurchaseResearchSnapshot: { create: mocks.researchSnapshotCreate },
   },
 }))
 vi.mock('@/lib/parcel/enrich', () => ({ enrichParcel: mocks.enrichParcel }))
@@ -46,6 +48,89 @@ describe('pre-purchase research governing geography', () => {
     mocks.parcelCacheFindMany.mockResolvedValue([])
     mocks.jurisdictionFindFirst.mockResolvedValue(null)
     mocks.fmrFindMany.mockResolvedValue([])
+    mocks.researchSnapshotCreate.mockResolvedValue({
+      id: 'snapshot-1', expiresAt: new Date('2026-07-15T01:00:00.000Z'),
+    })
+  })
+
+  it('keeps the canonical Volusia parcel conditional through the full research route', async () => {
+    mocks.resolveOfficialParcelLocation.mockResolvedValue({
+      lat: 28.9685, lon: -81.3165, parcelId: '800401180260',
+      sourceUrl: 'https://maps1.vcgov.org/arcgis/rest/services/Property_Appraiser/MapServer',
+      retrievedAt: '2026-07-15T00:00:00.000Z',
+    })
+    mocks.resolveGoverningGeography.mockResolvedValue({ countyFips: '12127', countyName: 'Volusia County' })
+    mocks.jurisdictionFindFirst.mockResolvedValue({
+      id: 'jurisdiction-1', state: 'FL', county: 'Volusia',
+      strategyData: [{
+        data: {
+          zoning_codes: {
+            'R-4': {
+              minLotSizeSqFt: 7_500,
+              minLotWidthFt: 75,
+              setbacks: { front: 25, side: 8, rear: 20 },
+            },
+          },
+        },
+      }],
+    })
+
+    const manualSourceUrl = 'https://vcpa.vcgov.org/parcel/summary/?altkey=2340282'
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST',
+      body: JSON.stringify({
+        apn: '2340282',
+        fipsCounty: '12127',
+        overrides: {
+          lotSizeSqFt: 5_000,
+          frontageLinearFt: 50,
+          lotDepthFt: 100,
+          improved: false,
+          zoning: 'R-4',
+          marketValueEstimate: 100_000,
+          landMarketType: 'INFILL',
+          manualSourceUrl,
+          manualVerification: true,
+        },
+      }),
+    }))
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    const builder = body.results.find((result: { exitKey: string }) => result.exitKey === 'VACANT_SELL_TO_BUILDER')
+    const landMao = body.mao.find((result: { strategy: string }) => result.strategy === 'LAND')
+
+    expect(body).toMatchObject({
+      parcel: {
+        apn: '0002340282', lotSizeSqFt: 5_000, frontageLinearFt: 50, lotDepthFt: 100, zoning: 'R-4',
+        sources: {
+          lotSizeSqFt: { provider: 'manual', sourceUrl: manualSourceUrl },
+          zoning: { provider: 'manual', sourceUrl: manualSourceUrl },
+        },
+      },
+      location: { status: 'OFFICIAL_PARCEL', parcelId: '800401180260' },
+      geography: { status: 'RESOLVED' },
+      handoff: { id: 'snapshot-1' },
+    })
+    expect(builder).toMatchObject({
+      verdict: 'CONDITIONAL',
+      blockers: expect.arrayContaining([
+        'Lot is smaller than jurisdiction minimum lot size',
+        'Lot frontage is smaller than jurisdiction minimum width',
+      ]),
+      buildableEnvelope: { widthFt: 34, depthFt: 55, areaSqFt: 1_870 },
+    })
+    expect(builder.conditions.join(' ')).toContain('nonconforming-lot eligibility')
+    expect(landMao).toMatchObject({
+      scenario: { conservative: 40_000, moderate: 55_000, aggressive: 70_000 },
+      basis: 'Market value estimate $100K × 40-70%',
+    })
+    expect(mocks.researchSnapshotCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        tenantId: 'tenant-1', jurisdictionId: 'jurisdiction-1', apn: '0002340282',
+        payload: expect.objectContaining({ version: 1 }),
+      }),
+    }))
   })
 
   it('uses an official Volusia parcel location before applying county research', async () => {
