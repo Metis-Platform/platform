@@ -20,6 +20,14 @@
         "fixtureSet": "integration-v1",
         "responseHeader": "x-request-id",
         "auditAction": "DEAL_CREATED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/new?strategy=TAX_LIEN",
+        "actions": [
+          { "userAction": "Complete the required tax-lien deal form and save", "expectedRequest": "Tax-lien deal server action" }
+        ],
+        "persistedOutcome": "A fixture-tenant deal exists and its DEAL_CREATED audit event carries the response request ID.",
+        "cleanup": "The integration fixture reset removes the created deal and its dependent records."
       }
     },
     {
@@ -33,6 +41,14 @@
         "fixtureSet": "integration-v1",
         "responseHeader": "x-request-id",
         "auditAction": "PARCEL_ENRICH_REQUEST"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/research",
+        "actions": [
+          { "userAction": "Enter the fixture APN and request parcel enrichment", "expectedRequest": "POST /api/parcels/enrich" }
+        ],
+        "persistedOutcome": "The fixture-tenant parcel cache reflects the enrichment and its PARCEL_ENRICH_REQUEST audit event carries the response request ID.",
+        "cleanup": "The integration fixture reset removes the parcel cache record."
       }
     },
     {
@@ -46,6 +62,14 @@
         "fixtureSet": "integration-v1",
         "responseHeader": "x-request-id",
         "auditAction": "PRE_PURCHASE_RESEARCH"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/research",
+        "actions": [
+          { "userAction": "Enter the fixture APN and run pre-purchase research", "expectedRequest": "POST /api/parcels/pre-purchase-research" }
+        ],
+        "persistedOutcome": "The returned research result is correlated to a fixture-tenant PRE_PURCHASE_RESEARCH audit event by response request ID.",
+        "cleanup": "The integration fixture reset removes any related fixture research data."
       }
     },
     {
@@ -59,6 +83,14 @@
         "fixtureSet": "integration-v1",
         "responseHeader": "x-request-id",
         "auditAction": "JURISDICTION_PROFILE_FLAGGED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/jurisdictions/{fixtureJurisdictionId}",
+        "actions": [
+          { "userAction": "Submit a field report with fixture-safe details", "expectedRequest": "POST /api/jurisdictions/{fixtureJurisdictionId}/field-report" }
+        ],
+        "persistedOutcome": "The fixture-tenant field report is persisted and its JURISDICTION_PROFILE_FLAGGED audit event carries the response request ID.",
+        "cleanup": "The integration fixture reset removes the field report."
       }
     }
   ]

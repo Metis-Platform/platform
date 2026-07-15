@@ -5,6 +5,7 @@ describe('E2E coverage contract', () => {
   it('requires correlation evidence for mutation stories', () => {
     expect(validateE2eCoverage({ version: 1, stories: [{
       id: 'mutation', risk: 'high', mode: 'mutation', spec: 'e2e/mutation.spec.ts', status: 'blocked', notes: 'Needs QA.',
+      evidence: { fixtureSet: 'integration-v1', responseHeader: 'x-request-id', auditAction: 'MUTATION' },
     }] }).success).toBe(false)
   })
 
@@ -12,6 +13,12 @@ describe('E2E coverage contract', () => {
     expect(validateE2eCoverage({ version: 1, stories: [{
       id: 'mutation', risk: 'high', mode: 'mutation', spec: 'e2e/mutation.spec.ts', status: 'blocked', notes: 'Needs QA.',
       evidence: { fixtureSet: 'integration-v1', responseHeader: 'x-request-id', auditAction: 'MUTATION' },
+      journey: {
+        entryPoint: '/dashboard/example',
+        actions: [{ userAction: 'Save example', expectedRequest: 'POST /api/example' }],
+        persistedOutcome: 'Example record exists for the fixture tenant.',
+        cleanup: 'Fixture reset removes the example record.',
+      },
     }] }).success).toBe(true)
   })
 
