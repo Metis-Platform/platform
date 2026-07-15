@@ -3,16 +3,16 @@ import { db } from '@/lib/db'
 import { InvestmentType } from '@/app/generated/prisma'
 import { parseStrategyParam, getStrategyMeta } from '@/lib/strategy-meta'
 import { NewLienForm } from './form'
-import { prefilledResearchApn } from '@/lib/research-deal-handoff'
+import { prefilledResearchApn, prefilledResearchSnapshotId } from '@/lib/research-deal-handoff'
 
 export const dynamic = 'force-dynamic'
 
 export default async function NewLienPage({
   searchParams,
 }: {
-  searchParams: Promise<{ strategy?: string; jid?: string; apn?: string }>
+  searchParams: Promise<{ strategy?: string; jid?: string; apn?: string; research?: string }>
 }) {
-  const { strategy: strategyParam, jid, apn } = await searchParams
+  const { strategy: strategyParam, jid, apn, research } = await searchParams
   const strategyKey = parseStrategyParam(strategyParam)
   const meta = getStrategyMeta(strategyKey)
 
@@ -51,6 +51,7 @@ export default async function NewLienPage({
       <NewLienForm jurisdictions={jurisdictions} strategy={strategyKey} preselected={preselected ? {
         ...preselected,
         apn: prefilledResearchApn(apn),
+        researchSnapshotId: prefilledResearchSnapshotId(research),
       } : null} />
     </div>
   )

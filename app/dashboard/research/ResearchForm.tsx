@@ -21,6 +21,7 @@ type ResearchResponse = {
   results: ExitResult[]
   mao: MaoResult[]
   jurisdiction: { id: string; state: string; county: string } | null
+  handoff?: { id: string; expiresAt: string } | null
   location?: {
     status: 'SUPPLIED' | 'OFFICIAL_PARCEL' | 'CENSUS_ADDRESS' | 'UNAVAILABLE' | 'UNRESOLVED'
     sourceUrl?: string
@@ -581,7 +582,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
                 If you bid and win, create a deal from this parcel to track it through closing and execution.
               </p>
               <Link
-                href={researchDealHref(data.jurisdiction.id, data.parcel.apn)}
+                href={researchDealHref(data.jurisdiction.id, data.parcel.apn, data.handoff?.id)}
                 className="inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
               >
                 Create deal for this parcel
