@@ -2,7 +2,7 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-14
+> Last updated: 2026-07-15
 
 ---
 
@@ -29,7 +29,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Reliability initiative | GitHub issue #287 created and Initiative 4 added to `ACTIVE-SPRINT.md` |
 | Full platform assessment | Completed in `docs/PLATFORM-ASSESSMENT-2026-07-13.md`; founding parcel integrity, isolated QA, release protection, spreadsheet import safety, and trace-based testing are the ordered priorities |
 | Founding acceptance truth check | Official data confirms 50×100 feet and R-4, which fails standard R-4 area/width; county nonconforming-lot exceptions make the definitive “unbuildable” claim itself unproven without ownership/title and permitting evidence. The app lacks dimensions/exception/provenance logic, a real Florida data path, canonical fixture/test, MAO formula alignment, and no-re-entry deal creation. |
-| Canonical Volusia regression fixture | PR #355 records the assessed 50×100 / 5,000-square-foot R-4 scenario for altkey 2340282 with official-source references. Residential builder/build exits must remain conditional with standard dimensional blockers and nonconforming/title/access diligence; this fixture does not assert a final county buildability determination. |
+| Canonical Volusia regression fixture | PR #355 records the assessed 50×100 / 5,000-square-foot R-4 scenario for altkey 2340282 with official-source references. #380 extends the same conditional contract through the production research route, including minimum width, setback envelope, manual provenance, MAO, and bounded handoff. Neither asserts a final county buildability determination. |
 | Raw-land MAO alignment | PR #356 uses an investor-provided market estimate with an explicit rural (25–50%) or infill (40–70%) selection. A county assessment is labeled only as a proxy, and an unknown classification produces no bid ceiling. |
 | Setback-constrained buildable envelope | PR #358 calculates the remaining width, depth, and area only when full jurisdiction setbacks and parcel dimensions are available. It exposes the result to the investor, preserves the Volusia nonconforming-lot determination as conditional, and blocks builder/build exits when setbacks leave no physical envelope. |
 | Research fact provenance | PR #359 exposes a conservative source label beside every displayed parcel fact: official source, estimated, manually entered, source not verified, or missing. It does not promote an arbitrary provider to authoritative status. |
@@ -136,7 +136,6 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
 | **Manual click-through PR #286** — Land sync/comps/AI summary | No — build/lint/tsc all passed pre-merge | 2026-06-16 | Open a Land deal: click "Sync from research", add 2 comps, click "Generate" on AI summary (needs an Anthropic key in Settings). Not yet manually verified in the live app. |
 | Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not repository work | 2026-07-13 | WSL currently has no Vercel CLI/link. Configure the logical integration identity, verified service allowlists, reset-safe runtime modes, and fixture credentials. #300/#302/#304/#306 provide the repository guards/orchestration; mutation tests remain blocked until the non-mutating plan and controlled hosted reset rehearsal pass. |
-| Restore Vercel preview capacity for PR #366 | Yes — branch protection requires Vercel before the trace-contract PR can merge | 2026-07-14 | Vercel reported `upgradeToPro=build-rate-limit`; local verification and the GitHub CI check passed. Wait for capacity or adjust the Vercel plan/build-limit configuration, then re-run the preview. |
 
 ---
 
