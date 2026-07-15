@@ -1,5 +1,4 @@
 import { execFileSync } from 'node:child_process'
-import { config } from 'dotenv'
 import { createSeedPrismaClient } from '../prisma/seeds/db'
 import { PrismaIntegrationFixtureStore } from '../prisma/integration-fixture-store'
 import { INTEGRATION_FIXTURE_MANIFEST } from '../prisma/fixtures/integration-v1'
@@ -13,6 +12,7 @@ import {
   createClerkFixtureProvider,
   createR2FixtureProvider,
 } from '../lib/integration-fixture-providers'
+import { loadLocalOperatorEnvironment } from '../lib/local-operator-env'
 
 function argument(name: string): string | undefined {
   const index = process.argv.indexOf(name)
@@ -24,7 +24,7 @@ function currentCommit(): string {
 }
 
 async function main() {
-  config({ path: '.env.local' })
+  loadLocalOperatorEnvironment()
   const execute = process.argv.includes('--execute')
   const confirmation = argument('--confirm-environment') ?? ''
   const fixtureSetConfirmation = argument('--confirm-fixture') ?? ''
