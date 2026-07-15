@@ -10,6 +10,11 @@ import { assembleResearchProfile } from '@/lib/parcel/research-profile'
 import { computeMao } from '@/lib/mao/calculator'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
 import { CensusGeocoderError, resolveGoverningGeography } from '@/lib/geography/census-geocoder'
+import {
+  OfficialParcelLocationError,
+  resolveOfficialParcelLocation,
+  type OfficialParcelLocation,
+} from '@/lib/parcel/sources/volusia-property-appraiser'
 import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types'
 
 const overridesSchema = z.object({
@@ -64,12 +69,33 @@ export async function POST(req: Request) {
 
   const { apn, fipsCounty, lat, lon, maxBid, overrides } = parsed.data
   const normalized = normalizeApn(apn, fipsCounty)
+  const hasSuppliedCoordinates = lat != null && lon != null
+  let officialParcelLocation: OfficialParcelLocation | null = null
+  let locationStatus: 'SUPPLIED' | 'OFFICIAL_PARCEL' | 'UNAVAILABLE' | 'UNRESOLVED' = hasSuppliedCoordinates
+    ? 'SUPPLIED'
+    : 'UNAVAILABLE'
+
+  if (!hasSuppliedCoordinates) {
+    try {
+      officialParcelLocation = await resolveOfficialParcelLocation({
+        apn: normalized.normalized,
+        fipsCounty: normalized.fipsCounty,
+      })
+      if (officialParcelLocation) locationStatus = 'OFFICIAL_PARCEL'
+    } catch (error) {
+      if (!(error instanceof OfficialParcelLocationError)) throw error
+      locationStatus = 'UNRESOLVED'
+    }
+  }
+
+  const resolvedLat = hasSuppliedCoordinates ? lat : officialParcelLocation?.lat
+  const resolvedLon = hasSuppliedCoordinates ? lon : officialParcelLocation?.lon
   let governingGeography: Awaited<ReturnType<typeof resolveGoverningGeography>> | null = null
   let geographyStatus: 'RESOLVED' | 'UNRESOLVED' | 'COORDINATES_NOT_PROVIDED' = 'COORDINATES_NOT_PROVIDED'
 
-  if (lat != null && lon != null) {
+  if (resolvedLat != null && resolvedLon != null) {
     try {
-      governingGeography = await resolveGoverningGeography({ lat, lon })
+      governingGeography = await resolveGoverningGeography({ lat: resolvedLat, lon: resolvedLon })
       geographyStatus = 'RESOLVED'
       if (governingGeography.countyFips !== normalized.fipsCounty) {
         return NextResponse.json({
@@ -97,8 +123,8 @@ export async function POST(req: Request) {
   const enrichResult = await enrichParcel(
     normalized.normalized,
     normalized.fipsCounty,
-    lat,
-    lon,
+    resolvedLat,
+    resolvedLon,
     tenant.id,
   )
 
@@ -167,6 +193,13 @@ export async function POST(req: Request) {
       resolved: governingGeography,
       // Geography resolution identifies scope; it does not select a zoning or permitting authority.
       municipalityScope: governingGeography?.municipalityStatus ?? 'UNKNOWN',
+    },
+    location: {
+      status: locationStatus,
+      sourceUrl: officialParcelLocation?.sourceUrl,
+      retrievedAt: officialParcelLocation?.retrievedAt,
+      // A returned geometry center only supplies a research coordinate; it is not a zoning or permitting determination.
+      parcelId: officialParcelLocation?.parcelId,
     },
     enrich: {
       cacheHits: enrichResult.cacheHits,
