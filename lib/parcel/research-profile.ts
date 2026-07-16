@@ -92,14 +92,22 @@ function applyCacheFields(profile: ParcelProfile, cacheRows: ParcelDataCache[]):
       [row.field]: value,
       sources: {
         ...next.sources,
-        [row.field]: fieldSource(row.source, row.retrievedAt, row.ttlHours),
+        [row.field]: fieldSource(row.source, row.retrievedAt, row.ttlHours, row.metadata),
       },
     }
   }, profile)
 }
 
-function fieldSource(provider: string, retrievedAt: Date, ttlHours: number): ParcelFieldSource {
-  return { provider, retrievedAt, ttlHours }
+function fieldSource(provider: string, retrievedAt: Date, ttlHours: number, metadata: unknown): ParcelFieldSource {
+  const sourceUrl = metadata != null && typeof metadata === 'object' && !Array.isArray(metadata)
+    ? (metadata as Record<string, unknown>).sourceUrl
+    : undefined
+  return {
+    provider,
+    retrievedAt,
+    ttlHours,
+    ...(typeof sourceUrl === 'string' ? { sourceUrl } : {}),
+  }
 }
 
 function stripUndefined<T extends object>(obj: T): Partial<T> {
