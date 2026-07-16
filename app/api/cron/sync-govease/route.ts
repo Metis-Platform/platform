@@ -17,80 +17,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { upsertAuctionSales, createTaxSaleEvents } from '@/lib/auction-feeds'
-import { AuctionFeedSource } from '@/app/generated/prisma'
+import { disabledAuctionFeedResult } from '@/lib/auction-feed-availability'
 import { guardCronRequest } from '@/lib/cron-guard'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-// States where GovEase operates
-const GOVEASE_STATES = ['AL', 'AZ', 'CA', 'CO', 'GA', 'IA', 'IN', 'LA', 'MS', 'OK', 'TN', 'TX', 'PA', 'WA']
-
-type GovEaseSale = {
-  state: string
-  county: string
-  saleDate: string // ISO date string
-  registrationDeadline?: string
-  depositRequirementCents?: number
-  platformUrl?: string
-}
-
-// TODO: replace with real scrape of govease.com/counties/ pages
-// Approach: fetch https://www.govease.com/counties/ → extract county links for GOVEASE_STATES
-// → for each county page, extract upcoming auction table rows
-async function fetchGovEaseSales(): Promise<GovEaseSale[]> {
-  return []
-}
-
 export async function GET(req: NextRequest) {
   const blocked = guardCronRequest(req, { requiredSideEffects: ['auction'] })
   if (blocked) return blocked
-
-  try {
-    const sales = await fetchGovEaseSales()
-
-    let upserted = 0
-    let eventsCreated = 0
-
-    for (const sale of sales) {
-      if (!GOVEASE_STATES.includes(sale.state)) continue
-
-      const jurisdiction = await db.jurisdiction.findFirst({
-        where: { state: sale.state, county: { contains: sale.county, mode: 'insensitive' } },
-        select: { id: true, county: true },
-      })
-      if (!jurisdiction) continue
-
-      const saleDate = new Date(sale.saleDate)
-
-      await upsertAuctionSales([{
-        jurisdictionId: jurisdiction.id,
-        source: AuctionFeedSource.GOVEASE,
-        saleDate,
-        registrationDeadline: sale.registrationDeadline ? new Date(sale.registrationDeadline) : undefined,
-        depositRequirementCents: sale.depositRequirementCents,
-        platformUrl: sale.platformUrl,
-      }])
-      upserted++
-
-      const notes = [
-        sale.registrationDeadline && `Registration: ${new Date(sale.registrationDeadline).toLocaleDateString()}`,
-        sale.depositRequirementCents && `Deposit: $${(sale.depositRequirementCents / 100).toLocaleString()}`,
-      ].filter(Boolean).join(' · ') || undefined
-
-      eventsCreated += await createTaxSaleEvents(
-        jurisdiction.id,
-        saleDate,
-        `Tax Sale — ${jurisdiction.county}`,
-        notes,
-      )
-    }
-
-    return NextResponse.json({ ok: true, upserted, eventsCreated, states: GOVEASE_STATES })
-  } catch (err) {
-    console.error('[sync-govease]', err)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
-  }
+  return NextResponse.json(disabledAuctionFeedResult('GOVEASE'))
 }

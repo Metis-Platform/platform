@@ -6,6 +6,7 @@ import RulesClient from './RulesClient'
 import StrategyDataClient from './StrategyDataClient'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { AuctionFeedSource } from '@/app/generated/prisma'
+import { DISABLED_AUCTION_FEEDS } from '@/lib/auction-feed-availability'
 
 export const dynamic = 'force-dynamic'
 
@@ -212,13 +213,16 @@ export default async function JurisdictionRulesPage({
       <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-sm font-semibold text-zinc-900">Auction Calendar</h2>
-          <span className="text-xs text-zinc-400">Synced weekly · upcoming sales only</span>
+          <span className="text-xs text-amber-700">Providers not connected</span>
         </div>
         <p className="text-xs text-zinc-500 mb-4">
-          Upcoming tax sale dates from GovEase, RealAuction (FL), and Tax Sale Resources feeds.
+          Historical feed records are shown below. GovEase, RealAuction (FL), and Tax Sale Resources are not currently connected.
         </p>
         {upcomingSales.length === 0 ? (
-          <p className="text-sm text-zinc-400">No upcoming sales in feed. Feeds sync weekly — check back after the next cron run.</p>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 space-y-1">
+            {Object.values(DISABLED_AUCTION_FEEDS).map(reason => <p key={reason}>{reason}</p>)}
+            <p>Existing records are historical and must be independently verified with the county or auction platform.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
