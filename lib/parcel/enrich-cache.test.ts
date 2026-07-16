@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   fetchNwiWetlands: vi.fn(),
   fetchSsurgoMapUnit: vi.fn(),
   fetchEpaFlags: vi.fn(),
+  fetchDemographics: vi.fn(),
 }))
 
 vi.mock('@/lib/db', () => ({
@@ -26,7 +27,10 @@ vi.mock('./sources/usda-ssurgo', () => ({
 }))
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: vi.fn().mockResolvedValue({}) }))
-vi.mock('./sources/census-acs', () => ({ fetchDemographics: vi.fn().mockResolvedValue({}) }))
+vi.mock('./sources/census-acs', () => ({
+  CENSUS_ACS_2024_SOURCE_URL: 'https://api.census.gov/data/2024/acs/acs5',
+  fetchDemographics: mocks.fetchDemographics,
+}))
 vi.mock('./sources/epa-echo', () => ({
   EPA_ECHO_CWA_SOURCE_URL: 'https://echodata.epa.gov/echo/cwa_rest_services.get_facilities',
   fetchEpaFlags: mocks.fetchEpaFlags,
@@ -47,6 +51,7 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam' })
     mocks.fetchEpaFlags.mockResolvedValue({ epaCwaFacilitySearchStatus: 'NO_FACILITY_RETURNED' })
+    mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
   })
 
   it('stores the official FEMA source URL with each returned fact', async () => {
@@ -106,6 +111,20 @@ describe('parcel enrichment cache provenance', () => {
     }))
     expect(mocks.upsert).not.toHaveBeenCalledWith(expect.objectContaining({
       create: expect.objectContaining({ source: 'epa_echo', field: 'brownfieldFlag' }),
+    }))
+  })
+
+  it('stores the exact official ACS vintage URL with demographic context', async () => {
+    await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'census_acs', field: 'medianHouseholdIncome',
+        metadata: {
+          source: 'census_acs',
+          sourceUrl: 'https://api.census.gov/data/2024/acs/acs5',
+        },
+      }),
     }))
   })
 })
