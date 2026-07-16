@@ -48,6 +48,7 @@
 - [x] **Production dependency security (#338)** — #339 moved Prisma CLI tooling out of runtime dependencies and patched PostCSS; #340 replaced the vulnerable `react-simple-maps` D3 chain. Combined production-only audit is clean.
 - [ ] **Portable reproducible development (#295)** — one container/bootstrap contract for WSL, macOS, and an approved cloud host; remove root dependence on original WSL paths
 - [x] **Auction feed availability truth (#396)** — unimplemented GovEase, RealAuction FL, and Tax Sale Resources routes return explicit skipped results before any write; the admin calendar no longer claims weekly-sync coverage.
+- [x] **QA provisioning owner handoff (#398)** — tracked no-secrets runbook for distinct QA services, LastPass distribution, preflight, and reset-rehearsal authorization.
 
 ---
 
