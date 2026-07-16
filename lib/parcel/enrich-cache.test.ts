@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   upsert: vi.fn(),
   fetchFloodZone: vi.fn(),
   fetchNwiWetlands: vi.fn(),
+  fetchSsurgoMapUnit: vi.fn(),
 }))
 
 vi.mock('@/lib/db', () => ({
@@ -17,6 +18,10 @@ vi.mock('./sources/fema-nfhl', () => ({
 vi.mock('./sources/fws-nwi', () => ({
   FWS_NWI_SOURCE_URL: 'https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0',
   fetchNwiWetlands: mocks.fetchNwiWetlands,
+}))
+vi.mock('./sources/usda-ssurgo', () => ({
+  USDA_SSURGO_SOURCE_URL: 'https://SDMDataAccess.sc.egov.usda.gov/Tabular/post.rest',
+  fetchSsurgoMapUnit: mocks.fetchSsurgoMapUnit,
 }))
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: vi.fn().mockResolvedValue({}) }))
@@ -36,6 +41,7 @@ describe('parcel enrichment cache provenance', () => {
     mocks.upsert.mockResolvedValue({})
     mocks.fetchFloodZone.mockResolvedValue({ floodZone: 'X', floodPanel: '12127C0360J' })
     mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
+    mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam' })
   })
 
   it('stores the official FEMA source URL with each returned fact', async () => {
@@ -63,6 +69,21 @@ describe('parcel enrichment cache provenance', () => {
     expect(result.errors).toContainEqual({ source: 'fema_nfhl', error: 'FEMA_NFHL_QUERY_FAILED' })
     expect(mocks.upsert).not.toHaveBeenCalledWith(expect.objectContaining({
       create: expect.objectContaining({ source: 'fema_nfhl' }),
+    }))
+  })
+
+  it('stores the official SSURGO source URL with returned map-unit evidence', async () => {
+    await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'usda_ssurgo',
+        field: 'soilMapUnitName',
+        metadata: {
+          source: 'usda_ssurgo',
+          sourceUrl: 'https://SDMDataAccess.sc.egov.usda.gov/Tabular/post.rest',
+        },
+      }),
     }))
   })
 })

@@ -9,6 +9,7 @@ import { fetchFlDorParcel } from './sources/fl-dor'
 import { fetchElectricUtility } from './sources/hifld-electric'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
+import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
 import { fetchWalkScore } from './sources/walk-score'
 import { decodeZoning } from './zoning/decode'
 import { lookupZoning } from './zoning/lookup'
@@ -153,6 +154,12 @@ function buildSourcePlans(
         fetch: async () => fetchNwiWetlands(lat, lon),
       },
       {
+        source: 'usda_ssurgo',
+        sourceUrl: USDA_SSURGO_SOURCE_URL,
+        fields: ['soilMapUnitKey', 'soilMapUnitName'],
+        fetch: async () => (await fetchSsurgoMapUnit(lat, lon)) ?? {},
+      },
+      {
         source: 'epa_echo',
         fields: ['brownfieldFlag', 'undergroundTankFlag', 'superfundProximity', 'facilities'],
         fetch: async () => fetchEpaFlags(lat, lon),
@@ -242,6 +249,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'floodPanel',
     'wetlandsPresent',
     'wetlandsNwiStatus',
+    'soilMapUnitKey',
+    'soilMapUnitName',
     'zoning',
     'zoningDescription',
     'brownfieldFlag',

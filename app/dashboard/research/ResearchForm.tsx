@@ -444,6 +444,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
               <ParcelFact label="Market estimate" field="marketValueEstimate" parcel={data.parcel} value={data.parcel.marketValueEstimate != null ? fmtCurrency(data.parcel.marketValueEstimate) : undefined} />
               <ParcelFact label="Wetlands" field="wetlandsPresent" parcel={data.parcel} value={data.parcel.wetlandsPresent == null ? undefined : data.parcel.wetlandsPresent ? 'Yes' : 'No'} />
               <ParcelFact label="NWI mapped wetlands" field="wetlandsNwiStatus" parcel={data.parcel} value={data.parcel.wetlandsNwiStatus === 'MAPPED_FEATURE' ? 'Mapped feature' : data.parcel.wetlandsNwiStatus === 'NO_MAPPED_FEATURE' ? 'No mapped feature (not a determination)' : undefined} />
+              <ParcelFact label="USDA soil map unit" field="soilMapUnitName" parcel={data.parcel} value={data.parcel.soilMapUnitName ? `${data.parcel.soilMapUnitName} (preliminary map evidence)` : undefined} />
             </dl>
             {data.location?.status === 'CENSUS_ADDRESS' && (
               <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
