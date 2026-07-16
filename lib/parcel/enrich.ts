@@ -2,7 +2,7 @@ import { Prisma, type ParcelDataCache } from '@/app/generated/prisma'
 import { db } from '@/lib/db'
 import type { ParcelProfile } from '@/lib/exit-engine/types'
 import { fetchDemographics } from './sources/census-acs'
-import { fetchEpaFlags } from './sources/epa-echo'
+import { EPA_ECHO_CWA_SOURCE_URL, fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
 import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
 import { fetchFlDorParcel } from './sources/fl-dor'
@@ -161,7 +161,8 @@ function buildSourcePlans(
       },
       {
         source: 'epa_echo',
-        fields: ['brownfieldFlag', 'undergroundTankFlag', 'superfundProximity', 'facilities'],
+        sourceUrl: EPA_ECHO_CWA_SOURCE_URL,
+        fields: ['epaCwaFacilitySearchStatus', 'epaCwaFacilityNames'],
         fetch: async () => fetchEpaFlags(lat, lon),
       },
       {
@@ -255,6 +256,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'zoningDescription',
     'brownfieldFlag',
     'undergroundTankFlag',
+    'epaCwaFacilitySearchStatus',
+    'epaCwaFacilityNames',
     'electricAvailable',
   ].includes(field as typeof PARCEL_FACT_FIELDS[number])
 }

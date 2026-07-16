@@ -24,6 +24,8 @@ const CACHE_PROFILE_FIELDS = new Set([
   'floodPanel',
   'brownfieldFlag',
   'undergroundTankFlag',
+  'epaCwaFacilitySearchStatus',
+  'epaCwaFacilityNames',
   'electricAvailable',
   'waterAvailable',
   'sewerAvailable',
@@ -88,6 +90,7 @@ function applyCacheFields(profile: ParcelProfile, cacheRows: ParcelDataCache[]):
   const now = Date.now()
   return cacheRows.reduce((next, row) => {
     if (row.ttlHours !== 0 && row.expiresAt.getTime() <= now) return next
+    if (row.source === 'epa_echo' && ['brownfieldFlag', 'undergroundTankFlag', 'superfundProximity', 'facilities'].includes(row.field)) return next
     if (!CACHE_PROFILE_FIELDS.has(row.field)) return next
     const value = row.normalized ?? row.valueJson
     if (value == null) return next

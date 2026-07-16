@@ -67,4 +67,25 @@ describe('assembleResearchProfile manual fallback', () => {
     })
     expect(profile).not.toHaveProperty('soilSuitability')
   })
+
+  it('retains accurately named CWA facility evidence and ignores legacy unsupported EPA flags', () => {
+    const retrievedAt = new Date('2026-07-16T12:00:00.000Z')
+    const common = {
+      tenantId: 'tenant-1', apnNormalized: '13275012', fipsCounty: '04013', source: 'epa_echo',
+      retrievedAt, ttlHours: 2_160, expiresAt: new Date('2026-10-14T12:00:00.000Z'),
+      metadata: { source: 'epa_echo', sourceUrl: 'https://echodata.epa.gov/echo/cwa_rest_services.get_facilities' },
+      createdAt: retrievedAt, updatedAt: retrievedAt,
+    }
+    const profile = assembleResearchProfile('13275012', '04013', 'AZ', 'Maricopa', [
+      { ...common, id: 'epa-status', field: 'epaCwaFacilitySearchStatus', valueJson: 'FACILITY_FOUND', normalized: 'FACILITY_FOUND' },
+      { ...common, id: 'epa-name', field: 'epaCwaFacilityNames', valueJson: ['Example NPDES Facility'], normalized: ['Example NPDES Facility'] },
+      { ...common, id: 'epa-legacy', field: 'brownfieldFlag', valueJson: false, normalized: false },
+    ])
+
+    expect(profile).toMatchObject({
+      epaCwaFacilitySearchStatus: 'FACILITY_FOUND', epaCwaFacilityNames: ['Example NPDES Facility'],
+      sources: { epaCwaFacilitySearchStatus: { provider: 'epa_echo', sourceUrl: 'https://echodata.epa.gov/echo/cwa_rest_services.get_facilities' } },
+    })
+    expect(profile.brownfieldFlag).toBeUndefined()
+  })
 })

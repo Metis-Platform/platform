@@ -171,6 +171,7 @@ function hasValue(value: unknown): boolean {
 function applyCacheFields(profile: ParcelProfile, cacheRows: ParcelDataCache[]): ParcelProfile {
   return cacheRows.reduce((next, row) => {
     if (row.ttlHours !== 0 && row.expiresAt.getTime() <= Date.now()) return next
+    if (row.source === 'epa_echo' && ['brownfieldFlag', 'undergroundTankFlag', 'superfundProximity', 'facilities'].includes(row.field)) return next
     const value = row.normalized ?? row.valueJson
     if (!isProfileField(row.field) || !isJsonValueForProfile(value)) return next
 
@@ -200,6 +201,8 @@ function isProfileField(field: string): field is keyof ParcelProfile {
     'floodPanel',
     'brownfieldFlag',
     'undergroundTankFlag',
+    'epaCwaFacilitySearchStatus',
+    'epaCwaFacilityNames',
     'electricAvailable',
     'waterAvailable',
     'sewerAvailable',
