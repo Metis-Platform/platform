@@ -46,4 +46,25 @@ describe('assembleResearchProfile manual fallback', () => {
       },
     })
   })
+
+  it('retains source-disclosed SSURGO map-unit evidence without deriving a suitability fact', () => {
+    const retrievedAt = new Date('2026-07-16T12:00:00.000Z')
+    const profile = assembleResearchProfile('13275012', '04013', 'AZ', 'Maricopa', [{
+      id: 'cache-soil', tenantId: 'tenant-1', apnNormalized: '13275012', fipsCounty: '04013',
+      source: 'usda_ssurgo', field: 'soilMapUnitName', valueJson: 'Gila loam', normalized: 'Gila loam',
+      retrievedAt, ttlHours: 8_760, expiresAt: new Date('2027-07-16T12:00:00.000Z'),
+      metadata: { source: 'usda_ssurgo', sourceUrl: 'https://SDMDataAccess.sc.egov.usda.gov/Tabular/post.rest' },
+    }])
+
+    expect(profile).toMatchObject({
+      soilMapUnitName: 'Gila loam',
+      sources: {
+        soilMapUnitName: {
+          provider: 'usda_ssurgo', retrievedAt,
+          sourceUrl: 'https://SDMDataAccess.sc.egov.usda.gov/Tabular/post.rest',
+        },
+      },
+    })
+    expect(profile).not.toHaveProperty('soilSuitability')
+  })
 })

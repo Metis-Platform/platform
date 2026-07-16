@@ -38,6 +38,8 @@ const CACHE_PROFILE_FIELDS = new Set([
   'wetlandsAcres',
   'wetlandsPresent',
   'wetlandsNwiStatus',
+  'soilMapUnitKey',
+  'soilMapUnitName',
   'hoa',
 ])
 
