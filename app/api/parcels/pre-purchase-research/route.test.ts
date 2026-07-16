@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   resolveGoverningGeography: vi.fn(),
   resolveCensusAddressLocation: vi.fn(),
   resolveOfficialParcelLocation: vi.fn(),
+  resolveMaricopaOfficialParcelLocation: vi.fn(),
   enrichParcel: vi.fn(),
 }))
 
@@ -34,6 +35,9 @@ vi.mock('@/lib/parcel/sources/volusia-property-appraiser', () => ({
   OfficialParcelLocationError: class OfficialParcelLocationError extends Error {},
   resolveOfficialParcelLocation: mocks.resolveOfficialParcelLocation,
 }))
+vi.mock('@/lib/parcel/sources/maricopa-property-assessor', () => ({
+  resolveMaricopaOfficialParcelLocation: mocks.resolveMaricopaOfficialParcelLocation,
+}))
 
 import { POST } from './route'
 
@@ -43,6 +47,7 @@ describe('pre-purchase research governing geography', () => {
     mocks.syncUserToDatabase.mockResolvedValue({ tenant: { id: 'tenant-1' }, user: { id: 'user-1' } })
     mocks.rateLimitCount.mockResolvedValue(0)
     mocks.resolveOfficialParcelLocation.mockResolvedValue(null)
+    mocks.resolveMaricopaOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveCensusAddressLocation.mockResolvedValue(null)
     mocks.enrichParcel.mockResolvedValue({ cacheHits: 0, apiCalls: 0, errors: [] })
     mocks.parcelCacheFindMany.mockResolvedValue([])
@@ -196,10 +201,24 @@ describe('pre-purchase research governing geography', () => {
     }))
 
     expect(mocks.resolveGoverningGeography).toHaveBeenCalledWith({ lat: 28.9685, lon: -81.3165 })
+    expect(mocks.resolveMaricopaOfficialParcelLocation).not.toHaveBeenCalled()
     await expect(response.json()).resolves.toMatchObject({
       location: { status: 'OFFICIAL_PARCEL', parcelId: '800401180260' },
       geography: { status: 'RESOLVED' },
     })
+  })
+
+  it('uses an official Maricopa parcel location before the address fallback', async () => {
+    mocks.resolveMaricopaOfficialParcelLocation.mockResolvedValue({
+      lat: 33.4475, lon: -112.0745, parcelId: '13275012', sourceUrl: 'https://gis.mcassessor.maricopa.gov/example', retrievedAt: '2026-07-16T00:00:00.000Z',
+    })
+    mocks.resolveGoverningGeography.mockResolvedValue({ countyFips: '04013', countyName: 'Maricopa County' })
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST', body: JSON.stringify({ apn: '13275012', fipsCounty: '04013', address: '1 W Jefferson St, Phoenix, AZ 85003' }),
+    }))
+    expect(response.status).toBe(200)
+    expect(mocks.resolveCensusAddressLocation).not.toHaveBeenCalled()
+    await expect(response.json()).resolves.toMatchObject({ location: { status: 'OFFICIAL_PARCEL', parcelId: '13275012' } })
   })
 
   it('does not audit when an official parcel location resolves to another county', async () => {
