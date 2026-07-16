@@ -20,6 +20,7 @@ import {
   resolveOfficialParcelLocation,
   type OfficialParcelLocation,
 } from '@/lib/parcel/sources/volusia-property-appraiser'
+import { resolveMaricopaOfficialParcelLocation } from '@/lib/parcel/sources/maricopa-property-assessor'
 import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types'
 import { prePurchaseResearchSnapshotPayload, researchSnapshotExpiry, researchSnapshotJson } from '@/lib/pre-purchase-research-snapshot'
 
@@ -86,6 +87,10 @@ export async function POST(req: Request) {
   if (!hasSuppliedCoordinates) {
     try {
       officialParcelLocation = await resolveOfficialParcelLocation({
+        apn: normalized.normalized,
+        fipsCounty: normalized.fipsCounty,
+      })
+      officialParcelLocation ??= await resolveMaricopaOfficialParcelLocation({
         apn: normalized.normalized,
         fipsCounty: normalized.fipsCounty,
       })
