@@ -133,6 +133,37 @@ describe('pre-purchase research governing geography', () => {
     }))
   })
 
+  it('keeps a Maricopa parcel preliminary when county zoning authority is unresolved', async () => {
+    mocks.resolveCensusAddressLocation.mockResolvedValue({
+      lat: 33.4484, lon: -112.074, matchedAddress: '1 W JEFFERSON ST, PHOENIX, AZ, 85003',
+      countyFips: '04013', countyName: 'Maricopa County', municipalityStatus: 'INCORPORATED',
+      sourceUrl: 'https://geocoding.geo.census.gov/geocoder', retrievedAt: '2026-07-16T00:00:00.000Z',
+    })
+    mocks.jurisdictionFindFirst.mockResolvedValue({
+      id: 'maricopa-jurisdiction', state: 'AZ', county: 'Maricopa', strategyData: [],
+    })
+    const sourceUrl = 'https://gis.mcassessor.maricopa.gov/arcgis/rest/services/Parcels/MapServer/0'
+
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST',
+      body: JSON.stringify({
+        apn: '13275012', fipsCounty: '04013', address: '1 W Jefferson St, Phoenix, AZ 85003',
+        overrides: { improved: false, manualSourceUrl: sourceUrl, manualVerification: true },
+      }),
+    }))
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body).toMatchObject({
+      parcel: { apn: '13275012', improved: false, sources: { improved: { provider: 'manual', sourceUrl } } },
+      location: { status: 'CENSUS_ADDRESS' },
+      geography: { status: 'RESOLVED', municipalityScope: 'INCORPORATED' },
+      handoff: { id: 'snapshot-1' },
+    })
+    expect(body.parcel.zoning).toBeUndefined()
+    expect(body.results.some((result: { verdict: string }) => result.verdict === 'VIABLE')).toBe(false)
+  })
+
   it('uses an official Volusia parcel location before applying county research', async () => {
     mocks.resolveOfficialParcelLocation.mockResolvedValue({
       lat: 28.9685, lon: -81.3165, parcelId: '800401180260',
