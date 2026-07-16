@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import type { ParcelProfile } from '@/lib/exit-engine/types'
 import { fetchDemographics } from './sources/census-acs'
 import { fetchEpaFlags } from './sources/epa-echo'
-import { fetchFloodZone } from './sources/fema-nfhl'
+import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
 import { fetchFlDorParcel } from './sources/fl-dor'
 import { fetchElectricUtility } from './sources/hifld-electric'
 import { fetchRegridParcel } from './sources/regrid'
@@ -21,6 +21,7 @@ export interface EnrichResult {
 
 interface SourcePlan {
   source: ParcelSourceName
+  sourceUrl?: string
   fields: Array<keyof ParcelProfile | string>
   fetch: () => Promise<Record<string, unknown>>
 }
@@ -77,6 +78,7 @@ export async function enrichParcel(
         apnNormalized,
         fipsCounty,
         source: plan.source,
+        sourceUrl: plan.sourceUrl,
         fields: missingFields,
         fetched,
         now,
@@ -139,6 +141,7 @@ function buildSourcePlans(
     plans.push(
       {
         source: 'fema_nfhl',
+        sourceUrl: FEMA_NFHL_SOURCE_URL,
         fields: ['floodZone', 'floodPanel'],
         fetch: async () => fetchFloodZone(lat, lon),
       },
@@ -192,6 +195,7 @@ function rowsFromFetched(params: {
   apnNormalized: string
   fipsCounty: string
   source: ParcelSourceName
+  sourceUrl?: string
   fields: string[]
   fetched: Record<string, unknown>
   now: Date
@@ -212,7 +216,10 @@ function rowsFromFetched(params: {
       retrievedAt: params.now,
       ttlHours,
       expiresAt,
-      metadata: { source: params.source },
+      metadata: {
+        source: params.source,
+        ...(params.sourceUrl ? { sourceUrl: params.sourceUrl } : {}),
+      },
     }))
 }
 

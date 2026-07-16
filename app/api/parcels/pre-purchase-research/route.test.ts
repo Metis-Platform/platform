@@ -134,6 +134,7 @@ describe('pre-purchase research governing geography', () => {
   })
 
   it('keeps a Maricopa parcel preliminary when county zoning authority is unresolved', async () => {
+    const retrievedAt = new Date('2026-07-16T00:00:00.000Z')
     mocks.resolveCensusAddressLocation.mockResolvedValue({
       lat: 33.4484, lon: -112.074, matchedAddress: '1 W JEFFERSON ST, PHOENIX, AZ, 85003',
       countyFips: '04013', countyName: 'Maricopa County', municipalityStatus: 'INCORPORATED',
@@ -142,6 +143,16 @@ describe('pre-purchase research governing geography', () => {
     mocks.jurisdictionFindFirst.mockResolvedValue({
       id: 'maricopa-jurisdiction', state: 'AZ', county: 'Maricopa', strategyData: [],
     })
+    mocks.parcelCacheFindMany.mockResolvedValue([{
+      id: 'fema-cache-1', tenantId: 'tenant-1', apnNormalized: '13275012', fipsCounty: '04013',
+      source: 'fema_nfhl', field: 'floodZone', valueJson: 'X', normalized: 'X', retrievedAt,
+      ttlHours: 8_760, expiresAt: new Date('2027-07-16T00:00:00.000Z'),
+      metadata: {
+        source: 'fema_nfhl',
+        sourceUrl: 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer',
+      },
+      createdAt: retrievedAt, updatedAt: retrievedAt,
+    }])
     const sourceUrl = 'https://gis.mcassessor.maricopa.gov/arcgis/rest/services/Parcels/MapServer/0'
 
     const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
@@ -155,7 +166,16 @@ describe('pre-purchase research governing geography', () => {
     expect(response.status).toBe(200)
     const body = await response.json()
     expect(body).toMatchObject({
-      parcel: { apn: '13275012', improved: false, sources: { improved: { provider: 'manual', sourceUrl } } },
+      parcel: {
+        apn: '13275012', improved: false, floodZone: 'X',
+        sources: {
+          improved: { provider: 'manual', sourceUrl },
+          floodZone: {
+            provider: 'fema_nfhl', retrievedAt: retrievedAt.toISOString(),
+            sourceUrl: 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer',
+          },
+        },
+      },
       location: { status: 'CENSUS_ADDRESS' },
       geography: { status: 'RESOLVED', municipalityScope: 'INCORPORATED' },
       handoff: { id: 'snapshot-1' },

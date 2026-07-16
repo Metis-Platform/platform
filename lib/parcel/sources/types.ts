@@ -29,12 +29,16 @@ export const SOURCE_TTL_HOURS: Record<ParcelSourceName, number> = {
   postgis_zoning: 24 * 365,
 }
 
-export async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
+export async function fetchJson(
+  url: string,
+  init?: RequestInit,
+  fetchImpl: typeof fetch = fetch,
+): Promise<unknown> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 10_000)
 
   try {
-    const response = await fetch(url, { ...init, signal: controller.signal })
+    const response = await fetchImpl(url, { ...init, signal: controller.signal })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     return response.json()
   } finally {

@@ -2,13 +2,23 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-15
+> Last updated: 2026-07-16
 
 ---
 
 ## Current Phase
 
 Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, and module breadth. The 2026-07-13 truth check found that the founding parcel acceptance case is not actually satisfied, so that work is reopened as P0 rather than described as complete. **Initiative 4 — Platform Reliability and Verification (#287)** is active.
+
+---
+
+## Current Session (2026-07-16) — Multi-state acceptance and FEMA baseline repair
+
+| Work | Result |
+|---|---|
+| Second-state route acceptance | PR #383 adds a Maricopa/Phoenix case that retains incorporated-area ambiguity, leaves zoning unknown, and refuses a viable conclusion. Required CI and Vercel passed. |
+| FEMA national flood baseline (#384) | The live official service showed that Flood Hazard Zones layer 28 no longer exposes `FIRM_PAN`; the old adapter silently returned empty facts. The adapter now queries zone and panel from their correct layers, fails closed on service errors/conflicts, omits non-intersections, and retains a clickable official source URL through the tenant cache. |
+| Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
 
@@ -135,7 +145,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Run NETROnline seed for FL counties manually | No — only needed once after #131-P3 deploy | 2026-06-15 | Requires Playwright + browser session (uses JS rendering). Run manually in user session once Playwright is configured. |
 | ~~**Acceptance test PR #284**~~ | ~~Yes~~ | 2026-06-15 | ✅ Done — PR #284 merged, wonky logic fix pushed adaa9a3 |
 | **Manual click-through PR #286** — Land sync/comps/AI summary | No — build/lint/tsc all passed pre-merge | 2026-06-16 | Open a Land deal: click "Sync from research", add 2 comps, click "Generate" on AI summary (needs an Anthropic key in Settings). Not yet manually verified in the live app. |
-| Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not repository work | 2026-07-13 | WSL currently has no Vercel CLI/link. Configure the logical integration identity, verified service allowlists, reset-safe runtime modes, and fixture credentials. #300/#302/#304/#306 provide the repository guards/orchestration; mutation tests remain blocked until the non-mutating plan and controlled hosted reset rehearsal pass. |
+| Verify or grant Vercel, Neon, and Clerk administration for isolated QA setup | Yes — blocks automated browser tests that save data, not repository work | 2026-07-13 | Vercel deployment read access is verified, but QA administration and the required Neon/Clerk identities are not. Configure the logical integration identity, verified service allowlists, reset-safe runtime modes, and fixture credentials. #300/#302/#304/#306 provide the repository guards/orchestration; mutation tests remain blocked until the non-mutating plan and controlled hosted reset rehearsal pass. |
 
 ---
 

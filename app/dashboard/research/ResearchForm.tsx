@@ -722,8 +722,10 @@ function ParcelFact({
       <dt className="text-xs text-zinc-400">{label}</dt>
       <dd className="text-sm font-medium text-zinc-800">{value == null ? '—' : String(value)}</dd>
       {provenance && <p className="mt-0.5 text-[11px] text-zinc-400">{PARCEL_FACT_PROVENANCE_LABEL[provenance]}</p>}
-      {provenance === 'MANUAL' && field && parcel?.sources[field]?.sourceUrl && (
-        <a href={parcel.sources[field].sourceUrl} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline">View supplied source</a>
+      {field && parcel?.sources[field]?.sourceUrl && (
+        <a href={parcel.sources[field].sourceUrl} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline">
+          {provenance === 'OFFICIAL' ? 'View official source' : 'View supplied source'}
+        </a>
       )}
     </div>
   )
