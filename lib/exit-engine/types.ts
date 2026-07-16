@@ -73,6 +73,7 @@ export interface ParcelProfile {
   floodZone?: string
   floodPanel?: string
   wetlandsPresent?: boolean
+  wetlandsNwiStatus?: 'MAPPED_FEATURE' | 'NO_MAPPED_FEATURE'
   wetlandsAcres?: number
   brownfieldFlag?: boolean
   undergroundTankFlag?: boolean

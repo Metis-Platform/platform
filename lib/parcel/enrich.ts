@@ -4,6 +4,7 @@ import type { ParcelProfile } from '@/lib/exit-engine/types'
 import { fetchDemographics } from './sources/census-acs'
 import { fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
+import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
 import { fetchFlDorParcel } from './sources/fl-dor'
 import { fetchElectricUtility } from './sources/hifld-electric'
 import { fetchRegridParcel } from './sources/regrid'
@@ -146,6 +147,12 @@ function buildSourcePlans(
         fetch: async () => fetchFloodZone(lat, lon),
       },
       {
+        source: 'fws_nwi',
+        sourceUrl: FWS_NWI_SOURCE_URL,
+        fields: ['wetlandsPresent', 'wetlandsNwiStatus'],
+        fetch: async () => fetchNwiWetlands(lat, lon),
+      },
+      {
         source: 'epa_echo',
         fields: ['brownfieldFlag', 'undergroundTankFlag', 'superfundProximity', 'facilities'],
         fetch: async () => fetchEpaFlags(lat, lon),
@@ -233,6 +240,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     ...PARCEL_FACT_FIELDS,
     'floodZone',
     'floodPanel',
+    'wetlandsPresent',
+    'wetlandsNwiStatus',
     'zoning',
     'zoningDescription',
     'brownfieldFlag',

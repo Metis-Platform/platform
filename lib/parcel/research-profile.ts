@@ -36,6 +36,7 @@ const CACHE_PROFILE_FIELDS = new Set([
   'conditionScore',
   'topography',
   'wetlandsAcres',
+  'wetlandsNwiStatus',
   'hoa',
 ])
 
