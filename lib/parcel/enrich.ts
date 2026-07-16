@@ -1,7 +1,7 @@
 import { Prisma, type ParcelDataCache } from '@/app/generated/prisma'
 import { db } from '@/lib/db'
 import type { ParcelProfile } from '@/lib/exit-engine/types'
-import { fetchDemographics } from './sources/census-acs'
+import { CENSUS_ACS_2024_SOURCE_URL, fetchDemographics } from './sources/census-acs'
 import { EPA_ECHO_CWA_SOURCE_URL, fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
 import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
@@ -134,6 +134,7 @@ function buildSourcePlans(
     },
     {
       source: 'census_acs',
+      sourceUrl: CENSUS_ACS_2024_SOURCE_URL,
       fields: ['medianHouseholdIncome', 'renterOccupancyPct', 'vacancyRatePct', 'populationDensity'],
       fetch: async () => fetchDemographics(fipsCounty),
     },

@@ -1,8 +1,11 @@
 import { fetchJson, numberFromUnknown } from './types'
 
+export const CENSUS_ACS_2024_SOURCE_URL = 'https://api.census.gov/data/2024/acs/acs5'
+
 export async function fetchDemographics(
   fipsCounty: string,
   tractCode?: string,
+  fetchImpl: typeof fetch = fetch,
 ): Promise<{
   medianHouseholdIncome?: number
   renterOccupancyPct?: number
@@ -17,7 +20,7 @@ export async function fetchDemographics(
     for: `tract:${tract}`,
     in: `state:${state} county:${county}`,
   })
-  const json = await fetchJson(`https://api.census.gov/data/2022/acs/acs5?${params.toString()}`)
+  const json = await fetchJson(`${CENSUS_ACS_2024_SOURCE_URL}?${params.toString()}`, undefined, fetchImpl)
   if (!Array.isArray(json) || json.length < 2 || !Array.isArray(json[1])) return {}
   const row = json[1] as unknown[]
   const renterOccupied = numberFromUnknown(row[1])
