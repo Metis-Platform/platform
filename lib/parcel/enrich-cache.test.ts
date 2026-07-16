@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   fetchFloodZone: vi.fn(),
   fetchNwiWetlands: vi.fn(),
   fetchSsurgoMapUnit: vi.fn(),
+  fetchEpaFlags: vi.fn(),
 }))
 
 vi.mock('@/lib/db', () => ({
@@ -26,7 +27,10 @@ vi.mock('./sources/usda-ssurgo', () => ({
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/census-acs', () => ({ fetchDemographics: vi.fn().mockResolvedValue({}) }))
-vi.mock('./sources/epa-echo', () => ({ fetchEpaFlags: vi.fn().mockResolvedValue({}) }))
+vi.mock('./sources/epa-echo', () => ({
+  EPA_ECHO_CWA_SOURCE_URL: 'https://echodata.epa.gov/echo/cwa_rest_services.get_facilities',
+  fetchEpaFlags: mocks.fetchEpaFlags,
+}))
 vi.mock('./sources/hifld-electric', () => ({ fetchElectricUtility: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/walk-score', () => ({ fetchWalkScore: vi.fn().mockResolvedValue({}) }))
 vi.mock('./zoning/lookup', () => ({ lookupZoning: vi.fn().mockResolvedValue({}) }))
@@ -42,6 +46,7 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchFloodZone.mockResolvedValue({ floodZone: 'X', floodPanel: '12127C0360J' })
     mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam' })
+    mocks.fetchEpaFlags.mockResolvedValue({ epaCwaFacilitySearchStatus: 'NO_FACILITY_RETURNED' })
   })
 
   it('stores the official FEMA source URL with each returned fact', async () => {
@@ -84,6 +89,23 @@ describe('parcel enrichment cache provenance', () => {
           sourceUrl: 'https://SDMDataAccess.sc.egov.usda.gov/Tabular/post.rest',
         },
       }),
+    }))
+  })
+
+  it('stores the official CWA endpoint only with accurately named facility search evidence', async () => {
+    await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'epa_echo', field: 'epaCwaFacilitySearchStatus',
+        metadata: {
+          source: 'epa_echo',
+          sourceUrl: 'https://echodata.epa.gov/echo/cwa_rest_services.get_facilities',
+        },
+      }),
+    }))
+    expect(mocks.upsert).not.toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ source: 'epa_echo', field: 'brownfieldFlag' }),
     }))
   })
 })
