@@ -12,12 +12,13 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 
 ---
 
-## Current Session (2026-07-16) — Multi-state acceptance and FEMA baseline repair
+## Current Session (2026-07-16) — Multi-state acceptance and nationwide baseline repair
 
 | Work | Result |
 |---|---|
 | Second-state route acceptance | PR #383 adds a Maricopa/Phoenix case that retains incorporated-area ambiguity, leaves zoning unknown, and refuses a viable conclusion. Required CI and Vercel passed. |
 | FEMA national flood baseline (#384) | The live official service showed that Flood Hazard Zones layer 28 no longer exposes `FIRM_PAN`; the old adapter silently returned empty facts. The adapter now queries zone and panel from their correct layers, fails closed on service errors/conflicts, omits non-intersections, and retains a clickable official source URL through the tenant cache. |
+| FWS wetlands baseline (#388) | The official National Wetlands Inventory map service is queried at the parcel research point and retained with clickable provenance. A mapped feature is preliminary evidence only; no mapped feature is explicitly not a wetlands delineation, permitting, jurisdictional, or buildability determination, and service failures remain data gaps. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---

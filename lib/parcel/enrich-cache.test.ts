@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   upsert: vi.fn(),
   fetchFloodZone: vi.fn(),
+  fetchNwiWetlands: vi.fn(),
 }))
 
 vi.mock('@/lib/db', () => ({
@@ -12,6 +13,10 @@ vi.mock('@/lib/db', () => ({
 vi.mock('./sources/fema-nfhl', () => ({
   FEMA_NFHL_SOURCE_URL: 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer',
   fetchFloodZone: mocks.fetchFloodZone,
+}))
+vi.mock('./sources/fws-nwi', () => ({
+  FWS_NWI_SOURCE_URL: 'https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0',
+  fetchNwiWetlands: mocks.fetchNwiWetlands,
 }))
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: vi.fn().mockResolvedValue({}) }))
@@ -30,6 +35,7 @@ describe('parcel enrichment cache provenance', () => {
     mocks.findMany.mockResolvedValue([])
     mocks.upsert.mockResolvedValue({})
     mocks.fetchFloodZone.mockResolvedValue({ floodZone: 'X', floodPanel: '12127C0360J' })
+    mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
   })
 
   it('stores the official FEMA source URL with each returned fact', async () => {
