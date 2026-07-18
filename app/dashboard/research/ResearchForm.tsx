@@ -6,7 +6,7 @@ import { EXIT_META } from '@/lib/exit-engine/keys'
 import type { ExitResult, ParcelProfile, Verdict } from '@/lib/exit-engine/types'
 import type { MaoResult } from '@/lib/mao/calculator'
 import { researchDealHref } from '@/lib/research-deal-handoff'
-import { PARCEL_FACT_PROVENANCE_LABEL, parcelFactProvenance } from '@/lib/parcel/provenance'
+import { PARCEL_FACT_PROVENANCE_LABEL, parcelFactProvenance, parcelFactTimestampLabel } from '@/lib/parcel/provenance'
 import { parcelEnrichmentGapLabels } from '@/lib/parcel/enrichment-gaps'
 
 type Jurisdiction = {
@@ -728,11 +728,13 @@ function ParcelFact({
   const provenance = field && parcel
     ? parcelFactProvenance(field, parcel.sources[field], value)
     : undefined
+  const timestamp = field && parcel ? parcelFactTimestampLabel(parcel.sources[field]) : undefined
   return (
     <div>
       <dt className="text-xs text-zinc-400">{label}</dt>
       <dd className="text-sm font-medium text-zinc-800">{value == null ? '—' : String(value)}</dd>
       {provenance && <p className="mt-0.5 text-[11px] text-zinc-400">{PARCEL_FACT_PROVENANCE_LABEL[provenance]}</p>}
+      {timestamp && <p className="text-[11px] text-zinc-400">{timestamp}</p>}
       {field && parcel?.sources[field]?.sourceUrl && (
         <a href={parcel.sources[field].sourceUrl} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline">
           {provenance === 'OFFICIAL' ? 'View official source' : 'View supplied source'}
