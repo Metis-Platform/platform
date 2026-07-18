@@ -7,6 +7,7 @@ import type { ExitResult, ParcelProfile, Verdict } from '@/lib/exit-engine/types
 import type { MaoResult } from '@/lib/mao/calculator'
 import { researchDealHref } from '@/lib/research-deal-handoff'
 import { PARCEL_FACT_PROVENANCE_LABEL, parcelFactProvenance } from '@/lib/parcel/provenance'
+import { parcelEnrichmentGapLabels } from '@/lib/parcel/enrichment-gaps'
 
 type Jurisdiction = {
   id: string
@@ -144,6 +145,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
 
   const rawLandMao = data?.mao.find(m => m.strategy === 'LAND')
   const hasResidentialMao = data?.mao.some(m => m.strategy === 'FIX_FLIP' || m.strategy === 'BUY_HOLD')
+  const unavailableBaselineChecks = parcelEnrichmentGapLabels(data?.enrich.errors ?? [])
 
   return (
     <div className="space-y-6">
@@ -451,6 +453,11 @@ export default function ResearchForm({ jurisdictions }: Props) {
             {data.location?.status === 'CENSUS_ADDRESS' && (
               <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 Location came from your address through the <a href={data.location.sourceUrl} target="_blank" rel="noreferrer" className="underline">Census Geocoder</a>{data.location.matchedAddress ? `: ${data.location.matchedAddress}` : ''}. Verify parcel identity and governing authority before relying on location-dependent conclusions.
+              </p>
+            )}
+            {unavailableBaselineChecks.length > 0 && (
+              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Some preliminary checks were unavailable: {unavailableBaselineChecks.join(', ')}. This is a data gap, not a clearance or favorable conclusion.
               </p>
             )}
             {data.parcel.dataCompleteness < 0.5 && (
