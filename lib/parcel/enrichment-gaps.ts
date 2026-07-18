@@ -6,6 +6,7 @@ const SOURCE_LABELS: Record<string, string> = {
   fws_nwi: 'National Wetlands Inventory map',
   usda_ssurgo: 'USDA soil map unit',
   usgs_3dep: 'USGS ground elevation',
+  usgs_3dhp: 'USGS surface-water map',
   epa_echo: 'EPA CWA facility search',
   walk_score: 'neighborhood access score',
   hifld: 'electric utility coverage',

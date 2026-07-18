@@ -43,6 +43,8 @@ const CACHE_PROFILE_FIELDS = new Set([
   'soilMapUnitKey',
   'soilMapUnitName',
   'elevationFeet',
+  'hydrography3dhpStatus',
+  'hydrography3dhpFeatureTypes',
   'hoa',
 ])
 
