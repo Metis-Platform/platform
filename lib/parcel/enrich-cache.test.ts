@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   fetchFloodZone: vi.fn(),
   fetchNwiWetlands: vi.fn(),
   fetchSsurgoMapUnit: vi.fn(),
+  fetchUsgsElevation: vi.fn(),
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
 }))
@@ -24,6 +25,10 @@ vi.mock('./sources/fws-nwi', () => ({
 vi.mock('./sources/usda-ssurgo', () => ({
   USDA_SSURGO_SOURCE_URL: 'https://SDMDataAccess.sc.egov.usda.gov/Tabular/post.rest',
   fetchSsurgoMapUnit: mocks.fetchSsurgoMapUnit,
+}))
+vi.mock('./sources/usgs-3dep', () => ({
+  USGS_3DEP_EPQS_SOURCE_URL: 'https://epqs.nationalmap.gov/v1/json',
+  fetchUsgsElevation: mocks.fetchUsgsElevation,
 }))
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: vi.fn().mockResolvedValue({}) }))
@@ -50,6 +55,7 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchFloodZone.mockResolvedValue({ floodZone: 'X', floodPanel: '12127C0360J' })
     mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam' })
+    mocks.fetchUsgsElevation.mockResolvedValue({ elevationFeet: 46.9 })
     mocks.fetchEpaFlags.mockResolvedValue({ epaCwaFacilitySearchStatus: 'NO_FACILITY_RETURNED' })
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
   })
@@ -111,6 +117,28 @@ describe('parcel enrichment cache provenance', () => {
     }))
     expect(mocks.upsert).not.toHaveBeenCalledWith(expect.objectContaining({
       create: expect.objectContaining({ source: 'epa_echo', field: 'brownfieldFlag' }),
+    }))
+  })
+
+  it('stores USGS interpolated elevation as source-disclosed preliminary evidence', async () => {
+    await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'usgs_3dep', field: 'elevationFeet',
+        metadata: { source: 'usgs_3dep', sourceUrl: 'https://epqs.nationalmap.gov/v1/json' },
+      }),
+    }))
+  })
+
+  it('reports a USGS service failure without caching an elevation fact', async () => {
+    mocks.fetchUsgsElevation.mockRejectedValue(new Error('USGS_3DEP_QUERY_FAILED'))
+
+    const result = await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(result.errors).toContainEqual({ source: 'usgs_3dep', error: 'USGS_3DEP_QUERY_FAILED' })
+    expect(mocks.upsert).not.toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ source: 'usgs_3dep' }),
     }))
   })
 

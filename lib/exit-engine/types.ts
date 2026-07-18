@@ -76,6 +76,7 @@ export interface ParcelProfile {
   wetlandsNwiStatus?: 'MAPPED_FEATURE' | 'NO_MAPPED_FEATURE'
   soilMapUnitKey?: string
   soilMapUnitName?: string
+  elevationFeet?: number
   wetlandsAcres?: number
   brownfieldFlag?: boolean
   undergroundTankFlag?: boolean

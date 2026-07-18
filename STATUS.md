@@ -2,7 +2,7 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-16
+> Last updated: 2026-07-18
 
 ---
 
@@ -23,6 +23,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | EPA CWA evidence correction (#392) | The prior adapter incorrectly converted EPA ECHO CWA/NPDES facility responses into Brownfield, underground-tank, and Superfund claims. It now exposes only a source-disclosed nearby CWA facility search result; empty results are not environmental clearance, failures are data gaps, and legacy unsupported EPA cache facts are quarantined. |
 | Census demographic freshness (#394) | Parcel enrichment now uses the official 2020–2024 ACS five-year dataset and retains the exact dataset URL on cached demographic context. ACS remains area-level demographic context, not parcel identity, zoning, market value, authority, or a decision-grade property conclusion. |
 | Auction feed availability truth (#396) | GovEase, RealAuction FL, and Tax Sale Resources are explicitly unavailable rather than simulated as zero-result weekly syncs. Their cron routes return inspectable skipped reasons before database/event writes, and the admin calendar treats any prior rows as historical data requiring independent verification. |
+| USGS 3DEP elevation baseline (#400) | Parcel research now requests the official USGS National Map Elevation Point Query Service when coordinates are available, stores only its interpolated point elevation with a clickable source, and labels it as preliminary map evidence. It does not derive slope, drainage, flood risk, engineering suitability, survey elevation, or buildability. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
