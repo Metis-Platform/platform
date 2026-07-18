@@ -48,6 +48,7 @@
 - [ ] **Mutation observability** — #341 establishes request-to-audit correlation for parcel/jurisdiction routes and now every existing server action that uses `emitAuditEvent`, including `DEAL_CREATED`; #357 adds super-admin tenant-scoped retrieval by response request ID. Remaining: authorized QA trace correlation.
 - [x] **Production dependency security (#338)** — #339 moved Prisma CLI tooling out of runtime dependencies and patched PostCSS; #340 replaced the vulnerable `react-simple-maps` D3 chain. Combined production-only audit is clean.
 - [ ] **Portable reproducible development (#295)** — one container/bootstrap contract for WSL, macOS, and an approved cloud host; remove root dependence on original WSL paths
+- [x] **Container bootstrap parity (#404)** — dev containers now invoke the same Node-20-pinned bootstrap contract as native WSL/macOS clones, including ignored local environment-template setup and Prisma client generation.
 - [x] **Auction feed availability truth (#396)** — unimplemented GovEase, RealAuction FL, and Tax Sale Resources routes return explicit skipped results before any write; the admin calendar no longer claims weekly-sync coverage.
 - [x] **QA provisioning owner handoff (#398)** — tracked no-secrets runbook for distinct QA services, LastPass distribution, preflight, and reset-rehearsal authorization.
 

@@ -2,7 +2,7 @@
   "name": "Metis Platform",
   "build": { "dockerfile": "Dockerfile" },
   "remoteUser": "node",
-  "postCreateCommand": "npm ci",
+  "postCreateCommand": "npm run bootstrap",
   "customizations": {
     "vscode": {
       "extensions": ["dbaeumer.vscode-eslint", "Prisma.prisma"]
