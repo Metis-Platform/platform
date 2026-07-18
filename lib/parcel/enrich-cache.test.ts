@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   fetchNwiWetlands: vi.fn(),
   fetchSsurgoMapUnit: vi.fn(),
   fetchUsgsElevation: vi.fn(),
+  fetchUsgsHydrography: vi.fn(),
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
 }))
@@ -29,6 +30,10 @@ vi.mock('./sources/usda-ssurgo', () => ({
 vi.mock('./sources/usgs-3dep', () => ({
   USGS_3DEP_EPQS_SOURCE_URL: 'https://epqs.nationalmap.gov/v1/json',
   fetchUsgsElevation: mocks.fetchUsgsElevation,
+}))
+vi.mock('./sources/usgs-3dhp', () => ({
+  USGS_3DHP_SOURCE_URL: 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer',
+  fetchUsgsHydrography: mocks.fetchUsgsHydrography,
 }))
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: vi.fn().mockResolvedValue({}) }))
@@ -56,6 +61,7 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam' })
     mocks.fetchUsgsElevation.mockResolvedValue({ elevationFeet: 46.9 })
+    mocks.fetchUsgsHydrography.mockResolvedValue({ hydrography3dhpStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchEpaFlags.mockResolvedValue({ epaCwaFacilitySearchStatus: 'NO_FACILITY_RETURNED' })
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
   })
@@ -139,6 +145,17 @@ describe('parcel enrichment cache provenance', () => {
     expect(result.errors).toContainEqual({ source: 'usgs_3dep', error: 'USGS_3DEP_QUERY_FAILED' })
     expect(mocks.upsert).not.toHaveBeenCalledWith(expect.objectContaining({
       create: expect.objectContaining({ source: 'usgs_3dep' }),
+    }))
+  })
+
+  it('stores USGS hydrography as source-disclosed point map evidence', async () => {
+    await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'usgs_3dhp', field: 'hydrography3dhpStatus',
+        metadata: { source: 'usgs_3dhp', sourceUrl: 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer' },
+      }),
     }))
   })
 

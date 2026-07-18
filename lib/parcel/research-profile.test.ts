@@ -85,6 +85,23 @@ describe('assembleResearchProfile manual fallback', () => {
     expect(profile).not.toHaveProperty('buildable')
   })
 
+  it('retains USGS hydrography point evidence without deriving a water determination', () => {
+    const retrievedAt = new Date('2026-07-18T12:00:00.000Z')
+    const profile = assembleResearchProfile('13275012', '04013', 'AZ', 'Maricopa', [{
+      id: 'cache-hydrography', tenantId: 'tenant-1', apnNormalized: '13275012', fipsCounty: '04013',
+      source: 'usgs_3dhp', field: 'hydrography3dhpStatus', valueJson: 'NO_MAPPED_FEATURE', normalized: 'NO_MAPPED_FEATURE',
+      retrievedAt, ttlHours: 8_760, expiresAt: new Date('2027-07-18T12:00:00.000Z'),
+      metadata: { source: 'usgs_3dhp', sourceUrl: 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer' },
+    }])
+
+    expect(profile).toMatchObject({
+      hydrography3dhpStatus: 'NO_MAPPED_FEATURE',
+      sources: { hydrography3dhpStatus: { provider: 'usgs_3dhp', sourceUrl: 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer' } },
+    })
+    expect(profile).not.toHaveProperty('waterAvailable')
+    expect(profile).not.toHaveProperty('floodRisk')
+  })
+
   it('retains accurately named CWA facility evidence and ignores legacy unsupported EPA flags', () => {
     const retrievedAt = new Date('2026-07-16T12:00:00.000Z')
     const common = {

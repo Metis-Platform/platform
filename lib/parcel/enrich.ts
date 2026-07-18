@@ -11,6 +11,7 @@ import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
 import { USGS_3DEP_EPQS_SOURCE_URL, fetchUsgsElevation } from './sources/usgs-3dep'
+import { USGS_3DHP_SOURCE_URL, fetchUsgsHydrography } from './sources/usgs-3dhp'
 import { fetchWalkScore } from './sources/walk-score'
 import { decodeZoning } from './zoning/decode'
 import { lookupZoning } from './zoning/lookup'
@@ -168,6 +169,12 @@ function buildSourcePlans(
         fetch: async () => fetchUsgsElevation(lat, lon),
       },
       {
+        source: 'usgs_3dhp',
+        sourceUrl: USGS_3DHP_SOURCE_URL,
+        fields: ['hydrography3dhpStatus', 'hydrography3dhpFeatureTypes'],
+        fetch: async () => fetchUsgsHydrography(lat, lon),
+      },
+      {
         source: 'epa_echo',
         sourceUrl: EPA_ECHO_CWA_SOURCE_URL,
         fields: ['epaCwaFacilitySearchStatus', 'epaCwaFacilityNames'],
@@ -261,6 +268,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'soilMapUnitKey',
     'soilMapUnitName',
     'elevationFeet',
+    'hydrography3dhpStatus',
+    'hydrography3dhpFeatureTypes',
     'zoning',
     'zoningDescription',
     'brownfieldFlag',

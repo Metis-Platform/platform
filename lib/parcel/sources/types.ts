@@ -7,6 +7,7 @@ export type ParcelSourceName =
   | 'fws_nwi'
   | 'usda_ssurgo'
   | 'usgs_3dep'
+  | 'usgs_3dhp'
   | 'epa_echo'
   | 'census_acs'
   | 'walk_score'
@@ -28,6 +29,7 @@ export const SOURCE_TTL_HOURS: Record<ParcelSourceName, number> = {
   fws_nwi: 24 * 365,
   usda_ssurgo: 24 * 365,
   usgs_3dep: 24 * 365,
+  usgs_3dhp: 24 * 365,
   epa_echo: 24 * 90,
   census_acs: 24 * 365,
   walk_score: 24 * 90,
