@@ -23,3 +23,11 @@ export const PARCEL_FACT_PROVENANCE_LABEL: Record<ParcelFactProvenance, string> 
   UNVERIFIED: 'Source not verified',
   MISSING: 'Missing',
 }
+
+export function parcelFactTimestampLabel(source: ParcelFieldSource | undefined): string | undefined {
+  if (!source) return undefined
+  const timestamp = new Date(source.retrievedAt)
+  if (Number.isNaN(timestamp.getTime())) return undefined
+  const verb = source.provider === 'manual' ? 'Recorded' : 'Retrieved'
+  return `${verb} ${timestamp.toISOString().slice(0, 10)}`
+}
