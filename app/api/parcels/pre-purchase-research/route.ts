@@ -252,6 +252,7 @@ export async function POST(req: Request) {
       cacheHits: enrichResult.cacheHits,
       apiCalls:  enrichResult.apiCalls,
       errors:    enrichResult.errors,
+      gaps:      enrichResult.gaps,
     },
   })
 }

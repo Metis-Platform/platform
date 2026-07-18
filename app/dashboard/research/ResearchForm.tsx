@@ -28,7 +28,12 @@ type ResearchResponse = {
     sourceUrl?: string
     matchedAddress?: string
   }
-  enrich: { cacheHits: number; apiCalls: number; errors: Array<{ source: string; error: string }> }
+  enrich: {
+    cacheHits: number
+    apiCalls: number
+    errors: Array<{ source: string; error: string }>
+    gaps: Array<{ source: string; fields: string[] }>
+  }
 }
 
 type Props = { jurisdictions: Jurisdiction[] }
@@ -145,7 +150,10 @@ export default function ResearchForm({ jurisdictions }: Props) {
 
   const rawLandMao = data?.mao.find(m => m.strategy === 'LAND')
   const hasResidentialMao = data?.mao.some(m => m.strategy === 'FIX_FLIP' || m.strategy === 'BUY_HOLD')
-  const unavailableBaselineChecks = parcelEnrichmentGapLabels(data?.enrich.errors ?? [])
+  const unavailableBaselineChecks = parcelEnrichmentGapLabels(
+    data?.enrich.errors ?? [],
+    data?.enrich.gaps ?? [],
+  )
 
   return (
     <div className="space-y-6">

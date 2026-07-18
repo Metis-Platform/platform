@@ -21,6 +21,12 @@ export interface EnrichResult {
   cacheHits: number
   apiCalls: number
   errors: Array<{ source: string; error: string }>
+  gaps: EnrichmentGap[]
+}
+
+export interface EnrichmentGap {
+  source: ParcelSourceName
+  fields: string[]
 }
 
 interface SourcePlan {
@@ -64,7 +70,7 @@ export async function enrichParcel(
   let apiCalls = 0
   const errors: EnrichResult['errors'] = []
 
-  const results = await Promise.all(plans.map(async (plan) => {
+  const sourceGaps = await Promise.all(plans.map(async (plan): Promise<EnrichmentGap | null> => {
     const cached = freshRowsForPlan(cacheRows, plan, now)
     for (const row of cached) {
       assignProfileValue(profile, row.field, row.normalized ?? row.valueJson)
@@ -72,11 +78,12 @@ export async function enrichParcel(
     cacheHits += cached.length
 
     const missingFields = plan.fields.filter(field => !cached.some(row => row.field === field))
-    if (missingFields.length === 0) return
+    if (missingFields.length === 0) return null
 
     try {
       apiCalls += 1
       const fetched = await plan.fetch()
+      const unresolvedFields = missingFields.filter(field => fetched[field] === undefined)
       const rows = rowsFromFetched({
         tenantId,
         apnNormalized,
@@ -110,14 +117,22 @@ export async function enrichParcel(
       })))
 
       for (const row of rows) assignProfileValue(profile, row.field, row.normalized ?? row.valueJson)
+      return unresolvedFields.length > 0
+        ? { source: plan.source, fields: unresolvedFields.map(String) }
+        : null
     } catch (error) {
       errors.push({ source: plan.source, error: error instanceof Error ? error.message : 'Unknown error' })
+      return { source: plan.source, fields: missingFields.map(String) }
     }
   }))
 
-  await Promise.all(results)
-
-  return { profile, cacheHits, apiCalls, errors }
+  return {
+    profile,
+    cacheHits,
+    apiCalls,
+    errors,
+    gaps: sourceGaps.filter((gap): gap is EnrichmentGap => gap != null),
+  }
 }
 
 function buildSourcePlans(

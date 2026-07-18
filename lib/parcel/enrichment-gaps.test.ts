@@ -12,4 +12,11 @@ describe('parcel enrichment data gaps', () => {
     expect(parcelEnrichmentGapLabels([{ source: 'unrecognized_provider' }]))
       .toEqual(['additional preliminary data source'])
   })
+
+  it('combines failed and silent source gaps without duplicate labels', () => {
+    expect(parcelEnrichmentGapLabels(
+      [{ source: 'fema_nfhl' }],
+      [{ source: 'fl_dor' }, { source: 'fema_nfhl' }, { source: 'hifld' }],
+    )).toEqual(['FEMA flood map', 'Florida parcel baseline', 'electric utility coverage'])
+  })
 })

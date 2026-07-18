@@ -83,12 +83,44 @@ describe('parcel enrichment cache provenance', () => {
     }))
   })
 
+  it('reports empty and partial source output without mislabeling explicit negative evidence', async () => {
+    const result = await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(result.gaps).toEqual(expect.arrayContaining([
+      {
+        source: 'regrid',
+        fields: ['lotSizeSqFt', 'lotSizeAcres', 'assessedValue', 'assessedYear', 'landUseCode', 'improved', 'marketValueEstimate'],
+      },
+      { source: 'fws_nwi', fields: ['wetlandsPresent'] },
+      { source: 'usgs_3dhp', fields: ['hydrography3dhpFeatureTypes'] },
+      { source: 'epa_echo', fields: ['epaCwaFacilityNames'] },
+      { source: 'hifld', fields: ['utilityName', 'serviceAreaType', 'electricAvailable'] },
+    ]))
+    expect(result.gaps.find(gap => gap.source === 'fws_nwi')?.fields).not.toContain('wetlandsNwiStatus')
+    expect(result.gaps.find(gap => gap.source === 'usgs_3dhp')?.fields).not.toContain('hydrography3dhpStatus')
+    expect(result.gaps.find(gap => gap.source === 'epa_echo')?.fields).not.toContain('epaCwaFacilitySearchStatus')
+  })
+
+  it('does not report a field missing when a fresh cached value supplies it', async () => {
+    mocks.findMany.mockResolvedValue([{
+      source: 'fema_nfhl', field: 'floodPanel', normalized: '04013C2205L', valueJson: '04013C2205L',
+      expiresAt: new Date(Date.now() + 60_000), retrievedAt: new Date(), ttlHours: 8_760,
+    }])
+    mocks.fetchFloodZone.mockResolvedValue({ floodZone: 'X' })
+
+    const result = await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(result.cacheHits).toBe(1)
+    expect(result.gaps.some(gap => gap.source === 'fema_nfhl')).toBe(false)
+  })
+
   it('reports FEMA service failure without caching a flood fact', async () => {
     mocks.fetchFloodZone.mockRejectedValue(new Error('FEMA_NFHL_QUERY_FAILED'))
 
     const result = await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
 
     expect(result.errors).toContainEqual({ source: 'fema_nfhl', error: 'FEMA_NFHL_QUERY_FAILED' })
+    expect(result.gaps).toContainEqual({ source: 'fema_nfhl', fields: ['floodZone', 'floodPanel'] })
     expect(mocks.upsert).not.toHaveBeenCalledWith(expect.objectContaining({
       create: expect.objectContaining({ source: 'fema_nfhl' }),
     }))
