@@ -68,6 +68,23 @@ describe('assembleResearchProfile manual fallback', () => {
     expect(profile).not.toHaveProperty('soilSuitability')
   })
 
+  it('retains USGS interpolated elevation without deriving a terrain conclusion', () => {
+    const retrievedAt = new Date('2026-07-16T12:00:00.000Z')
+    const profile = assembleResearchProfile('13275012', '04013', 'AZ', 'Maricopa', [{
+      id: 'cache-elevation', tenantId: 'tenant-1', apnNormalized: '13275012', fipsCounty: '04013',
+      source: 'usgs_3dep', field: 'elevationFeet', valueJson: 1_086.5, normalized: 1_086.5,
+      retrievedAt, ttlHours: 8_760, expiresAt: new Date('2027-07-16T12:00:00.000Z'),
+      metadata: { source: 'usgs_3dep', sourceUrl: 'https://epqs.nationalmap.gov/v1/json' },
+    }])
+
+    expect(profile).toMatchObject({
+      elevationFeet: 1_086.5,
+      sources: { elevationFeet: { provider: 'usgs_3dep', sourceUrl: 'https://epqs.nationalmap.gov/v1/json' } },
+    })
+    expect(profile).not.toHaveProperty('slopePercent')
+    expect(profile).not.toHaveProperty('buildable')
+  })
+
   it('retains accurately named CWA facility evidence and ignores legacy unsupported EPA flags', () => {
     const retrievedAt = new Date('2026-07-16T12:00:00.000Z')
     const common = {

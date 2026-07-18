@@ -10,6 +10,7 @@ import { fetchElectricUtility } from './sources/hifld-electric'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
+import { USGS_3DEP_EPQS_SOURCE_URL, fetchUsgsElevation } from './sources/usgs-3dep'
 import { fetchWalkScore } from './sources/walk-score'
 import { decodeZoning } from './zoning/decode'
 import { lookupZoning } from './zoning/lookup'
@@ -161,6 +162,12 @@ function buildSourcePlans(
         fetch: async () => (await fetchSsurgoMapUnit(lat, lon)) ?? {},
       },
       {
+        source: 'usgs_3dep',
+        sourceUrl: USGS_3DEP_EPQS_SOURCE_URL,
+        fields: ['elevationFeet'],
+        fetch: async () => fetchUsgsElevation(lat, lon),
+      },
+      {
         source: 'epa_echo',
         sourceUrl: EPA_ECHO_CWA_SOURCE_URL,
         fields: ['epaCwaFacilitySearchStatus', 'epaCwaFacilityNames'],
@@ -253,6 +260,7 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'wetlandsNwiStatus',
     'soilMapUnitKey',
     'soilMapUnitName',
+    'elevationFeet',
     'zoning',
     'zoningDescription',
     'brownfieldFlag',

@@ -445,6 +445,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
               <ParcelFact label="Wetlands" field="wetlandsPresent" parcel={data.parcel} value={data.parcel.wetlandsPresent == null ? undefined : data.parcel.wetlandsPresent ? 'Yes' : 'No'} />
               <ParcelFact label="NWI mapped wetlands" field="wetlandsNwiStatus" parcel={data.parcel} value={data.parcel.wetlandsNwiStatus === 'MAPPED_FEATURE' ? 'Mapped feature' : data.parcel.wetlandsNwiStatus === 'NO_MAPPED_FEATURE' ? 'No mapped feature (not a determination)' : undefined} />
               <ParcelFact label="USDA soil map unit" field="soilMapUnitName" parcel={data.parcel} value={data.parcel.soilMapUnitName ? `${data.parcel.soilMapUnitName} (preliminary map evidence)` : undefined} />
+              <ParcelFact label="USGS ground elevation" field="elevationFeet" parcel={data.parcel} value={data.parcel.elevationFeet != null ? `${data.parcel.elevationFeet.toFixed(1)} ft (interpolated preliminary map evidence)` : undefined} />
               <ParcelFact label="EPA CWA facilities (1 mi)" field="epaCwaFacilitySearchStatus" parcel={data.parcel} value={data.parcel.epaCwaFacilitySearchStatus === 'FACILITY_FOUND' ? 'Nearby regulated facility found' : data.parcel.epaCwaFacilitySearchStatus === 'NO_FACILITY_RETURNED' ? 'None returned (not environmental clearance)' : undefined} />
             </dl>
             {data.location?.status === 'CENSUS_ADDRESS' && (
