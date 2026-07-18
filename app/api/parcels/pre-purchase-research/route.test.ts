@@ -49,7 +49,7 @@ describe('pre-purchase research governing geography', () => {
     mocks.resolveOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveMaricopaOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveCensusAddressLocation.mockResolvedValue(null)
-    mocks.enrichParcel.mockResolvedValue({ cacheHits: 0, apiCalls: 0, errors: [] })
+    mocks.enrichParcel.mockResolvedValue({ cacheHits: 0, apiCalls: 0, errors: [], gaps: [] })
     mocks.parcelCacheFindMany.mockResolvedValue([])
     mocks.jurisdictionFindFirst.mockResolvedValue(null)
     mocks.fmrFindMany.mockResolvedValue([])
@@ -205,6 +205,29 @@ describe('pre-purchase research governing geography', () => {
     await expect(response.json()).resolves.toMatchObject({
       location: { status: 'OFFICIAL_PARCEL', parcelId: '800401180260' },
       geography: { status: 'RESOLVED' },
+    })
+  })
+
+  it('returns silent source gaps as an additive enrichment contract', async () => {
+    mocks.enrichParcel.mockResolvedValue({
+      cacheHits: 1,
+      apiCalls: 3,
+      errors: [],
+      gaps: [{ source: 'fl_dor', fields: ['lotSizeSqFt', 'assessedValue'] }],
+    })
+
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST', body: JSON.stringify({ apn: '2340282', fipsCounty: '12127' }),
+    }))
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      enrich: {
+        cacheHits: 1,
+        apiCalls: 3,
+        errors: [],
+        gaps: [{ source: 'fl_dor', fields: ['lotSizeSqFt', 'assessedValue'] }],
+      },
     })
   })
 

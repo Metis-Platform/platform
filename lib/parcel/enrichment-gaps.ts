@@ -13,6 +13,8 @@ const SOURCE_LABELS: Record<string, string> = {
   postgis_zoning: 'zoning map',
 }
 
-export function parcelEnrichmentGapLabels(errors: Array<{ source: string }>): string[] {
-  return [...new Set(errors.map(({ source }) => SOURCE_LABELS[source] ?? 'additional preliminary data source'))]
+export function parcelEnrichmentGapLabels(...sourceGroups: Array<Array<{ source: string }>>): string[] {
+  return [...new Set(sourceGroups
+    .flat()
+    .map(({ source }) => SOURCE_LABELS[source] ?? 'additional preliminary data source'))]
 }
