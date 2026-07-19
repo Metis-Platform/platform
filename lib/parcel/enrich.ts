@@ -5,13 +5,17 @@ import { CENSUS_ACS_2024_SOURCE_URL, fetchDemographics } from './sources/census-
 import { EPA_ECHO_CWA_SOURCE_URL, fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
 import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
-import { fetchFlDorParcel } from './sources/fl-dor'
 import { fetchElectricUtility } from './sources/hifld-electric'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
 import { USGS_3DEP_EPQS_SOURCE_URL, fetchUsgsElevation } from './sources/usgs-3dep'
 import { USGS_3DHP_SOURCE_URL, fetchUsgsHydrography } from './sources/usgs-3dhp'
+import {
+  fetchOfficialVolusiaParcelFacts,
+  VOLUSIA_FIPS,
+  volusiaParcelQueryUrl,
+} from './sources/volusia-property-appraiser'
 import { fetchWalkScore } from './sources/walk-score'
 import { decodeZoning } from './zoning/decode'
 import { lookupZoning } from './zoning/lookup'
@@ -33,7 +37,7 @@ interface SourcePlan {
   source: ParcelSourceName
   sourceUrl?: string
   fields: Array<keyof ParcelProfile | string>
-  fetch: () => Promise<Record<string, unknown>>
+  fetch?: () => Promise<Record<string, unknown>>
 }
 
 const PARCEL_FACT_FIELDS = [
@@ -79,6 +83,7 @@ export async function enrichParcel(
 
     const missingFields = plan.fields.filter(field => !cached.some(row => row.field === field))
     if (missingFields.length === 0) return null
+    if (!plan.fetch) return { source: plan.source, fields: missingFields.map(String) }
 
     try {
       apiCalls += 1
@@ -142,13 +147,7 @@ function buildSourcePlans(
   lon?: number,
 ): SourcePlan[] {
   const plans: SourcePlan[] = [
-    {
-      source: fipsCounty.startsWith('12') ? 'fl_dor' : 'regrid',
-      fields: [...PARCEL_FACT_FIELDS],
-      fetch: async () => fipsCounty.startsWith('12')
-        ? fetchFlDorParcel(apnNormalized, fipsCounty)
-        : fetchRegridParcel(apnNormalized, fipsCounty),
-    },
+    parcelBaselinePlan(apnNormalized, fipsCounty),
     {
       source: 'census_acs',
       sourceUrl: CENSUS_ACS_2024_SOURCE_URL,
@@ -214,6 +213,36 @@ function buildSourcePlans(
   }
 
   return plans
+}
+
+function parcelBaselinePlan(apnNormalized: string, fipsCounty: string): SourcePlan {
+  if (fipsCounty === VOLUSIA_FIPS) {
+    let sourceUrl: string | undefined
+    try {
+      sourceUrl = volusiaParcelQueryUrl(apnNormalized)
+    } catch {
+      // The fetch path reports the invalid identifier as a fail-closed source gap.
+    }
+    return {
+      source: 'volusia_property_appraiser',
+      sourceUrl,
+      fields: [...PARCEL_FACT_FIELDS],
+      fetch: async () => fetchOfficialVolusiaParcelFacts({ apn: apnNormalized, fipsCounty }),
+    }
+  }
+
+  if (fipsCounty.startsWith('12')) {
+    return {
+      source: 'fl_dor',
+      fields: [...PARCEL_FACT_FIELDS],
+    }
+  }
+
+  return {
+    source: 'regrid',
+    fields: [...PARCEL_FACT_FIELDS],
+    fetch: async () => fetchRegridParcel(apnNormalized, fipsCounty),
+  }
 }
 
 async function fetchZoningProfile(lat: number, lon: number, fipsCounty: string): Promise<Record<string, unknown>> {

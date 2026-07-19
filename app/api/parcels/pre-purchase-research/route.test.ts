@@ -59,12 +59,35 @@ describe('pre-purchase research governing geography', () => {
   })
 
   it('keeps the canonical Volusia parcel conditional through the full research route', async () => {
+    const parcelRetrievedAt = new Date('2026-07-19T00:00:00.000Z')
+    const parcelSourceUrl = 'https://maps5.vcgov.org/arcgis/rest/services/Basemap/MapServer/6/query?where=ALTKEY%3D2340282'
     mocks.resolveOfficialParcelLocation.mockResolvedValue({
       lat: 28.9685, lon: -81.3165, parcelId: '800401180260',
       sourceUrl: 'https://maps1.vcgov.org/arcgis/rest/services/Property_Appraiser/MapServer',
       retrievedAt: '2026-07-15T00:00:00.000Z',
     })
     mocks.resolveGoverningGeography.mockResolvedValue({ countyFips: '12127', countyName: 'Volusia County' })
+    mocks.parcelCacheFindMany.mockResolvedValue([
+      ['lotSizeSqFt', 5_000],
+      ['lotSizeAcres', 0.1148],
+      ['landUseCode', 'VACANT RES'],
+      ['improved', false],
+    ].map(([field, value], index) => ({
+      id: `volusia-cache-${index}`,
+      tenantId: 'tenant-1',
+      apnNormalized: '0002340282',
+      fipsCounty: '12127',
+      source: 'volusia_property_appraiser',
+      field,
+      valueJson: value,
+      normalized: value,
+      retrievedAt: parcelRetrievedAt,
+      ttlHours: 4_320,
+      expiresAt: new Date('2027-01-15T00:00:00.000Z'),
+      metadata: { source: 'volusia_property_appraiser', sourceUrl: parcelSourceUrl },
+      createdAt: parcelRetrievedAt,
+      updatedAt: parcelRetrievedAt,
+    })))
     mocks.jurisdictionFindFirst.mockResolvedValue({
       id: 'jurisdiction-1', state: 'FL', county: 'Volusia',
       strategyData: [{
@@ -87,10 +110,8 @@ describe('pre-purchase research governing geography', () => {
         apn: '2340282',
         fipsCounty: '12127',
         overrides: {
-          lotSizeSqFt: 5_000,
           frontageLinearFt: 50,
           lotDepthFt: 100,
-          improved: false,
           zoning: 'R-4',
           marketValueEstimate: 100_000,
           landMarketType: 'INFILL',
@@ -109,7 +130,12 @@ describe('pre-purchase research governing geography', () => {
       parcel: {
         apn: '0002340282', lotSizeSqFt: 5_000, frontageLinearFt: 50, lotDepthFt: 100, zoning: 'R-4',
         sources: {
-          lotSizeSqFt: { provider: 'manual', sourceUrl: manualSourceUrl },
+          lotSizeSqFt: {
+            provider: 'volusia_property_appraiser',
+            sourceUrl: parcelSourceUrl,
+            retrievedAt: parcelRetrievedAt.toISOString(),
+          },
+          improved: { provider: 'volusia_property_appraiser', sourceUrl: parcelSourceUrl },
           zoning: { provider: 'manual', sourceUrl: manualSourceUrl },
         },
       },
