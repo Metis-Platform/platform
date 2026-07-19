@@ -19,4 +19,9 @@ describe('parcel enrichment data gaps', () => {
       [{ source: 'fl_dor' }, { source: 'fema_nfhl' }, { source: 'hifld' }],
     )).toEqual(['FEMA flood map', 'Florida parcel baseline', 'electric utility coverage'])
   })
+
+  it('names an incomplete official Volusia parcel response', () => {
+    expect(parcelEnrichmentGapLabels([], [{ source: 'volusia_property_appraiser' }]))
+      .toEqual(['Volusia Property Appraiser parcel facts'])
+  })
 })

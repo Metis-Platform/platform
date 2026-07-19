@@ -2,7 +2,7 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-18
+> Last updated: 2026-07-19
 
 ---
 
@@ -12,7 +12,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 
 ---
 
-## Current Session (2026-07-16) — Multi-state acceptance and nationwide baseline repair
+## Current Session (2026-07-19) — Multi-state acceptance and nationwide baseline repair
 
 | Work | Result |
 |---|---|
@@ -28,6 +28,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Unavailable research checks (#402) | Parcel research now names unavailable national baseline checks in the investor result without exposing raw provider errors. The warning explicitly says a failed preliminary check is a data gap, not a clearance or favorable conclusion. |
 | Silent parcel-source gaps (#412) | Research now also names checks whose adapter returned no usable facts or only a partial field set. Fresh cache evidence and explicit negative map/search statuses count as evidence; only unresolved fields remain gaps, so blank provider output can no longer silently resemble a favorable result. |
 | Parcel fact retrieval evidence (#406) | Research now shows the existing per-field retrieval date beside provenance and source links; manual facts are labeled recorded. It does not turn a timestamp into a freshness, authority, or buildability claim. |
+| Official Volusia parcel baseline (#414) | The founding route now consumes non-owner lot area, land-use description, and improvement state from the official Volusia Property Appraiser layer with exact query provenance. Other Florida counties retain an explicit unsupported parcel-baseline gap; assessor facts do not establish frontage, zoning authority, title, permitting, or buildability. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
@@ -163,9 +164,9 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 ## Next Up
 
-1. Continue the national jurisdiction intelligence/on-demand research architecture: turn the quarantined legacy inventory into an evidence-backed migration queue, then add coverage/on-demand workflows and Volusia as one canonical proof case.
-2. Make development reproducible across WSL, macOS, and an approved cloud host; implement the guarded integration reset and isolated QA lifecycle.
-3. Implement Playwright trace/report verification, mutation observability, spreadsheet import safety, and rehearse a clean production cutover.
+1. Finish the founding Volusia acceptance evidence: authoritative frontage/depth, governing zoning scope, and the county/title/permitting nonconforming-lot determination remain unresolved.
+2. Continue demand-driven national and county parcel-source coverage; unsupported Florida counties still have no configured official or commercial parcel baseline.
+3. Reconcile Vercel's Node 24.x runtime with the repository and CI Node 20 contract, while owner-authorized QA provisioning remains the blocker for mutation/browser proof.
 
 ---
 

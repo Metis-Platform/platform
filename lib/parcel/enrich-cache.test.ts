@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   fetchUsgsHydrography: vi.fn(),
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
+  fetchOfficialVolusiaParcelFacts: vi.fn(),
+  fetchFlDorParcel: vi.fn(),
 }))
 
 vi.mock('@/lib/db', () => ({
@@ -36,7 +38,12 @@ vi.mock('./sources/usgs-3dhp', () => ({
   fetchUsgsHydrography: mocks.fetchUsgsHydrography,
 }))
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
-vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: vi.fn().mockResolvedValue({}) }))
+vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: mocks.fetchFlDorParcel }))
+vi.mock('./sources/volusia-property-appraiser', () => ({
+  VOLUSIA_FIPS: '12127',
+  volusiaParcelQueryUrl: (apn: string) => `https://maps5.vcgov.org/arcgis/rest/services/Basemap/MapServer/6/query?where=ALTKEY%3D${Number(apn)}`,
+  fetchOfficialVolusiaParcelFacts: mocks.fetchOfficialVolusiaParcelFacts,
+}))
 vi.mock('./sources/census-acs', () => ({
   CENSUS_ACS_2024_SOURCE_URL: 'https://api.census.gov/data/2024/acs/acs5',
   fetchDemographics: mocks.fetchDemographics,
@@ -64,6 +71,9 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchUsgsHydrography.mockResolvedValue({ hydrography3dhpStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchEpaFlags.mockResolvedValue({ epaCwaFacilitySearchStatus: 'NO_FACILITY_RETURNED' })
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
+    mocks.fetchOfficialVolusiaParcelFacts.mockResolvedValue({
+      lotSizeSqFt: 5_000, lotSizeAcres: 0.1148, landUseCode: 'VACANT RES', improved: false,
+    })
   })
 
   it('stores the official FEMA source URL with each returned fact', async () => {
@@ -81,6 +91,41 @@ describe('parcel enrichment cache provenance', () => {
         },
       }),
     }))
+  })
+
+  it('uses the official Volusia parcel source and retires the no-source FL DOR fetch', async () => {
+    const result = await enrichParcel('0002340282', '12127', undefined, undefined, 'tenant-1')
+
+    expect(result.errors).toEqual([])
+    expect(mocks.fetchOfficialVolusiaParcelFacts).toHaveBeenCalledWith({ apn: '0002340282', fipsCounty: '12127' })
+    expect(mocks.fetchFlDorParcel).not.toHaveBeenCalled()
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'volusia_property_appraiser',
+        field: 'lotSizeSqFt',
+        normalized: 5_000,
+        metadata: {
+          source: 'volusia_property_appraiser',
+          sourceUrl: 'https://maps5.vcgov.org/arcgis/rest/services/Basemap/MapServer/6/query?where=ALTKEY%3D2340282',
+        },
+      }),
+    }))
+    expect(result.gaps).toContainEqual({
+      source: 'volusia_property_appraiser', fields: ['assessedValue', 'assessedYear', 'marketValueEstimate'],
+    })
+  })
+
+  it('reports unsupported Florida parcel coverage without pretending to make an API call', async () => {
+    const result = await enrichParcel('1234567890', '12095', undefined, undefined, 'tenant-1')
+
+    expect(result.apiCalls).toBe(1)
+    expect(result.errors).toEqual([])
+    expect(result.gaps).toContainEqual({
+      source: 'fl_dor',
+      fields: ['lotSizeSqFt', 'lotSizeAcres', 'assessedValue', 'assessedYear', 'landUseCode', 'improved', 'marketValueEstimate'],
+    })
+    expect(mocks.fetchOfficialVolusiaParcelFacts).not.toHaveBeenCalled()
+    expect(mocks.fetchFlDorParcel).not.toHaveBeenCalled()
   })
 
   it('reports empty and partial source output without mislabeling explicit negative evidence', async () => {

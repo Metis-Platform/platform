@@ -1,5 +1,6 @@
 const SOURCE_LABELS: Record<string, string> = {
   fl_dor: 'Florida parcel baseline',
+  volusia_property_appraiser: 'Volusia Property Appraiser parcel facts',
   regrid: 'parcel baseline',
   census_acs: 'Census demographic context',
   fema_nfhl: 'FEMA flood map',

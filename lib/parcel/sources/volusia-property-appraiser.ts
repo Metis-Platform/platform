@@ -1,4 +1,7 @@
-const VOLUSIA_FIPS = '12127'
+import type { ParcelProfile } from '@/lib/exit-engine/types'
+import { numberFromUnknown, objectRecord } from './types'
+
+export const VOLUSIA_FIPS = '12127'
 const VOLUSIA_PARCELS_URL = 'https://maps5.vcgov.org/arcgis/rest/services/Basemap/MapServer/6/query'
 const OUT_FIELDS = 'ALTKEY,PID,LANDACRES,LANDSQFT,PC,PC_DESC,BLDGCOUNT,RES_TOTAL_SFLA'
 
@@ -42,21 +45,7 @@ export async function resolveOfficialParcelLocation(
 ): Promise<OfficialParcelLocation | null> {
   if (input.fipsCounty !== VOLUSIA_FIPS) return null
 
-  const sourceUrl = volusiaParcelQueryUrl(input.apn)
-  let response: Response
-  try {
-    response = await fetchImpl(sourceUrl, { headers: { Accept: 'application/json' } })
-  } catch {
-    throw new OfficialParcelLocationError('VOLUSIA_PARCEL_SOURCE_UNAVAILABLE')
-  }
-  if (!response.ok) throw new OfficialParcelLocationError('VOLUSIA_PARCEL_SOURCE_UNAVAILABLE')
-
-  const payload = await response.json() as { features?: unknown }
-  const features = Array.isArray(payload.features) ? payload.features.filter(isFeature) : []
-  if (features.length === 0) throw new OfficialParcelLocationError('VOLUSIA_PARCEL_NOT_FOUND')
-  if (features.length > 1) throw new OfficialParcelLocationError('VOLUSIA_PARCEL_AMBIGUOUS')
-
-  const feature = features[0]
+  const { feature, sourceUrl } = await fetchOfficialParcelFeature(input.apn, fetchImpl)
   const center = parcelInteriorPoint(feature.geometry?.rings)
   const parcelId = stringValue(feature.attributes?.PID)
   if (!center || !parcelId) throw new OfficialParcelLocationError('VOLUSIA_PARCEL_LOCATION_UNRESOLVED')
@@ -68,6 +57,60 @@ export async function resolveOfficialParcelLocation(
     parcelId,
     alternateKey: stringValue(feature.attributes?.ALTKEY),
   }
+}
+
+export async function fetchOfficialVolusiaParcelFacts(
+  input: { apn: string; fipsCounty: string },
+  fetchImpl: FetchLike = fetch,
+): Promise<Partial<ParcelProfile>> {
+  if (input.fipsCounty !== VOLUSIA_FIPS) return {}
+  const { feature } = await fetchOfficialParcelFeature(input.apn, fetchImpl)
+  return normalizeVolusiaParcelAttributes(feature.attributes ?? {})
+}
+
+export function normalizeVolusiaParcelAttributes(attributes: Record<string, unknown>): Partial<ParcelProfile> {
+  const lotSizeAcres = numberFromUnknown(attributes.LANDACRES)
+  const lotSizeSqFt = numberFromUnknown(attributes.LANDSQFT)
+    ?? (lotSizeAcres == null ? undefined : lotSizeAcres * 43_560)
+  const buildingCount = numberFromUnknown(attributes.BLDGCOUNT)
+  const residentialLivingArea = numberFromUnknown(attributes.RES_TOTAL_SFLA)
+  const improved = buildingCount != null
+    ? buildingCount > 0
+    : residentialLivingArea == null
+      ? undefined
+      : residentialLivingArea > 0
+
+  return {
+    lotSizeAcres,
+    lotSizeSqFt,
+    landUseCode: stringValue(attributes.PC_DESC) ?? stringValue(attributes.PC),
+    improved,
+  }
+}
+
+async function fetchOfficialParcelFeature(apn: string, fetchImpl: FetchLike): Promise<{ feature: Feature; sourceUrl: string }> {
+  const sourceUrl = volusiaParcelQueryUrl(apn)
+  let response: Response
+  try {
+    response = await fetchImpl(sourceUrl, { headers: { Accept: 'application/json' } })
+  } catch {
+    throw new OfficialParcelLocationError('VOLUSIA_PARCEL_SOURCE_UNAVAILABLE')
+  }
+  if (!response.ok) throw new OfficialParcelLocationError('VOLUSIA_PARCEL_SOURCE_UNAVAILABLE')
+
+  let payload: Record<string, unknown>
+  try {
+    payload = objectRecord(await response.json())
+  } catch {
+    throw new OfficialParcelLocationError('VOLUSIA_PARCEL_SOURCE_UNAVAILABLE')
+  }
+  if (Object.keys(objectRecord(payload.error)).length > 0) {
+    throw new OfficialParcelLocationError('VOLUSIA_PARCEL_SOURCE_UNAVAILABLE')
+  }
+  const features = Array.isArray(payload.features) ? payload.features.filter(isFeature) : []
+  if (features.length === 0) throw new OfficialParcelLocationError('VOLUSIA_PARCEL_NOT_FOUND')
+  if (features.length > 1) throw new OfficialParcelLocationError('VOLUSIA_PARCEL_AMBIGUOUS')
+  return { feature: features[0], sourceUrl }
 }
 
 function volusiaWhereClause(apn: string): string | null {
