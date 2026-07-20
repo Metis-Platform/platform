@@ -299,6 +299,21 @@
         "persistedOutcome": "The fixture task records a correlated TASK_UPDATED event, then is removed with a correlated TASK_DELETED event; neither audit event stores task content or changed values.",
         "cleanup": "The integration fixture reset restores or removes the fixture task and related audit events."
       }
+    },
+    {
+      "id": "analyst-create-delete-financial-transaction",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/financial-transaction.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture, fixture deal, and deterministic financial-transaction cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "FINANCIAL_TRANSACTION_CREATED and FINANCIAL_TRANSACTION_DELETED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureDealId}",
+        "actions": [{ "userAction": "Save a fixture financial transaction and then delete it", "expectedRequest": "POST /api/deals/{fixtureDealId}/transactions then DELETE /api/transactions/{fixtureTransactionId}" }],
+        "persistedOutcome": "The fixture deal records correlated create and delete events for the financial transaction without amount, type, date, or description in audit metadata.",
+        "cleanup": "The integration fixture reset removes or restores the transaction and related audit events."
+      }
     }
   ]
 }
