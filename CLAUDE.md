@@ -53,7 +53,7 @@ Read on demand only (not every session):
 
 **Environment:**
 - Repo: the active Git checkout; resolve it with `git rev-parse --show-toplevel` rather than assuming a machine path.
-- Node: Node 20 from `.nvmrc`; run `npm run bootstrap` on a fresh clone before npm/npx work.
+- Node: Node 24 from `.nvmrc`; run `npm run bootstrap` on a fresh clone before npm/npx work.
 - Use the host temporary directory for migration SQL, then copy it into the repository with normal ownership.
 
 **Step 2 — Sync safely and check open PRs:**
