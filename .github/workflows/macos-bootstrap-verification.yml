@@ -1,0 +1,36 @@
+name: macOS bootstrap verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos-bootstrap:
+    name: Fresh macOS clone verification
+    runs-on: macos-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Bootstrap fresh checkout
+        run: npm run bootstrap
+
+      - name: Verify tracked context and GitHub handoff state
+        run: npm run context:check
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Test
+        run: npm test
+
+      - name: Production build
+        run: npm run build
