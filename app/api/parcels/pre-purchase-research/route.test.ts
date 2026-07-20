@@ -145,13 +145,10 @@ describe('pre-purchase research governing geography', () => {
     })
     expect(builder).toMatchObject({
       verdict: 'CONDITIONAL',
-      blockers: expect.arrayContaining([
-        'Lot is smaller than jurisdiction minimum lot size',
-        'Lot frontage is smaller than jurisdiction minimum width',
-      ]),
-      buildableEnvelope: { widthFt: 34, depthFt: 55, areaSqFt: 1_870 },
+      blockers: [],
     })
-    expect(builder.conditions.join(' ')).toContain('nonconforming-lot eligibility')
+    expect(builder.buildableEnvelope).toBeUndefined()
+    expect(builder.conditions).toContain('Governing local land-use authority is unresolved')
     expect(landMao).toMatchObject({
       scenario: { conservative: 40_000, moderate: 55_000, aggressive: 70_000 },
       basis: 'Market value estimate $100K × 40-70%',

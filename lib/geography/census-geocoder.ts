@@ -15,6 +15,7 @@ export type GoverningGeography = {
   stateFips?: string
   incorporatedPlace?: { geoid: string; name: string }
   municipalityStatus: 'INCORPORATED_PLACE' | 'NO_INCORPORATED_PLACE_RETURNED'
+  countyLandUseAuthorityStatus: 'UNRESOLVED' | 'VERIFIED'
   sourceUrl: string
   retrievedAt: string
 }
@@ -121,6 +122,8 @@ function governingGeographyFromGeographies(
     incorporatedPlace,
     // A missing incorporated-place layer is not proof that a parcel is governed by county rules.
     municipalityStatus: incorporatedPlace ? 'INCORPORATED_PLACE' : 'NO_INCORPORATED_PLACE_RETURNED',
+    // Census place context alone cannot verify the governing zoning/planning authority.
+    countyLandUseAuthorityStatus: 'UNRESOLVED',
     sourceUrl,
     retrievedAt: new Date().toISOString(),
   }

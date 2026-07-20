@@ -23,6 +23,7 @@ describe('Census governing geography resolver', () => {
     expect(result).toMatchObject({
       countyFips: '12127', countyName: 'Volusia County', stateFips: '12',
       incorporatedPlace: { geoid: '1217000', name: 'DeLand city' },
+      countyLandUseAuthorityStatus: 'UNRESOLVED',
       municipalityStatus: 'INCORPORATED_PLACE',
     })
     expect(fetchImpl).toHaveBeenCalledWith(expect.stringContaining('x=-81.3031'), expect.anything())
@@ -38,6 +39,7 @@ describe('Census governing geography resolver', () => {
 
     expect(result).toMatchObject({ municipalityStatus: 'NO_INCORPORATED_PLACE_RETURNED' })
     expect(result.incorporatedPlace).toBeUndefined()
+    expect(result.countyLandUseAuthorityStatus).toBe('UNRESOLVED')
   })
 
   it('fails closed for missing county geography and transport failures', async () => {
