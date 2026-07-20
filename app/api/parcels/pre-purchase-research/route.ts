@@ -206,7 +206,11 @@ export async function POST(req: Request) {
 
   const ctx = {
     parcel,
-    jurisdiction: buildJurisdictionFacts(strategyData, fmrByBedroom),
+    jurisdiction: buildJurisdictionFacts(strategyData, fmrByBedroom, {
+      // County land-use records cannot govern a coordinate Census places inside a municipality.
+      // County tax-sale facts remain available because this only suppresses local land-use fields.
+      allowCountyLandUseRules: governingGeography?.municipalityStatus !== 'INCORPORATED_PLACE',
+    }),
     investor,
     strategy: 'TAX_DEED' as const,
   }

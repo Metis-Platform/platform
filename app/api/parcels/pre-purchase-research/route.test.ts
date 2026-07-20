@@ -172,7 +172,9 @@ describe('pre-purchase research governing geography', () => {
       sourceUrl: 'https://geocoding.geo.census.gov/geocoder', retrievedAt: '2026-07-16T00:00:00.000Z',
     })
     mocks.jurisdictionFindFirst.mockResolvedValue({
-      id: 'maricopa-jurisdiction', state: 'AZ', county: 'Maricopa', strategyData: [],
+      id: 'maricopa-jurisdiction', state: 'AZ', county: 'Maricopa', strategyData: [{
+        data: { zoning_codes: { R1: { minLotSizeSqFt: 5_000, minLotWidthFt: 50, setbacks: { front: 20, side: 5, rear: 10 } } } },
+      }],
     })
     mocks.parcelCacheFindMany.mockResolvedValue([{
       id: 'fema-cache-1', tenantId: 'tenant-1', apnNormalized: '13275012', fipsCounty: '04013',
@@ -190,7 +192,7 @@ describe('pre-purchase research governing geography', () => {
       method: 'POST',
       body: JSON.stringify({
         apn: '13275012', fipsCounty: '04013', address: '1 W Jefferson St, Phoenix, AZ 85003',
-        overrides: { improved: false, manualSourceUrl: sourceUrl, manualVerification: true },
+        overrides: { improved: false, zoning: 'R1', manualSourceUrl: sourceUrl, manualVerification: true },
       }),
     }))
 
@@ -198,7 +200,7 @@ describe('pre-purchase research governing geography', () => {
     const body = await response.json()
     expect(body).toMatchObject({
       parcel: {
-        apn: '13275012', improved: false, floodZone: 'X',
+        apn: '13275012', improved: false, zoning: 'R1', floodZone: 'X',
         sources: {
           improved: { provider: 'manual', sourceUrl },
           floodZone: {
@@ -211,7 +213,7 @@ describe('pre-purchase research governing geography', () => {
       geography: { status: 'RESOLVED', municipalityScope: 'INCORPORATED' },
       handoff: { id: 'snapshot-1' },
     })
-    expect(body.parcel.zoning).toBeUndefined()
+    expect(body.parcel.zoning).toBe('R1')
     expect(body.results.some((result: { verdict: string }) => result.verdict === 'VIABLE')).toBe(false)
   })
 

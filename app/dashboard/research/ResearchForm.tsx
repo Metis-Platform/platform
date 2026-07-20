@@ -28,6 +28,10 @@ type ResearchResponse = {
     sourceUrl?: string
     matchedAddress?: string
   }
+  geography?: {
+    municipalityScope: 'INCORPORATED_PLACE' | 'NO_INCORPORATED_PLACE_RETURNED' | 'UNKNOWN'
+    resolved?: { incorporatedPlace?: { geoid: string; name: string } } | null
+  }
   enrich: {
     cacheHits: number
     apiCalls: number
@@ -464,6 +468,11 @@ export default function ResearchForm({ jurisdictions }: Props) {
             {data.location?.status === 'CENSUS_ADDRESS' && (
               <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 Location came from your address through the <a href={data.location.sourceUrl} target="_blank" rel="noreferrer" className="underline">Census Geocoder</a>{data.location.matchedAddress ? `: ${data.location.matchedAddress}` : ''}. Verify parcel identity and governing authority before relying on location-dependent conclusions.
+              </p>
+            )}
+            {data.geography?.municipalityScope === 'INCORPORATED_PLACE' && (
+              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                This research point is inside {data.geography.resolved?.incorporatedPlace?.name ?? 'an incorporated place'}. County land-use rules are not applied; verify the municipal zoning, planning, and permitting authority before relying on local development conclusions.
               </p>
             )}
             {unavailableBaselineChecks.length > 0 && (

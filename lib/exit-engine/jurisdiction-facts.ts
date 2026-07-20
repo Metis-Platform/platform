@@ -26,11 +26,14 @@ interface JurisdictionStrategyJson {
 export function buildJurisdictionFacts(
   strategyData: JurisdictionStrategyData | null,
   fmrByBedroom: Record<number, number>,
+  options: { allowCountyLandUseRules?: boolean } = {},
 ): JurisdictionFacts {
   const data = asJurisdictionStrategyJson(strategyData?.data)
+  const allowCountyLandUseRules = options.allowCountyLandUseRules ?? true
 
   return {
     minLotSizeSqFt(zoning?: string): number | undefined {
+      if (!allowCountyLandUseRules) return undefined
       const decoded = zoning ? data.zoning_codes?.[zoning] : undefined
       if (decoded?.minLotSizeSqFt != null) return decoded.minLotSizeSqFt
       if (!data.minLotSizeByZone) return undefined
@@ -39,27 +42,30 @@ export function buildJurisdictionFacts(
     },
 
     minLotWidthFt(zoning?: string): number | undefined {
+      if (!allowCountyLandUseRules) return undefined
       if (!zoning) return undefined
       return data.zoning_codes?.[zoning]?.minLotWidthFt
     },
 
     setbackFeet(zoning?: string): { front?: number; side?: number; rear?: number } | undefined {
+      if (!allowCountyLandUseRules) return undefined
       if (!zoning) return undefined
       return data.zoning_codes?.[zoning]?.setbacks ?? data.setbacksByZone?.[zoning]
     },
 
     allowedUses(zoning?: string): string[] | undefined {
+      if (!allowCountyLandUseRules) return undefined
       if (!zoning) return undefined
       return data.zoning_codes?.[zoning]?.allowedUses ?? data.allowedUsesByZone?.[zoning]
     },
 
-    strAllowed: data.strAllowed,
-    rentControlZone: data.rentControlZone,
-    wholesaleLicenseRequired: data.wholesaleLicenseRequired,
+    strAllowed: allowCountyLandUseRules ? data.strAllowed : undefined,
+    rentControlZone: allowCountyLandUseRules ? data.rentControlZone : undefined,
+    wholesaleLicenseRequired: allowCountyLandUseRules ? data.wholesaleLicenseRequired : undefined,
     taxDeedRedemptionDays: data.taxDeedRedemptionDays,
     taxLienInterestRate: data.taxLienInterestRate,
     taxLienRedemptionPeriodDays: data.taxLienRedemptionPeriodDays,
-    subdivisionAllowed: data.subdivisionAllowed,
+    subdivisionAllowed: allowCountyLandUseRules ? data.subdivisionAllowed : undefined,
     quietTitleRequirements: data.quietTitleRequirements,
     deedQualityPostTaxSale: data.deedQualityPostTaxSale,
 
