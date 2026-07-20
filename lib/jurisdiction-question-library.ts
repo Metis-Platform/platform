@@ -14,7 +14,7 @@ export const JURISDICTION_QUESTION_SCHEMA_VERSION = '2026-07-20.v1' as const
 // is in that county. This claim is the narrowly-scoped, reviewed declaration
 // that the county authority actually governs the entire county. Other scopes
 // remain conditional until Metis can resolve their boundary at the parcel.
-export const COUNTY_WIDE_LAND_USE_AUTHORITY_FIELD = 'countyWideLandUseAuthority'
+export const COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD = 'countyLandUseAuthorityScope'
 
 export type JurisdictionClaimRisk = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 export type JurisdictionClaimVolatility = 'STATIC' | 'ANNUAL' | 'QUARTERLY' | 'PER_SALE'
@@ -71,7 +71,7 @@ function volatilityFor(
   section: JurisdictionProfileSection,
   fieldKey: string,
 ): JurisdictionClaimVolatility {
-  if (section === 'zoning' && fieldKey === COUNTY_WIDE_LAND_USE_AUTHORITY_FIELD) {
+  if (section === 'zoning' && fieldKey === COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD) {
     return 'QUARTERLY'
   }
   for (const definitions of Object.values(OFFICE_TYPE_FIELDS)) {
@@ -130,8 +130,8 @@ function buildQuestionLibrary(): JurisdictionQuestionDefinition[] {
   }
   add(
     'zoning',
-    COUNTY_WIDE_LAND_USE_AUTHORITY_FIELD,
-    'County-wide land-use authority scope',
+    COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD,
+    'County land-use authority scope',
   )
 
   return [...fields.values()]
