@@ -5,7 +5,7 @@ import { CENSUS_ACS_2024_SOURCE_URL, fetchDemographics } from './sources/census-
 import { EPA_ECHO_CWA_SOURCE_URL, fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
 import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
-import { fetchElectricUtility } from './sources/hifld-electric'
+import { fetchElectricUtility, HIFLD_ELECTRIC_RETAIL_TERRITORIES_SOURCE_URL } from './sources/hifld-electric'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
@@ -208,7 +208,8 @@ function buildSourcePlans(
       },
       {
         source: 'hifld',
-        fields: ['utilityName', 'serviceAreaType', 'electricAvailable'],
+        sourceUrl: HIFLD_ELECTRIC_RETAIL_TERRITORIES_SOURCE_URL,
+        fields: ['hifldElectricTerritoryStatus', 'hifldElectricUtilityNames', 'hifldElectricServiceTypes'],
         fetch: async () => fetchElectricUtility(lat, lon),
       },
       {
@@ -330,6 +331,9 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'undergroundTankFlag',
     'epaCwaFacilitySearchStatus',
     'epaCwaFacilityNames',
+    'hifldElectricTerritoryStatus',
+    'hifldElectricUtilityNames',
+    'hifldElectricServiceTypes',
     'electricAvailable',
   ].includes(field as typeof PARCEL_FACT_FIELDS[number])
 }

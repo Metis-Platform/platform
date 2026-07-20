@@ -57,7 +57,10 @@ vi.mock('./sources/epa-echo', () => ({
   EPA_ECHO_CWA_SOURCE_URL: 'https://echodata.epa.gov/echo/cwa_rest_services.get_facilities',
   fetchEpaFlags: mocks.fetchEpaFlags,
 }))
-vi.mock('./sources/hifld-electric', () => ({ fetchElectricUtility: vi.fn().mockResolvedValue({}) }))
+vi.mock('./sources/hifld-electric', () => ({
+  HIFLD_ELECTRIC_RETAIL_TERRITORIES_SOURCE_URL: 'https://services5.arcgis.com/HDRa0B57OVrv2E1q/ArcGIS/rest/services/Electric_Retail_Service_Territories/FeatureServer/0',
+  fetchElectricUtility: vi.fn().mockResolvedValue({ hifldElectricTerritoryStatus: 'NO_MAPPED_TERRITORY_RETURNED' }),
+}))
 vi.mock('./sources/walk-score', () => ({ fetchWalkScore: vi.fn().mockResolvedValue({}) }))
 vi.mock('./zoning/lookup', () => ({ lookupZoning: vi.fn().mockResolvedValue({}) }))
 vi.mock('./zoning/decode', () => ({ decodeZoning: vi.fn().mockResolvedValue(null) }))
@@ -145,7 +148,7 @@ describe('parcel enrichment cache provenance', () => {
       { source: 'fws_nwi', fields: ['wetlandsPresent'] },
       { source: 'usgs_3dhp', fields: ['hydrography3dhpFeatureTypes'] },
       { source: 'epa_echo', fields: ['epaCwaFacilityNames'] },
-      { source: 'hifld', fields: ['utilityName', 'serviceAreaType', 'electricAvailable'] },
+      { source: 'hifld', fields: ['hifldElectricUtilityNames', 'hifldElectricServiceTypes'] },
     ]))
     expect(result.gaps.find(gap => gap.source === 'fws_nwi')?.fields).not.toContain('wetlandsNwiStatus')
     expect(result.gaps.find(gap => gap.source === 'usgs_3dhp')?.fields).not.toContain('hydrography3dhpStatus')

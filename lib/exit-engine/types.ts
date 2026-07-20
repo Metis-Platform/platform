@@ -87,6 +87,9 @@ export interface ParcelProfile {
   undergroundTankFlag?: boolean
   epaCwaFacilitySearchStatus?: 'FACILITY_FOUND' | 'NO_FACILITY_RETURNED'
   epaCwaFacilityNames?: string[]
+  hifldElectricTerritoryStatus?: 'MAPPED_TERRITORY' | 'NO_MAPPED_TERRITORY_RETURNED'
+  hifldElectricUtilityNames?: string[]
+  hifldElectricServiceTypes?: string[]
   slopePercent?: number
   titleType?: 'warranty' | 'tax_deed' | 'quit_claim' | 'special_warranty'
   deedQuality?: 'insurable' | 'conditional' | 'uninsurable'
