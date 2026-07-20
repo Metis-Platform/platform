@@ -269,6 +269,21 @@
         "persistedOutcome": "The fixture deal receives only its missing checklist tasks and one CHECKLIST_CREATED audit event carrying the response request ID without task text.",
         "cleanup": "The integration fixture reset removes generated checklist tasks and the related audit event."
       }
+    },
+    {
+      "id": "analyst-create-task",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/task-create.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture, a fixture deal, and deterministic task cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "TASK_CREATED" },
+      "journey": {
+        "entryPoint": "/dashboard/tasks?dealId={fixtureDealId}",
+        "actions": [{ "userAction": "Enter fixture-safe task details and save", "expectedRequest": "POST /api/tasks" }],
+        "persistedOutcome": "The fixture deal receives the task and one TASK_CREATED audit event carrying the response request ID without task content or assignment.",
+        "cleanup": "The integration fixture reset removes the task and related audit event."
+      }
     }
   ]
 }

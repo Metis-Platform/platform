@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 class AssigneeNotFoundError extends Error {}
 
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
         if (!assignee) throw new AssigneeNotFoundError()
       }
 
-      return tx.task.create({
+      const created = await tx.task.create({
         data: {
           dealId,
           tenantId: tenant.id,
@@ -59,6 +60,17 @@ export async function POST(req: Request) {
         },
         include: { assignedTo: { select: { id: true, name: true, email: true } } },
       })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: synced.user.id,
+          requestId: requestIdFromHeaders(req.headers),
+          action: 'TASK_CREATED',
+          // Task content and assignment can be investor-specific; retain identity only.
+          meta: { taskId: created.id, dealId },
+        },
+      })
+      return created
     })
   } catch (error) {
     if (error instanceof AssigneeNotFoundError) {
