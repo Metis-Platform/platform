@@ -79,6 +79,8 @@ export interface ParcelProfile {
   elevationFeet?: number
   hydrography3dhpStatus?: 'MAPPED_FEATURE' | 'NO_MAPPED_FEATURE'
   hydrography3dhpFeatureTypes?: Array<'FLOWLINE' | 'WATERBODY'>
+  padusFederalFeeStatus?: 'MAPPED_FEATURE' | 'NO_MAPPED_FEATURE'
+  padusFederalFeeManagerNames?: string[]
   wetlandsAcres?: number
   brownfieldFlag?: boolean
   undergroundTankFlag?: boolean
