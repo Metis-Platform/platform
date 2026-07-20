@@ -2,7 +2,7 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-19
+> Last updated: 2026-07-20
 
 ---
 
@@ -12,7 +12,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 
 ---
 
-## Current Session (2026-07-19) — Multi-state acceptance and nationwide baseline repair
+## Current Session (2026-07-20) — Multi-state acceptance, nationwide baseline repair, and runtime parity
 
 | Work | Result |
 |---|---|
@@ -29,6 +29,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Silent parcel-source gaps (#412) | Research now also names checks whose adapter returned no usable facts or only a partial field set. Fresh cache evidence and explicit negative map/search statuses count as evidence; only unresolved fields remain gaps, so blank provider output can no longer silently resemble a favorable result. |
 | Parcel fact retrieval evidence (#406) | Research now shows the existing per-field retrieval date beside provenance and source links; manual facts are labeled recorded. It does not turn a timestamp into a freshness, authority, or buildability claim. |
 | Official Volusia parcel baseline (#414) | The founding route now consumes non-owner lot area, land-use description, and improvement state from the official Volusia Property Appraiser layer with exact query provenance. Other Florida counties retain an explicit unsupported parcel-baseline gap; assessor facts do not establish frontage, zoning authority, title, permitting, or buildability. |
+| Vercel Node runtime parity (#416) | `package.json` now pins Vercel builds/functions to Node 20.x, matching `.nvmrc`, the dev container, bootstrap, type definitions, and required CI. The repository contract overrides the prior Node 24.x project setting without a dashboard mutation. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
@@ -166,7 +167,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 1. Finish the founding Volusia acceptance evidence: authoritative frontage/depth, governing zoning scope, and the county/title/permitting nonconforming-lot determination remain unresolved.
 2. Continue demand-driven national and county parcel-source coverage; unsupported Florida counties still have no configured official or commercial parcel baseline.
-3. Reconcile Vercel's Node 24.x runtime with the repository and CI Node 20 contract, while owner-authorized QA provisioning remains the blocker for mutation/browser proof.
+3. Complete #295 with fresh-clone macOS and approved remote-Linux acceptance evidence, while owner-authorized QA provisioning remains the blocker for mutation/browser proof.
 
 ---
 
