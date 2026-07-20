@@ -44,6 +44,26 @@ describe('jurisdiction source adapters', () => {
     expect(result.sources.every(source => source.authorityRationale.includes('unincorporated Maricopa County'))).toBe(true)
   })
 
+  it('keeps Harris County development discovery conditional on municipal ETJ and no county zoning', () => {
+    const result = discoverJurisdictionSources({
+      state: 'TX', county: 'Harris County',
+      requestedOfficeTypes: ['assessor', 'tax_collector', 'recorder', 'gis', 'planning_zoning', 'building'],
+      now: new Date('2026-07-20T00:00:00Z'),
+    })
+
+    expect(result.sources).toEqual([
+      expect.objectContaining({ adapterId: 'tx-harris-county-offices-v1', officeType: 'assessor', url: 'https://hcad.org/' }),
+      expect.objectContaining({ adapterId: 'tx-harris-county-offices-v1', officeType: 'tax_collector', url: 'https://www.hctax.net/Property/Overview' }),
+      expect.objectContaining({ adapterId: 'tx-harris-county-offices-v1', officeType: 'recorder', url: 'https://cclerk.hctx.net/applications/websearch/RP.aspx/RP.aspx' }),
+      expect.objectContaining({ adapterId: 'tx-harris-county-offices-v1', officeType: 'gis' }),
+      expect.objectContaining({ adapterId: 'tx-harris-county-offices-v1', officeType: 'planning_zoning' }),
+      expect.objectContaining({ adapterId: 'tx-harris-county-offices-v1', officeType: 'building' }),
+    ])
+    expect(result.sources.every(source => source.candidateScope === 'COUNTY_OFFICE_CANDIDATE')).toBe(true)
+    expect(result.sources.every(source => source.authorityRationale.includes('no zoning regulations'))).toBe(true)
+    expect(result.sources.every(source => source.authorityRationale.includes('municipal ETJ rules may still apply'))).toBe(true)
+  })
+
   it('queues discovery metadata without creating an authority source record', async () => {
     const created: unknown[] = []
     const sources = discoverJurisdictionSources({ state: 'FL', requestedOfficeTypes: ['assessor'], now: new Date('2026-07-14T00:00:00Z') }).sources

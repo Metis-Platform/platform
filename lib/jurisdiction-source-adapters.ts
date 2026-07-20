@@ -59,6 +59,22 @@ const ADAPTERS: JurisdictionAdapter[] = [
       building: 'https://www.maricopa.gov/2733/Planning-Development',
     },
   },
+  {
+    id: 'tx-harris-county-offices-v1',
+    state: 'TX',
+    county: 'Harris',
+    officeTypes: ['assessor', 'tax_collector', 'recorder', 'gis', 'planning_zoning', 'building'],
+    authorityOwner: 'Harris County offices and the Harris Central Appraisal District',
+    scopeNote: 'Harris County states that unincorporated county area has no zoning regulations; municipal ETJ rules may still apply. Resolve incorporated place and ETJ before relying on county development sources.',
+    sourceUrls: {
+      assessor: 'https://hcad.org/',
+      tax_collector: 'https://www.hctax.net/Property/Overview',
+      recorder: 'https://cclerk.hctx.net/applications/websearch/RP.aspx/RP.aspx',
+      gis: 'https://oce.harriscountytx.gov/Divisions/IT-Asset-Management/Geographic-Information-Systems-GIS',
+      planning_zoning: 'https://oce.harriscountytx.gov/Services/Permits/Platting',
+      building: 'https://oce.harriscountytx.gov/Services/Permits/Civil',
+    },
+  },
 ]
 
 export function adaptersForState(state: string) {
