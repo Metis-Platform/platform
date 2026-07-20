@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   fetchSsurgoMapUnit: vi.fn(),
   fetchUsgsElevation: vi.fn(),
   fetchUsgsHydrography: vi.fn(),
+  fetchPadusFederalFeeManagers: vi.fn(),
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
   fetchOfficialVolusiaParcelFacts: vi.fn(),
@@ -36,6 +37,10 @@ vi.mock('./sources/usgs-3dep', () => ({
 vi.mock('./sources/usgs-3dhp', () => ({
   USGS_3DHP_SOURCE_URL: 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer',
   fetchUsgsHydrography: mocks.fetchUsgsHydrography,
+}))
+vi.mock('./sources/usgs-padus', () => ({
+  USGS_PADUS_FEDERAL_FEE_SOURCE_URL: 'https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Federal_Fee_Managers_Authoritative_PADUS/FeatureServer/0',
+  fetchPadusFederalFeeManagers: mocks.fetchPadusFederalFeeManagers,
 }))
 vi.mock('./sources/regrid', () => ({ fetchRegridParcel: vi.fn().mockResolvedValue({}) }))
 vi.mock('./sources/fl-dor', () => ({ fetchFlDorParcel: mocks.fetchFlDorParcel }))
@@ -69,6 +74,7 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam' })
     mocks.fetchUsgsElevation.mockResolvedValue({ elevationFeet: 46.9 })
     mocks.fetchUsgsHydrography.mockResolvedValue({ hydrography3dhpStatus: 'NO_MAPPED_FEATURE' })
+    mocks.fetchPadusFederalFeeManagers.mockResolvedValue({ padusFederalFeeStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchEpaFlags.mockResolvedValue({ epaCwaFacilitySearchStatus: 'NO_FACILITY_RETURNED' })
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
     mocks.fetchOfficialVolusiaParcelFacts.mockResolvedValue({
@@ -143,6 +149,7 @@ describe('parcel enrichment cache provenance', () => {
     ]))
     expect(result.gaps.find(gap => gap.source === 'fws_nwi')?.fields).not.toContain('wetlandsNwiStatus')
     expect(result.gaps.find(gap => gap.source === 'usgs_3dhp')?.fields).not.toContain('hydrography3dhpStatus')
+    expect(result.gaps.find(gap => gap.source === 'usgs_padus')?.fields).not.toContain('padusFederalFeeStatus')
     expect(result.gaps.find(gap => gap.source === 'epa_echo')?.fields).not.toContain('epaCwaFacilitySearchStatus')
   })
 
@@ -232,6 +239,17 @@ describe('parcel enrichment cache provenance', () => {
       create: expect.objectContaining({
         source: 'usgs_3dhp', field: 'hydrography3dhpStatus',
         metadata: { source: 'usgs_3dhp', sourceUrl: 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer' },
+      }),
+    }))
+  })
+
+  it('stores USGS PAD-US mapping as source-disclosed point evidence', async () => {
+    await enrichParcel('13275012', '04013', 33.4484, -112.074, 'tenant-1')
+
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'usgs_padus', field: 'padusFederalFeeStatus',
+        metadata: { source: 'usgs_padus', sourceUrl: 'https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Federal_Fee_Managers_Authoritative_PADUS/FeatureServer/0' },
       }),
     }))
   })

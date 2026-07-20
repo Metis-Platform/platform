@@ -8,6 +8,7 @@ const SOURCE_LABELS: Record<string, string> = {
   usda_ssurgo: 'USDA soil map unit',
   usgs_3dep: 'USGS ground elevation',
   usgs_3dhp: 'USGS surface-water map',
+  usgs_padus: 'USGS protected-area map',
   epa_echo: 'EPA CWA facility search',
   walk_score: 'neighborhood access score',
   hifld: 'electric utility coverage',

@@ -45,6 +45,8 @@ const CACHE_PROFILE_FIELDS = new Set([
   'elevationFeet',
   'hydrography3dhpStatus',
   'hydrography3dhpFeatureTypes',
+  'padusFederalFeeStatus',
+  'padusFederalFeeManagerNames',
   'hoa',
 ])
 

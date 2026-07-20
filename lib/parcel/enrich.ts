@@ -11,6 +11,7 @@ import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
 import { USGS_3DEP_EPQS_SOURCE_URL, fetchUsgsElevation } from './sources/usgs-3dep'
 import { USGS_3DHP_SOURCE_URL, fetchUsgsHydrography } from './sources/usgs-3dhp'
+import { USGS_PADUS_FEDERAL_FEE_SOURCE_URL, fetchPadusFederalFeeManagers } from './sources/usgs-padus'
 import {
   fetchOfficialVolusiaParcelFacts,
   VOLUSIA_FIPS,
@@ -189,6 +190,12 @@ function buildSourcePlans(
         fetch: async () => fetchUsgsHydrography(lat, lon),
       },
       {
+        source: 'usgs_padus',
+        sourceUrl: USGS_PADUS_FEDERAL_FEE_SOURCE_URL,
+        fields: ['padusFederalFeeStatus', 'padusFederalFeeManagerNames'],
+        fetch: async () => fetchPadusFederalFeeManagers(lat, lon),
+      },
+      {
         source: 'epa_echo',
         sourceUrl: EPA_ECHO_CWA_SOURCE_URL,
         fields: ['epaCwaFacilitySearchStatus', 'epaCwaFacilityNames'],
@@ -314,6 +321,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'elevationFeet',
     'hydrography3dhpStatus',
     'hydrography3dhpFeatureTypes',
+    'padusFederalFeeStatus',
+    'padusFederalFeeManagerNames',
     'zoning',
     'zoningDescription',
     'brownfieldFlag',
