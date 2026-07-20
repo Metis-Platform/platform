@@ -7,7 +7,7 @@ GitHub is the handoff point between the Windows/WSL machine and macOS. Do not sy
 ```bash
 git clone https://github.com/Metis-Platform/platform.git
 cd platform
-# Select Node 20 using nvm, fnm, volta, or your platform's equivalent.
+# Select Node 24 using nvm, fnm, volta, or your platform's equivalent.
 npm run bootstrap
 gh auth status
 npm run env:check
