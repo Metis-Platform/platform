@@ -3,6 +3,8 @@ import { currentUser } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { isSuperAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
+import { syncUserToDatabase } from '@/lib/sync-user'
 import { publishJurisdictionClaim } from '@/lib/jurisdiction-claim-publication'
 import { getJurisdictionQuestion, COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD } from '@/lib/jurisdiction-question-library'
 
@@ -18,6 +20,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
   const user = await currentUser()
   if (!user?.id) return NextResponse.json({ error: 'Reviewer identity unavailable' }, { status: 401 })
+  const actor = await syncUserToDatabase()
+  if (!actor) return NextResponse.json({ error: 'Active organization required' }, { status: 401 })
   const { id: jurisdictionId } = await params
 
   const source = await db.jurisdictionSourceUrl.findFirst({
@@ -75,6 +79,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         authorityStatus: source.authorityStatus,
         authorityVerifiedAt: source.authorityVerifiedAt,
         authorityVerifiedBy: source.authorityVerifiedBy,
+      },
+      auditEvent: {
+        tenantId: actor.tenant.id,
+        userId: actor.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'JURISDICTION_AUTHORITY_SCOPE_PUBLISHED',
+        meta: {
+          jurisdictionId,
+          sourceUrlId: source.id,
+          scope: parsed.data.scope,
+          evidenceSnapshotId: snapshot.id,
+        },
       },
     })
     return NextResponse.json({ ok: true, claimId: result.claimId }, { status: 201 })

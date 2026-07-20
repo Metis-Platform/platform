@@ -49,6 +49,13 @@ export interface ClaimPublicationInput {
     expectedCurrentClaimId: string
     expectedCandidateUpdatedAt: Date
   }
+  auditEvent?: {
+    tenantId: string
+    userId: string
+    requestId?: string
+    action: string
+    meta: Prisma.InputJsonValue
+  }
 }
 
 function optionalString(value: unknown): string | undefined {
@@ -471,6 +478,12 @@ export async function publishJurisdictionClaim(input: ClaimPublicationInput) {
       input.jurisdictionId,
       reviewedAt,
     )
+
+    if (input.auditEvent) {
+      await tx.auditEvent.create({
+        data: input.auditEvent,
+      })
+    }
 
     return { claimId, queuedCoverageNotifications, ...publication }
   })

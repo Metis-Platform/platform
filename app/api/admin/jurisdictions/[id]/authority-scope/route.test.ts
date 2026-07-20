@@ -5,12 +5,14 @@ const mocks = vi.hoisted(() => ({
   currentUser: vi.fn(),
   sourceFindFirst: vi.fn(),
   publishJurisdictionClaim: vi.fn(),
+  syncUserToDatabase: vi.fn(),
 }))
 
 vi.mock('@/lib/admin-auth', () => ({ isSuperAdmin: mocks.isSuperAdmin }))
 vi.mock('@clerk/nextjs/server', () => ({ currentUser: mocks.currentUser }))
 vi.mock('@/lib/db', () => ({ db: { jurisdictionSourceUrl: { findFirst: mocks.sourceFindFirst } } }))
 vi.mock('@/lib/jurisdiction-claim-publication', () => ({ publishJurisdictionClaim: mocks.publishJurisdictionClaim }))
+vi.mock('@/lib/sync-user', () => ({ syncUserToDatabase: mocks.syncUserToDatabase }))
 
 import { POST } from './route'
 
@@ -32,6 +34,7 @@ describe('authority scope publication route', () => {
     mocks.currentUser.mockResolvedValue({ id: 'reviewer-1' })
     mocks.sourceFindFirst.mockResolvedValue(source)
     mocks.publishJurisdictionClaim.mockResolvedValue({ claimId: 'claim-1' })
+    mocks.syncUserToDatabase.mockResolvedValue({ tenant: { id: 'tenant-1' }, user: { id: 'local-user-1' } })
   })
 
   it('requires a verified local source and immutable evidence snapshot', async () => {
@@ -52,6 +55,11 @@ describe('authority scope publication route', () => {
       jurisdictionId: 'j-1', section: 'zoning', fieldKey: 'countyLandUseAuthorityScope',
       extractedValue: expect.objectContaining({ value: 'UNINCORPORATED_COUNTY', geographicScope: 'UNINCORPORATED_COUNTY' }),
       source: expect.objectContaining({ sourceUrlId: 'source-1', evidenceSnapshotId: 'snapshot-1' }),
+      auditEvent: expect.objectContaining({
+        tenantId: 'tenant-1', userId: 'local-user-1',
+        action: 'JURISDICTION_AUTHORITY_SCOPE_PUBLISHED',
+        meta: expect.objectContaining({ jurisdictionId: 'j-1', scope: 'UNINCORPORATED_COUNTY' }),
+      }),
     }))
   })
 })

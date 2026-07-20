@@ -31,5 +31,8 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Verify feature-test coverage catalog
+        run: npm run e2e:coverage:check
+
       - name: Production build
         run: npm run build
