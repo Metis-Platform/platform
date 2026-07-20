@@ -254,6 +254,21 @@
         "persistedOutcome": "The fixture tenant investor profile is updated by an owner and its INVESTOR_PROFILE_UPDATED event carries the response request ID without financial assumptions or licenses.",
         "cleanup": "The integration fixture reset restores the investor profile and related audit event."
       }
+    },
+    {
+      "id": "analyst-generate-deal-checklist",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/deal-checklist.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture, a deal with missing checklist items, and deterministic task cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "CHECKLIST_CREATED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureDealId}",
+        "actions": [{ "userAction": "Select Generate DD Checklist", "expectedRequest": "POST /api/deals/{fixtureDealId}/checklist" }],
+        "persistedOutcome": "The fixture deal receives only its missing checklist tasks and one CHECKLIST_CREATED audit event carrying the response request ID without task text.",
+        "cleanup": "The integration fixture reset removes generated checklist tasks and the related audit event."
+      }
     }
   ]
 }
