@@ -35,6 +35,7 @@ type ResearchResponse = {
       claimId: string
       sourceUrl: string
       verifiedAt: string
+      scope: 'COUNTY_WIDE' | 'UNINCORPORATED_COUNTY'
     }
     resolved?: { incorporatedPlace?: { geoid: string; name: string } } | null
   }
@@ -485,7 +486,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
             )}
             {data.geography?.landUseAuthority.status === 'VERIFIED' && (
               <p className="mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
-                County land-use rules were applied under Metis&apos;s current reviewed county-wide authority declaration. <a href={data.geography.landUseAuthority.sourceUrl} target="_blank" rel="noreferrer" className="underline">Review the authoritative source</a> before relying on any development conclusion.
+                County land-use rules were applied under Metis&apos;s current reviewed {data.geography.landUseAuthority.scope === 'COUNTY_WIDE' ? 'county-wide' : 'unincorporated-area boundary'} authority declaration. <a href={data.geography.landUseAuthority.sourceUrl} target="_blank" rel="noreferrer" className="underline">Review the authoritative source</a> before relying on any development conclusion.
               </p>
             )}
             {unavailableBaselineChecks.length > 0 && (

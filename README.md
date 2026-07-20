@@ -57,7 +57,7 @@ npm run lint
 npm run build
 ```
 
-The dev container supplies Node 20, Git, and the PostgreSQL client. It intentionally does not
+The dev container supplies Node 24, Git, and the PostgreSQL client. It intentionally does not
 embed credentials or a database: development must use approved isolated QA services.
 
 ## Deploy model

@@ -31,7 +31,7 @@ describe('jurisdiction question library', () => {
     expect(JURISDICTION_QUESTION_SCHEMA_VERSION).toBe('2026-07-20.v1')
     expect(JURISDICTION_QUESTIONS.every(question => question.volatility)).toBe(true)
     expect(getJurisdictionQuestion('zoning', 'minimumLotSizeSqft')?.volatility).toBe('STATIC')
-    expect(getJurisdictionQuestion('zoning', 'countyWideLandUseAuthority')).toMatchObject({
+    expect(getJurisdictionQuestion('zoning', 'countyLandUseAuthorityScope')).toMatchObject({
       risk: 'CRITICAL', volatility: 'QUARTERLY', expectedAuthority: 'LOCAL_OFFICIAL',
     })
   })

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   resolveOfficialParcelLocation: vi.fn(),
   resolveMaricopaOfficialParcelLocation: vi.fn(),
   enrichParcel: vi.fn(),
+  lookupUnincorporatedAuthorityBoundaryClaimIds: vi.fn(),
 }))
 
 vi.mock('@/lib/sync-user', () => ({ syncUserToDatabase: mocks.syncUserToDatabase }))
@@ -26,6 +27,9 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 vi.mock('@/lib/parcel/enrich', () => ({ enrichParcel: mocks.enrichParcel }))
+vi.mock('@/lib/jurisdiction-authority-boundary', () => ({
+  lookupUnincorporatedAuthorityBoundaryClaimIds: mocks.lookupUnincorporatedAuthorityBoundaryClaimIds,
+}))
 vi.mock('@/lib/geography/census-geocoder', () => ({
   CensusGeocoderError: class CensusGeocoderError extends Error {},
   resolveCensusAddressLocation: mocks.resolveCensusAddressLocation,
@@ -50,6 +54,7 @@ describe('pre-purchase research governing geography', () => {
     mocks.resolveMaricopaOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveCensusAddressLocation.mockResolvedValue(null)
     mocks.enrichParcel.mockResolvedValue({ cacheHits: 0, apiCalls: 0, errors: [], gaps: [] })
+    mocks.lookupUnincorporatedAuthorityBoundaryClaimIds.mockResolvedValue(new Set())
     mocks.parcelCacheFindMany.mockResolvedValue([])
     mocks.jurisdictionFindFirst.mockResolvedValue(null)
     mocks.fmrFindMany.mockResolvedValue([])
@@ -168,7 +173,7 @@ describe('pre-purchase research governing geography', () => {
         data: { zoning_codes: { R1: { minLotSizeSqFt: 5_000, minLotWidthFt: 50 } } },
       }],
       claims: [{
-        id: 'countywide-claim', section: 'zoning', fieldKey: 'countyWideLandUseAuthority',
+        id: 'countywide-claim', section: 'zoning', fieldKey: 'countyLandUseAuthorityScope',
         value: 'COUNTY_WIDE', geographicScope: 'COUNTY_WIDE', expectedAuthorityClass: 'LOCAL_OFFICIAL',
         sourceAuthorityClass: 'LOCAL_OFFICIAL', sourceAuthorityOwner: 'Example County Planning',
         sourceAuthorityStatus: 'VERIFIED', sourceAuthorityVerifiedAt: new Date('2026-07-01'), sourceAuthorityVerifiedBy: 'reviewer-1',
@@ -199,6 +204,40 @@ describe('pre-purchase research governing geography', () => {
     })
     const builder = body.results.find((result: { exitKey: string }) => result.exitKey === 'VACANT_SELL_TO_BUILDER')
     expect(builder.conditions).not.toContain('Governing local land-use authority is unresolved')
+  })
+
+  it('uses a reviewed unincorporated boundary only for its covered research point', async () => {
+    mocks.lookupUnincorporatedAuthorityBoundaryClaimIds.mockResolvedValue(new Set(['unincorporated-claim']))
+    mocks.resolveGoverningGeography.mockResolvedValue({
+      countyFips: '12127', countyName: 'Example County', municipalityStatus: 'NO_INCORPORATED_PLACE_RETURNED',
+    })
+    mocks.jurisdictionFindFirst.mockResolvedValue({
+      id: 'unincorporated-jurisdiction', state: 'FL', county: 'Example', strategyData: [],
+      claims: [{
+        id: 'unincorporated-claim', section: 'zoning', fieldKey: 'countyLandUseAuthorityScope',
+        value: 'UNINCORPORATED_COUNTY', geographicScope: 'UNINCORPORATED_COUNTY', expectedAuthorityClass: 'LOCAL_OFFICIAL',
+        sourceAuthorityClass: 'LOCAL_OFFICIAL', sourceAuthorityOwner: 'Example County Planning',
+        sourceAuthorityStatus: 'VERIFIED', sourceAuthorityVerifiedAt: new Date('2026-07-01'), sourceAuthorityVerifiedBy: 'reviewer-1',
+        verificationState: 'VERIFIED', reviewedAt: new Date('2026-07-01'),
+        freshness: { reviewDueAt: new Date('2026-09-01'), staleAt: new Date('2026-09-01') },
+        evidence: [{ sourceUrl: 'https://planning.example.gov/authority', sourceUrlRecord: {
+          authorityClass: 'LOCAL_OFFICIAL', authorityOwner: 'Example County Planning', authorityStatus: 'VERIFIED',
+          authorityVerifiedAt: new Date('2026-07-01'), authorityVerifiedBy: 'reviewer-1',
+        } }],
+      }],
+    })
+
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST', body: JSON.stringify({ apn: '1234', fipsCounty: '12127', lat: 28.9, lon: -81.3 }),
+    }))
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      geography: { landUseAuthority: { status: 'VERIFIED', scope: 'UNINCORPORATED_COUNTY' } },
+    })
+    expect(mocks.lookupUnincorporatedAuthorityBoundaryClaimIds).toHaveBeenCalledWith(
+      'unincorporated-jurisdiction', 28.9, -81.3,
+    )
   })
 
   it('keeps a Maricopa parcel preliminary when county zoning authority is unresolved', async () => {

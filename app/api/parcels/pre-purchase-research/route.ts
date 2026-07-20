@@ -23,7 +23,8 @@ import {
 } from '@/lib/parcel/sources/volusia-property-appraiser'
 import { resolveMaricopaOfficialParcelLocation } from '@/lib/parcel/sources/maricopa-property-assessor'
 import { resolveCountyLandUseAuthority } from '@/lib/jurisdiction-land-use-authority'
-import { COUNTY_WIDE_LAND_USE_AUTHORITY_FIELD } from '@/lib/jurisdiction-question-library'
+import { lookupUnincorporatedAuthorityBoundaryClaimIds } from '@/lib/jurisdiction-authority-boundary'
+import { COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD } from '@/lib/jurisdiction-question-library'
 import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types'
 import { prePurchaseResearchSnapshotPayload, researchSnapshotExpiry, researchSnapshotJson } from '@/lib/pre-purchase-research-snapshot'
 
@@ -180,7 +181,7 @@ export async function POST(req: Request) {
         claims: {
           where: {
             section: 'zoning',
-            fieldKey: COUNTY_WIDE_LAND_USE_AUTHORITY_FIELD,
+            fieldKey: COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD,
             supersededByClaim: null,
           },
           select: {
@@ -220,7 +221,13 @@ export async function POST(req: Request) {
     }),
   ])
 
-  const countyLandUseAuthority = resolveCountyLandUseAuthority(jurisdiction?.claims ?? [])
+  const unincorporatedBoundaryClaimIds = jurisdiction && resolvedLat != null && resolvedLon != null
+    ? await lookupUnincorporatedAuthorityBoundaryClaimIds(jurisdiction.id, resolvedLat, resolvedLon)
+    : new Set<string>()
+  const countyLandUseAuthority = resolveCountyLandUseAuthority(jurisdiction?.claims ?? [], {
+    unincorporatedBoundaryClaimIds,
+    incorporatedPlace: governingGeography?.municipalityStatus === 'INCORPORATED_PLACE',
+  })
 
   const fmrByBedroom = jurisdiction
     ? await loadFmrByBedroom(jurisdiction.state, jurisdiction.county)
