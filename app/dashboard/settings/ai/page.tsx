@@ -1,10 +1,11 @@
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, hasRole } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import AiKeyForm from './AiKeyForm'
 
 export default async function AiSettingsPage() {
   const result = await getCurrentUser()
   if (!result) redirect('/sign-in')
+  if (!hasRole(result.user.role, 'OWNER')) redirect('/dashboard')
 
   const { tenant } = result
   const hasKey = !!tenant.anthropicApiKey
