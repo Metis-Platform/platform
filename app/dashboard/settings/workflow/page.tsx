@@ -1,17 +1,15 @@
-import { auth } from '@clerk/nextjs/server'
+import { getCurrentUser, hasRole } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import WorkflowClient from './WorkflowClient'
 
 export default async function WorkflowSettingsPage() {
-  const { orgId } = await auth()
-  if (!orgId) redirect('/sign-in')
-
-  const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId }, select: { id: true } })
-  if (!tenant) redirect('/onboarding')
+  const result = await getCurrentUser()
+  if (!result) redirect('/sign-in')
+  if (!hasRole(result.user.role, 'OWNER')) redirect('/dashboard')
 
   const rules = await db.tenantWorkflowRule.findMany({
-    where: { tenantId: tenant.id },
+    where: { tenantId: result.tenant.id },
     orderBy: [{ strategy: 'asc' }, { createdAt: 'asc' }],
   })
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, hasRole } from '@/lib/auth'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
 import { StrategyType, Prisma } from '@/app/generated/prisma'
 
@@ -17,6 +17,9 @@ const createSchema = z.object({
 export async function GET() {
   const result = await getCurrentUser()
   if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasRole(result.user.role, 'OWNER')) {
+    return NextResponse.json({ error: 'Only owners can manage workflow rules' }, { status: 403 })
+  }
   const rules = await db.tenantWorkflowRule.findMany({
     where: { tenantId: result.tenant.id },
     orderBy: [{ strategy: 'asc' }, { createdAt: 'asc' }],
@@ -27,6 +30,9 @@ export async function GET() {
 export async function POST(req: Request) {
   const result = await getCurrentUser()
   if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasRole(result.user.role, 'OWNER')) {
+    return NextResponse.json({ error: 'Only owners can manage workflow rules' }, { status: 403 })
+  }
   const body = await req.json()
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })

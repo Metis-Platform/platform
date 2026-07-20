@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   auditCreate: vi.fn(),
 }))
 
-vi.mock('@/lib/auth', () => ({ getCurrentUser: mocks.getCurrentUser }))
+vi.mock('@/lib/auth', () => ({ getCurrentUser: mocks.getCurrentUser, hasRole: (role: string) => role === 'OWNER' }))
 vi.mock('@/lib/db', () => ({
   db: {
     $transaction: async (callback: (tx: unknown) => unknown) => callback({
@@ -24,7 +24,7 @@ describe('workflow rule by id route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mocks.getCurrentUser.mockResolvedValue({
-      tenant: { id: 'tenant-1' }, user: { id: 'user-1' },
+      tenant: { id: 'tenant-1' }, user: { id: 'user-1', role: 'OWNER' },
     })
     mocks.findFirst.mockResolvedValue({ id: 'rule-1', tenantId: 'tenant-1', strategy: 'TAX_LIEN' })
     mocks.update.mockResolvedValue({ id: 'rule-1', isActive: false })
@@ -69,6 +69,20 @@ describe('workflow rule by id route', () => {
 
     expect(response.status).toBe(404)
     expect(mocks.remove).not.toHaveBeenCalled()
+    expect(mocks.auditCreate).not.toHaveBeenCalled()
+  })
+
+  it('refuses a non-owner before inspecting or changing a workflow rule', async () => {
+    mocks.getCurrentUser.mockResolvedValue({
+      tenant: { id: 'tenant-1' }, user: { id: 'user-2', role: 'ANALYST' },
+    })
+    const response = await PATCH(new Request('https://metis.example/api/settings/workflow/rule-1', {
+      method: 'PATCH', body: JSON.stringify({ isActive: false }),
+    }), { params: Promise.resolve({ id: 'rule-1' }) })
+
+    expect(response.status).toBe(403)
+    expect(mocks.findFirst).not.toHaveBeenCalled()
+    expect(mocks.update).not.toHaveBeenCalled()
     expect(mocks.auditCreate).not.toHaveBeenCalled()
   })
 })
