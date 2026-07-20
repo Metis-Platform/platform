@@ -13,6 +13,7 @@ const ACTION_ICON: Record<string, string> = {
   BLAST_SENT: '📧',
   NOTE_PAYMENT_LOGGED: '💰',
   CHECKLIST_CREATED: '✅',
+  TASK_CREATED: '☑️',
   LOGIN: '🔑',
 }
 
@@ -22,6 +23,7 @@ const ACTION_LABEL: Record<string, string> = {
   BLAST_SENT: 'Buyer blast sent',
   NOTE_PAYMENT_LOGGED: 'Note payment logged',
   CHECKLIST_CREATED: 'Checklist created',
+  TASK_CREATED: 'Task created',
   LOGIN: 'Logged in',
 }
 
