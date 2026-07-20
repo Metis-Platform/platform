@@ -218,6 +218,27 @@
         "persistedOutcome": "The fixture workflow rule records a correlated WORKFLOW_RULE_UPDATED event, then is removed with a correlated WORKFLOW_RULE_DELETED event.",
         "cleanup": "The integration fixture reset restores or removes any fixture workflow rule and related audit events."
       }
+    },
+    {
+      "id": "owner-configure-ai-key",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/ai-key.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated owner tenant with a dedicated disposable AI-key fixture and deterministic credential cleanup.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "AI_KEY_CONFIGURATION_CHANGED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/settings/ai",
+        "actions": [
+          { "userAction": "Save the fixture AI key and then remove it", "expectedRequest": "PATCH /api/settings/ai-key" }
+        ],
+        "persistedOutcome": "The fixture tenant key is configured and removed only by an owner; each change has an AI_KEY_CONFIGURATION_CHANGED audit event carrying its response request ID without the credential.",
+        "cleanup": "The integration fixture reset removes the dedicated fixture credential and related audit events."
+      }
     }
   ]
 }
