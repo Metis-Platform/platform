@@ -30,7 +30,12 @@ type ResearchResponse = {
   }
   geography?: {
     municipalityScope: 'INCORPORATED_PLACE' | 'NO_INCORPORATED_PLACE_RETURNED' | 'UNKNOWN'
-    landUseAuthority: 'UNRESOLVED' | 'VERIFIED'
+    landUseAuthority: { status: 'UNRESOLVED' } | {
+      status: 'VERIFIED'
+      claimId: string
+      sourceUrl: string
+      verifiedAt: string
+    }
     resolved?: { incorporatedPlace?: { geoid: string; name: string } } | null
   }
   enrich: {
@@ -471,11 +476,16 @@ export default function ResearchForm({ jurisdictions }: Props) {
                 Location came from your address through the <a href={data.location.sourceUrl} target="_blank" rel="noreferrer" className="underline">Census Geocoder</a>{data.location.matchedAddress ? `: ${data.location.matchedAddress}` : ''}. Verify parcel identity and governing authority before relying on location-dependent conclusions.
               </p>
             )}
-            {data.geography?.landUseAuthority === 'UNRESOLVED' && (
+            {data.geography?.landUseAuthority.status === 'UNRESOLVED' && (
               <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 {data.geography.municipalityScope === 'INCORPORATED_PLACE'
                   ? `This research point is inside ${data.geography.resolved?.incorporatedPlace?.name ?? 'an incorporated place'}.`
                   : 'Metis has not verified whether this research point is governed by county or municipal land-use authority.'} County land-use rules are not applied; verify the governing zoning, planning, and permitting authority before relying on local development conclusions.
+              </p>
+            )}
+            {data.geography?.landUseAuthority.status === 'VERIFIED' && (
+              <p className="mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+                County land-use rules were applied under Metis&apos;s current reviewed county-wide authority declaration. <a href={data.geography.landUseAuthority.sourceUrl} target="_blank" rel="noreferrer" className="underline">Review the authoritative source</a> before relying on any development conclusion.
               </p>
             )}
             {unavailableBaselineChecks.length > 0 && (

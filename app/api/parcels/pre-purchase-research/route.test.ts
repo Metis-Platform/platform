@@ -149,6 +149,7 @@ describe('pre-purchase research governing geography', () => {
     })
     expect(builder.buildableEnvelope).toBeUndefined()
     expect(builder.conditions).toContain('Governing local land-use authority is unresolved')
+    expect(body.geography.landUseAuthority).toEqual({ status: 'UNRESOLVED' })
     expect(landMao).toMatchObject({
       scenario: { conservative: 40_000, moderate: 55_000, aggressive: 70_000 },
       basis: 'Market value estimate $100K × 40-70%',
@@ -159,6 +160,45 @@ describe('pre-purchase research governing geography', () => {
         payload: expect.objectContaining({ version: 1 }),
       }),
     }))
+  })
+
+  it('applies county land-use rules only when a current verified county-wide declaration exists', async () => {
+    mocks.jurisdictionFindFirst.mockResolvedValue({
+      id: 'countywide-jurisdiction', state: 'FL', county: 'Example', strategyData: [{
+        data: { zoning_codes: { R1: { minLotSizeSqFt: 5_000, minLotWidthFt: 50 } } },
+      }],
+      claims: [{
+        id: 'countywide-claim', section: 'zoning', fieldKey: 'countyWideLandUseAuthority',
+        value: 'COUNTY_WIDE', geographicScope: 'COUNTY_WIDE', expectedAuthorityClass: 'LOCAL_OFFICIAL',
+        sourceAuthorityClass: 'LOCAL_OFFICIAL', sourceAuthorityOwner: 'Example County Planning',
+        sourceAuthorityStatus: 'VERIFIED', sourceAuthorityVerifiedAt: new Date('2026-07-01'), sourceAuthorityVerifiedBy: 'reviewer-1',
+        verificationState: 'VERIFIED', reviewedAt: new Date('2026-07-01'),
+        freshness: { reviewDueAt: new Date('2026-09-01'), staleAt: new Date('2026-09-01') },
+        evidence: [{ sourceUrl: 'https://planning.example.gov/authority', sourceUrlRecord: {
+          authorityClass: 'LOCAL_OFFICIAL', authorityOwner: 'Example County Planning', authorityStatus: 'VERIFIED',
+          authorityVerifiedAt: new Date('2026-07-01'), authorityVerifiedBy: 'reviewer-1',
+        } }],
+      }],
+    })
+
+    const response = await POST(new Request('https://metis.example/api/parcels/pre-purchase-research', {
+      method: 'POST',
+      body: JSON.stringify({
+        apn: '1234', fipsCounty: '12127',
+        overrides: {
+          lotSizeSqFt: 4_000, frontageLinearFt: 40, zoning: 'R1', improved: false,
+          manualSourceUrl: 'https://assessor.example.gov/parcel/1234', manualVerification: true,
+        },
+      }),
+    }))
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.geography.landUseAuthority).toMatchObject({
+      status: 'VERIFIED', claimId: 'countywide-claim', sourceUrl: 'https://planning.example.gov/authority',
+    })
+    const builder = body.results.find((result: { exitKey: string }) => result.exitKey === 'VACANT_SELL_TO_BUILDER')
+    expect(builder.conditions).not.toContain('Governing local land-use authority is unresolved')
   })
 
   it('keeps a Maricopa parcel preliminary when county zoning authority is unresolved', async () => {
