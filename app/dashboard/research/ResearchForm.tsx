@@ -30,6 +30,7 @@ type ResearchResponse = {
   }
   geography?: {
     municipalityScope: 'INCORPORATED_PLACE' | 'NO_INCORPORATED_PLACE_RETURNED' | 'UNKNOWN'
+    landUseAuthority: 'UNRESOLVED' | 'VERIFIED'
     resolved?: { incorporatedPlace?: { geoid: string; name: string } } | null
   }
   enrich: {
@@ -470,9 +471,11 @@ export default function ResearchForm({ jurisdictions }: Props) {
                 Location came from your address through the <a href={data.location.sourceUrl} target="_blank" rel="noreferrer" className="underline">Census Geocoder</a>{data.location.matchedAddress ? `: ${data.location.matchedAddress}` : ''}. Verify parcel identity and governing authority before relying on location-dependent conclusions.
               </p>
             )}
-            {data.geography?.municipalityScope === 'INCORPORATED_PLACE' && (
+            {data.geography?.landUseAuthority === 'UNRESOLVED' && (
               <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                This research point is inside {data.geography.resolved?.incorporatedPlace?.name ?? 'an incorporated place'}. County land-use rules are not applied; verify the municipal zoning, planning, and permitting authority before relying on local development conclusions.
+                {data.geography.municipalityScope === 'INCORPORATED_PLACE'
+                  ? `This research point is inside ${data.geography.resolved?.incorporatedPlace?.name ?? 'an incorporated place'}.`
+                  : 'Metis has not verified whether this research point is governed by county or municipal land-use authority.'} County land-use rules are not applied; verify the governing zoning, planning, and permitting authority before relying on local development conclusions.
               </p>
             )}
             {unavailableBaselineChecks.length > 0 && (

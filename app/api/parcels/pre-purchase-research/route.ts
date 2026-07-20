@@ -5,6 +5,7 @@ import { syncUserToDatabase } from '@/lib/sync-user'
 import { normalizeApn } from '@/lib/parcel/apn'
 import { enrichParcel } from '@/lib/parcel/enrich'
 import { buildJurisdictionFacts } from '@/lib/exit-engine/jurisdiction-facts'
+import { EXIT_META } from '@/lib/exit-engine/keys'
 import { evaluateExits } from '@/lib/exit-engine/engine'
 import { assembleResearchProfile } from '@/lib/parcel/research-profile'
 import { computeMao } from '@/lib/mao/calculator'
@@ -207,15 +208,24 @@ export async function POST(req: Request) {
   const ctx = {
     parcel,
     jurisdiction: buildJurisdictionFacts(strategyData, fmrByBedroom, {
-      // County land-use records cannot govern a coordinate Census places inside a municipality.
-      // County tax-sale facts remain available because this only suppresses local land-use fields.
-      allowCountyLandUseRules: governingGeography?.municipalityStatus !== 'INCORPORATED_PLACE',
+      // A Census place result can identify an incorporated place, but its absence cannot prove
+      // unincorporated county authority. County tax-sale facts remain available separately.
+      allowCountyLandUseRules: governingGeography?.countyLandUseAuthorityStatus === 'VERIFIED',
     }),
     investor,
     strategy: 'TAX_DEED' as const,
   }
 
-  const exitResults = evaluateExits(ctx)
+  const evaluatedExits = evaluateExits(ctx)
+  const exitResults = governingGeography?.countyLandUseAuthorityStatus === 'VERIFIED'
+    ? evaluatedExits
+    : evaluatedExits.map(result => EXIT_META[result.exitKey].family !== 'LIEN'
+      ? {
+          ...result,
+          verdict: result.verdict === 'VIABLE' ? 'CONDITIONAL' as const : result.verdict,
+          conditions: [...result.conditions, 'Governing local land-use authority is unresolved'],
+        }
+      : result)
   const mao = computeMao(parcel, exitResults)
   const handoff = jurisdiction
     ? await db.prePurchaseResearchSnapshot.create({
@@ -243,6 +253,7 @@ export async function POST(req: Request) {
       resolved: governingGeography,
       // Geography resolution identifies scope; it does not select a zoning or permitting authority.
       municipalityScope: governingGeography?.municipalityStatus ?? 'UNKNOWN',
+      landUseAuthority: governingGeography?.countyLandUseAuthorityStatus ?? 'UNRESOLVED',
     },
     location: {
       status: locationStatus,
