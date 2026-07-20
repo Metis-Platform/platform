@@ -174,7 +174,7 @@ function buildSourcePlans(
       {
         source: 'usda_ssurgo',
         sourceUrl: USDA_SSURGO_SOURCE_URL,
-        fields: ['soilMapUnitKey', 'soilMapUnitName'],
+        fields: ['soilMapUnitKey', 'soilMapUnitName', 'soilFarmlandClassification'],
         fetch: async () => (await fetchSsurgoMapUnit(lat, lon)) ?? {},
       },
       {
@@ -318,6 +318,7 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'wetlandsNwiStatus',
     'soilMapUnitKey',
     'soilMapUnitName',
+    'soilFarmlandClassification',
     'elevationFeet',
     'hydrography3dhpStatus',
     'hydrography3dhpFeatureTypes',
