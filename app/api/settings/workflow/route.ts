@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { auth } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/auth'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 import { StrategyType, Prisma } from '@/app/generated/prisma'
 
 const createSchema = z.object({
@@ -13,39 +14,45 @@ const createSchema = z.object({
   actionConfig: z.record(z.string(), z.unknown()),
 })
 
-async function getTenant() {
-  const { orgId } = await auth()
-  if (!orgId) return null
-  return db.tenant.findUnique({ where: { clerkOrgId: orgId }, select: { id: true } })
-}
-
 export async function GET() {
-  const tenant = await getTenant()
-  if (!tenant) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getCurrentUser()
+  if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const rules = await db.tenantWorkflowRule.findMany({
-    where: { tenantId: tenant.id },
+    where: { tenantId: result.tenant.id },
     orderBy: [{ strategy: 'asc' }, { createdAt: 'asc' }],
   })
   return NextResponse.json(rules)
 }
 
 export async function POST(req: Request) {
-  const tenant = await getTenant()
-  if (!tenant) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getCurrentUser()
+  if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await req.json()
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
-  const rule = await db.tenantWorkflowRule.create({
-    data: {
-      tenantId: tenant.id,
-      strategy: parsed.data.strategy,
-      name: parsed.data.name,
-      triggerEvent: parsed.data.triggerEvent,
-      offsetDays: parsed.data.offsetDays,
-      action: parsed.data.action,
-      actionConfig: parsed.data.actionConfig as Prisma.InputJsonValue,
-    },
+  const rule = await db.$transaction(async tx => {
+    const created = await tx.tenantWorkflowRule.create({
+      data: {
+        tenantId: result.tenant.id,
+        strategy: parsed.data.strategy,
+        name: parsed.data.name,
+        triggerEvent: parsed.data.triggerEvent,
+        offsetDays: parsed.data.offsetDays,
+        action: parsed.data.action,
+        actionConfig: parsed.data.actionConfig as Prisma.InputJsonValue,
+      },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: result.tenant.id,
+        userId: result.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'WORKFLOW_RULE_CREATED',
+        meta: { workflowRuleId: created.id, strategy: created.strategy },
+      },
+    })
+    return created
   })
   return NextResponse.json(rule)
 }
