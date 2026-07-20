@@ -4,9 +4,17 @@ import { isSuperAdmin } from '@/lib/admin-auth'
 import Link from 'next/link'
 import RulesClient from './RulesClient'
 import StrategyDataClient from './StrategyDataClient'
+import AuthorityBoundaryClient from './AuthorityBoundaryClient'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { AuctionFeedSource } from '@/app/generated/prisma'
 import { DISABLED_AUCTION_FEEDS } from '@/lib/auction-feed-availability'
+import {
+  isCurrentVerifiedLocalAuthorityClaim,
+  UNINCORPORATED_COUNTY_LAND_USE_AUTHORITY_SCOPE,
+  type CountyLandUseAuthorityClaim,
+} from '@/lib/jurisdiction-land-use-authority'
+import { listCurrentUnincorporatedAuthorityBoundaries } from '@/lib/jurisdiction-authority-boundary'
+import { COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD } from '@/lib/jurisdiction-question-library'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +34,7 @@ export default async function JurisdictionRulesPage({
 
   const { jurisdictionId } = await params
 
-  const [jurisdiction, strategyDataRows, upcomingSales] = await Promise.all([
+  const [jurisdiction, strategyDataRows, upcomingSales, authorityClaims, authorityBoundaries] = await Promise.all([
     db.jurisdiction.findUnique({
       where: { id: jurisdictionId },
       include: {
@@ -44,6 +52,47 @@ export default async function JurisdictionRulesPage({
       orderBy: { saleDate: 'asc' },
       take: 12,
     }),
+    db.jurisdictionClaim.findMany({
+      where: {
+        jurisdictionId,
+        section: 'zoning',
+        fieldKey: COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD,
+        supersededByClaim: null,
+      },
+      select: {
+        id: true,
+        section: true,
+        fieldKey: true,
+        value: true,
+        geographicScope: true,
+        expectedAuthorityClass: true,
+        sourceAuthorityClass: true,
+        sourceAuthorityOwner: true,
+        sourceAuthorityStatus: true,
+        sourceAuthorityVerifiedAt: true,
+        sourceAuthorityVerifiedBy: true,
+        verificationState: true,
+        reviewedAt: true,
+        freshness: { select: { reviewDueAt: true, staleAt: true } },
+        evidence: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            sourceUrl: true,
+            sourceUrlRecord: {
+              select: {
+                authorityClass: true,
+                authorityOwner: true,
+                authorityStatus: true,
+                authorityVerifiedAt: true,
+                authorityVerifiedBy: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    listCurrentUnincorporatedAuthorityBoundaries(jurisdictionId),
   ])
 
   if (!jurisdiction) notFound()
@@ -74,6 +123,16 @@ export default async function JurisdictionRulesPage({
       description: r.description,
     })),
   }))
+  const eligibleAuthorityClaims = authorityClaims
+    .filter(claim => isCurrentVerifiedLocalAuthorityClaim(
+      claim as CountyLandUseAuthorityClaim,
+      UNINCORPORATED_COUNTY_LAND_USE_AUTHORITY_SCOPE,
+    ))
+    .map(claim => ({
+      id: claim.id,
+      sourceUrl: claim.evidence[0].sourceUrl,
+      reviewedAt: claim.reviewedAt.toISOString(),
+    }))
 
   return (
     <div className="space-y-6">
@@ -205,6 +264,18 @@ export default async function JurisdictionRulesPage({
             strategy: r.strategy,
             data: r.data as Record<string, unknown>,
             updatedAt: r.updatedAt.toISOString(),
+          }))}
+        />
+      </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-900 mb-1">Unincorporated authority boundary</h2>
+        <AuthorityBoundaryClient
+          jurisdictionId={jurisdictionId}
+          claims={eligibleAuthorityClaims}
+          initialBoundaries={authorityBoundaries.map(boundary => ({
+            ...boundary,
+            createdAt: boundary.createdAt.toISOString(),
           }))}
         />
       </div>
