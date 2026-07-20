@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   isSuperAdmin: vi.fn(),
   currentUser: vi.fn(),
   publishUnincorporatedAuthorityBoundary: vi.fn(),
+  syncUserToDatabase: vi.fn(),
 }))
 
 vi.mock('@/lib/admin-auth', () => ({ isSuperAdmin: mocks.isSuperAdmin }))
@@ -11,6 +12,7 @@ vi.mock('@clerk/nextjs/server', () => ({ currentUser: mocks.currentUser }))
 vi.mock('@/lib/jurisdiction-authority-boundary', () => ({
   publishUnincorporatedAuthorityBoundary: mocks.publishUnincorporatedAuthorityBoundary,
 }))
+vi.mock('@/lib/sync-user', () => ({ syncUserToDatabase: mocks.syncUserToDatabase }))
 
 import { POST } from './route'
 
@@ -28,6 +30,7 @@ describe('authority-boundary publication route', () => {
       boundaryId: '00000000-0000-4000-8000-000000000001',
       claimId: '00000000-0000-4000-8000-000000000002',
     })
+    mocks.syncUserToDatabase.mockResolvedValue({ tenant: { id: 'tenant-1' }, user: { id: 'local-user-1' } })
   })
 
   it('requires a super-admin and a reviewed polygon payload', async () => {
@@ -52,8 +55,13 @@ describe('authority-boundary publication route', () => {
     }), { params: Promise.resolve({ id: 'j-1' }) })
 
     expect(response.status).toBe(201)
-    expect(mocks.publishUnincorporatedAuthorityBoundary).toHaveBeenCalledWith({
+    expect(mocks.publishUnincorporatedAuthorityBoundary).toHaveBeenCalledWith(expect.objectContaining({
       jurisdictionId: 'j-1', claimId, geometry, reviewerId: 'reviewer-1',
-    })
+      auditEvent: expect.objectContaining({
+        tenantId: 'tenant-1', userId: 'local-user-1',
+        action: 'JURISDICTION_AUTHORITY_BOUNDARY_PUBLISHED',
+        meta: expect.objectContaining({ jurisdictionId: 'j-1', claimId }),
+      }),
+    }))
   })
 })

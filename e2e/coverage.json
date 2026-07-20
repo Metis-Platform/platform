@@ -92,6 +92,48 @@
         "persistedOutcome": "The fixture-tenant field report is persisted and its JURISDICTION_PROFILE_FLAGGED audit event carries the response request ID.",
         "cleanup": "The integration fixture reset removes the field report."
       }
+    },
+    {
+      "id": "super-admin-publish-authority-scope",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/authority-scope.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated super-admin fixture and deterministic reset of authority claims.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "JURISDICTION_AUTHORITY_SCOPE_PUBLISHED"
+      },
+      "journey": {
+        "entryPoint": "/admin/rules/{fixtureJurisdictionId}",
+        "actions": [
+          { "userAction": "Select a verified local source, choose the authority scope, cite the evidence, and publish", "expectedRequest": "POST /api/admin/jurisdictions/{fixtureJurisdictionId}/authority-scope" }
+        ],
+        "persistedOutcome": "The fixture jurisdiction has a current authority-scope claim and its JURISDICTION_AUTHORITY_SCOPE_PUBLISHED audit event carries the response request ID.",
+        "cleanup": "The integration fixture reset removes the authority-scope claim and its dependent evidence records."
+      }
+    },
+    {
+      "id": "super-admin-publish-unincorporated-authority-boundary",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/authority-boundary.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated super-admin fixture and deterministic reset of authority boundaries.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "JURISDICTION_AUTHORITY_BOUNDARY_PUBLISHED"
+      },
+      "journey": {
+        "entryPoint": "/admin/rules/{fixtureJurisdictionId}",
+        "actions": [
+          { "userAction": "Select the current unincorporated authority claim, submit reviewed GeoJSON, and save", "expectedRequest": "POST /api/admin/jurisdictions/{fixtureJurisdictionId}/authority-boundaries" }
+        ],
+        "persistedOutcome": "The fixture jurisdiction has a current reviewed authority boundary and its JURISDICTION_AUTHORITY_BOUNDARY_PUBLISHED audit event carries the response request ID.",
+        "cleanup": "The integration fixture reset removes the authority-boundary record."
+      }
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { db } from './db'
 import { randomUUID } from 'node:crypto'
+import { Prisma } from '@/app/generated/prisma'
 import { isPolygonGeometry } from './geo/types'
 import {
   isCurrentVerifiedLocalAuthorityClaim,
@@ -68,6 +69,13 @@ export async function publishUnincorporatedAuthorityBoundary(input: {
   geometry: unknown
   reviewerId: string
   replacesBoundaryId?: string
+  auditEvent?: {
+    tenantId: string
+    userId: string
+    requestId?: string
+    action: string
+    meta: Prisma.InputJsonValue
+  }
 }) {
   if (!input.reviewerId.trim()) throw new Error('REVIEWER_REQUIRED')
   if (!isPolygonGeometry(input.geometry)) throw new Error('BOUNDARY_GEOMETRY_INVALID')
@@ -162,6 +170,10 @@ export async function publishUnincorporatedAuthorityBoundary(input: {
         WHERE id = ${currentId} AND superseded_by_id IS NULL
       `
       if (superseded !== 1) throw new Error('STALE_AUTHORITY_BOUNDARY')
+    }
+
+    if (input.auditEvent) {
+      await tx.auditEvent.create({ data: input.auditEvent })
     }
 
     return { boundaryId, claimId: input.claimId }
