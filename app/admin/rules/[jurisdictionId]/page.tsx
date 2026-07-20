@@ -5,6 +5,7 @@ import Link from 'next/link'
 import RulesClient from './RulesClient'
 import StrategyDataClient from './StrategyDataClient'
 import AuthorityBoundaryClient from './AuthorityBoundaryClient'
+import AuthorityScopeClaimClient from './AuthorityScopeClaimClient'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { AuctionFeedSource } from '@/app/generated/prisma'
 import { DISABLED_AUCTION_FEEDS } from '@/lib/auction-feed-availability'
@@ -34,7 +35,7 @@ export default async function JurisdictionRulesPage({
 
   const { jurisdictionId } = await params
 
-  const [jurisdiction, strategyDataRows, upcomingSales, authorityClaims, authorityBoundaries] = await Promise.all([
+  const [jurisdiction, strategyDataRows, upcomingSales, authorityClaims, authorityBoundaries, authoritySources] = await Promise.all([
     db.jurisdiction.findUnique({
       where: { id: jurisdictionId },
       include: {
@@ -93,6 +94,24 @@ export default async function JurisdictionRulesPage({
       },
     }),
     listCurrentUnincorporatedAuthorityBoundaries(jurisdictionId),
+    db.jurisdictionSourceUrl.findMany({
+      where: {
+        jurisdictionId,
+        authorityStatus: 'VERIFIED',
+        authorityClass: 'LOCAL_OFFICIAL',
+        evidenceSnapshots: { some: {} },
+      },
+      select: {
+        id: true,
+        url: true,
+        evidenceSnapshots: {
+          orderBy: { retrievedAt: 'desc' },
+          take: 1,
+          select: { retrievedAt: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    }),
   ])
 
   if (!jurisdiction) notFound()
@@ -265,6 +284,16 @@ export default async function JurisdictionRulesPage({
             data: r.data as Record<string, unknown>,
             updatedAt: r.updatedAt.toISOString(),
           }))}
+        />
+      </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-900 mb-1">County land-use authority scope</h2>
+        <AuthorityScopeClaimClient
+          jurisdictionId={jurisdictionId}
+          sources={authoritySources.flatMap(source => source.evidenceSnapshots[0]
+            ? [{ id: source.id, url: source.url, retrievedAt: source.evidenceSnapshots[0].retrievedAt.toISOString() }]
+            : [])}
         />
       </div>
 
