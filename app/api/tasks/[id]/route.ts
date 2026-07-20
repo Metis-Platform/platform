@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { getCurrentUser, hasRole } from '@/lib/auth'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 class AssigneeNotFoundError extends Error {}
 class TaskNotFoundError extends Error {}
@@ -60,7 +61,18 @@ export async function PATCH(
         if (!assignee) throw new AssigneeNotFoundError()
       }
 
-      return tx.task.update({ where: { id: task.id }, data })
+      const updatedTask = await tx.task.update({ where: { id: task.id }, data })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: synced.user.id,
+          requestId: requestIdFromHeaders(req.headers),
+          action: 'TASK_UPDATED',
+          // Task content and changed values can be investor-specific; retain identity only.
+          meta: { taskId: task.id },
+        },
+      })
+      return updatedTask
     })
   } catch (error) {
     if (error instanceof TaskNotFoundError) {
@@ -75,7 +87,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const result = await getCurrentUser()
@@ -85,11 +97,30 @@ export async function DELETE(
   }
 
   const { id } = await params
-  const existing = await db.task.findUnique({ where: { id } })
-  if (!existing || existing.tenantId !== result.tenant.id) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
+  try {
+    await db.$transaction(async tx => {
+      const existing = await tx.task.findFirst({
+        where: { id, tenantId: result.tenant.id },
+        select: { id: true },
+      })
+      if (!existing) throw new TaskNotFoundError()
 
-  await db.task.delete({ where: { id } })
+      await tx.task.delete({ where: { id: existing.id } })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: result.tenant.id,
+          userId: result.user.id,
+          requestId: requestIdFromHeaders(req.headers),
+          action: 'TASK_DELETED',
+          meta: { taskId: existing.id },
+        },
+      })
+    })
+  } catch (error) {
+    if (error instanceof TaskNotFoundError) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    throw error
+  }
   return NextResponse.json({ ok: true })
 }

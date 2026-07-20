@@ -284,6 +284,21 @@
         "persistedOutcome": "The fixture deal receives the task and one TASK_CREATED audit event carrying the response request ID without task content or assignment.",
         "cleanup": "The integration fixture reset removes the task and related audit event."
       }
+    },
+    {
+      "id": "analyst-update-delete-task",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/task-update-delete.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture, a fixture task, and deterministic task restoration before deletion cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "TASK_UPDATED and TASK_DELETED" },
+      "journey": {
+        "entryPoint": "/dashboard/tasks?dealId={fixtureDealId}",
+        "actions": [{ "userAction": "Update the fixture task and then delete it", "expectedRequest": "PATCH then DELETE /api/tasks/{fixtureTaskId}" }],
+        "persistedOutcome": "The fixture task records a correlated TASK_UPDATED event, then is removed with a correlated TASK_DELETED event; neither audit event stores task content or changed values.",
+        "cleanup": "The integration fixture reset restores or removes the fixture task and related audit events."
+      }
     }
   ]
 }
