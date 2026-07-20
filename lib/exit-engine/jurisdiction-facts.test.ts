@@ -65,4 +65,22 @@ describe('buildJurisdictionFacts', () => {
     expect(facts.setbackFeet('R-1')).toBeUndefined()
     expect(facts.fmr(3)).toBeUndefined()
   })
+
+  it('withholds county land-use fields without withholding county tax-sale facts', () => {
+    const facts = buildJurisdictionFacts(strategyData({
+      zoning_codes: { R1: { minLotSizeSqFt: 5_000, minLotWidthFt: 50, setbacks: { front: 20 } } },
+      strAllowed: true,
+      rentControlZone: true,
+      wholesaleLicenseRequired: true,
+      subdivisionAllowed: true,
+      taxDeedRedemptionDays: 90,
+    }), {}, { allowCountyLandUseRules: false })
+
+    expect(facts.minLotSizeSqFt('R1')).toBeUndefined()
+    expect(facts.minLotWidthFt?.('R1')).toBeUndefined()
+    expect(facts.setbackFeet('R1')).toBeUndefined()
+    expect(facts.strAllowed).toBeUndefined()
+    expect(facts.subdivisionAllowed).toBeUndefined()
+    expect(facts.taxDeedRedemptionDays).toBe(90)
+  })
 })
