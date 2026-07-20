@@ -42,6 +42,7 @@ const CACHE_PROFILE_FIELDS = new Set([
   'wetlandsNwiStatus',
   'soilMapUnitKey',
   'soilMapUnitName',
+  'soilFarmlandClassification',
   'elevationFeet',
   'hydrography3dhpStatus',
   'hydrography3dhpFeatureTypes',

@@ -76,6 +76,7 @@ export interface ParcelProfile {
   wetlandsNwiStatus?: 'MAPPED_FEATURE' | 'NO_MAPPED_FEATURE'
   soilMapUnitKey?: string
   soilMapUnitName?: string
+  soilFarmlandClassification?: string
   elevationFeet?: number
   hydrography3dhpStatus?: 'MAPPED_FEATURE' | 'NO_MAPPED_FEATURE'
   hydrography3dhpFeatureTypes?: Array<'FLOWLINE' | 'WATERBODY'>
