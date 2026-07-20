@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { getCurrentUser, hasRole } from '@/lib/auth'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const TRANSACTION_TYPES = [
   'PURCHASE', 'SUBSEQUENT_TAX', 'LEGAL_FEE', 'TITLE_SEARCH', 'RECORDING_FEE',
@@ -63,15 +64,28 @@ export async function POST(
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
   }
 
-  const tx = await db.financialTransaction.create({
-    data: {
-      dealId,
-      tenantId: tenant.id,
-      type: parsed.data.type,
-      amount: parsed.data.amount,
-      date: new Date(parsed.data.date),
-      description: parsed.data.description ?? null,
-    },
+  const tx = await db.$transaction(async transaction => {
+    const created = await transaction.financialTransaction.create({
+      data: {
+        dealId,
+        tenantId: tenant.id,
+        type: parsed.data.type,
+        amount: parsed.data.amount,
+        date: new Date(parsed.data.date),
+        description: parsed.data.description ?? null,
+      },
+    })
+    await transaction.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: result.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'FINANCIAL_TRANSACTION_CREATED',
+        // Amount, type, date, and description are investor-sensitive; retain identity only.
+        meta: { transactionId: created.id, dealId },
+      },
+    })
+    return created
   })
 
   return NextResponse.json(tx, { status: 201 })
