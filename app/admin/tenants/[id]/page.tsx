@@ -14,6 +14,8 @@ const ACTION_ICON: Record<string, string> = {
   NOTE_PAYMENT_LOGGED: '💰',
   CHECKLIST_CREATED: '✅',
   TASK_CREATED: '☑️',
+  TASK_UPDATED: '✏️',
+  TASK_DELETED: '🗑️',
   LOGIN: '🔑',
 }
 
@@ -24,6 +26,8 @@ const ACTION_LABEL: Record<string, string> = {
   NOTE_PAYMENT_LOGGED: 'Note payment logged',
   CHECKLIST_CREATED: 'Checklist created',
   TASK_CREATED: 'Task created',
+  TASK_UPDATED: 'Task updated',
+  TASK_DELETED: 'Task deleted',
   LOGIN: 'Logged in',
 }
 
