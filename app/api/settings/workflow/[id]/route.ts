@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, hasRole } from '@/lib/auth'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const patchSchema = z.object({
@@ -12,6 +12,9 @@ const patchSchema = z.object({
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getCurrentUser()
   if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasRole(result.user.role, 'OWNER')) {
+    return NextResponse.json({ error: 'Only owners can manage workflow rules' }, { status: 403 })
+  }
   const { id } = await params
   const body = await req.json()
   const parsed = patchSchema.safeParse(body)
@@ -40,6 +43,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getCurrentUser()
   if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasRole(result.user.role, 'OWNER')) {
+    return NextResponse.json({ error: 'Only owners can manage workflow rules' }, { status: 403 })
+  }
   const { id } = await params
 
   const deleted = await db.$transaction(async tx => {

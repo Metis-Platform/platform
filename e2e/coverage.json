@@ -178,12 +178,12 @@
       }
     },
     {
-      "id": "tenant-create-workflow-rule",
+      "id": "owner-create-workflow-rule",
       "risk": "high",
       "mode": "mutation",
       "spec": "e2e/workflow-rule-create.spec.ts",
       "status": "blocked-by-289",
-      "notes": "Requires an isolated tenant member and deterministic workflow-rule cleanup.",
+      "notes": "Requires an isolated owner and deterministic workflow-rule cleanup.",
       "evidence": {
         "fixtureSet": "integration-v1",
         "responseHeader": "x-request-id",
@@ -199,12 +199,12 @@
       }
     },
     {
-      "id": "tenant-update-delete-workflow-rule",
+      "id": "owner-update-delete-workflow-rule",
       "risk": "high",
       "mode": "mutation",
       "spec": "e2e/workflow-rule-update-delete.spec.ts",
       "status": "blocked-by-289",
-      "notes": "Requires a fixture workflow rule and deterministic restoration before deletion cleanup.",
+      "notes": "Requires an isolated owner, fixture workflow rule, and deterministic restoration before deletion cleanup.",
       "evidence": {
         "fixtureSet": "integration-v1",
         "responseHeader": "x-request-id",
