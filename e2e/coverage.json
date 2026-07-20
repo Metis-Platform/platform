@@ -134,6 +134,48 @@
         "persistedOutcome": "The fixture jurisdiction has a current reviewed authority boundary and its JURISDICTION_AUTHORITY_BOUNDARY_PUBLISHED audit event carries the response request ID.",
         "cleanup": "The integration fixture reset removes the authority-boundary record."
       }
+    },
+    {
+      "id": "owner-invite-team-member",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/team-invite.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated owner and Clerk organization fixture with deterministic invitation cleanup.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "TEAM_MEMBER_INVITED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/settings/team",
+        "actions": [
+          { "userAction": "Enter the fixture member email and send an invitation", "expectedRequest": "POST /api/team/invite" }
+        ],
+        "persistedOutcome": "The fixture organization has the expected invitation and its TEAM_MEMBER_INVITED audit event carries the response request ID without the invitee email in metadata.",
+        "cleanup": "The integration fixture reset removes the Clerk invitation and any related fixture membership."
+      }
+    },
+    {
+      "id": "owner-change-team-member-role",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/team-role.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires a fixture owner/member pair and deterministic membership-role reset.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "TEAM_MEMBER_ROLE_CHANGED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/settings/team",
+        "actions": [
+          { "userAction": "Select the fixture member role and save the change", "expectedRequest": "PATCH /api/team/members/{fixtureMemberId}/role" }
+        ],
+        "persistedOutcome": "The fixture member has the selected role and its TEAM_MEMBER_ROLE_CHANGED audit event carries the response request ID.",
+        "cleanup": "The integration fixture reset restores the fixture member role."
+      }
     }
   ]
 }
