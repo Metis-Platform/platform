@@ -22,6 +22,8 @@ import {
   type OfficialParcelLocation,
 } from '@/lib/parcel/sources/volusia-property-appraiser'
 import { resolveMaricopaOfficialParcelLocation } from '@/lib/parcel/sources/maricopa-property-assessor'
+import { resolveCountyLandUseAuthority } from '@/lib/jurisdiction-land-use-authority'
+import { COUNTY_WIDE_LAND_USE_AUTHORITY_FIELD } from '@/lib/jurisdiction-question-library'
 import type { InvestorConstraints, ParcelProfile } from '@/lib/exit-engine/types'
 import { prePurchaseResearchSnapshotPayload, researchSnapshotExpiry, researchSnapshotJson } from '@/lib/pre-purchase-research-snapshot'
 
@@ -173,9 +175,52 @@ export async function POST(req: Request) {
     }),
     db.jurisdiction.findFirst({
       where:   { fips: normalized.fipsCounty },
-      include: { strategyData: true },
+      include: {
+        strategyData: true,
+        claims: {
+          where: {
+            section: 'zoning',
+            fieldKey: COUNTY_WIDE_LAND_USE_AUTHORITY_FIELD,
+            supersededByClaim: null,
+          },
+          select: {
+            id: true,
+            section: true,
+            fieldKey: true,
+            value: true,
+            geographicScope: true,
+            expectedAuthorityClass: true,
+            sourceAuthorityClass: true,
+            sourceAuthorityOwner: true,
+            sourceAuthorityStatus: true,
+            sourceAuthorityVerifiedAt: true,
+            sourceAuthorityVerifiedBy: true,
+            verificationState: true,
+            reviewedAt: true,
+            freshness: { select: { reviewDueAt: true, staleAt: true } },
+            evidence: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: {
+                sourceUrl: true,
+                sourceUrlRecord: {
+                  select: {
+                    authorityClass: true,
+                    authorityOwner: true,
+                    authorityStatus: true,
+                    authorityVerifiedAt: true,
+                    authorityVerifiedBy: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     }),
   ])
+
+  const countyLandUseAuthority = resolveCountyLandUseAuthority(jurisdiction?.claims ?? [])
 
   const fmrByBedroom = jurisdiction
     ? await loadFmrByBedroom(jurisdiction.state, jurisdiction.county)
@@ -208,16 +253,17 @@ export async function POST(req: Request) {
   const ctx = {
     parcel,
     jurisdiction: buildJurisdictionFacts(strategyData, fmrByBedroom, {
-      // A Census place result can identify an incorporated place, but its absence cannot prove
-      // unincorporated county authority. County tax-sale facts remain available separately.
-      allowCountyLandUseRules: governingGeography?.countyLandUseAuthorityStatus === 'VERIFIED',
+      // A county-wide, current, reviewed authority declaration is the only scope that can
+      // safely apply county land-use rules without a parcel-boundary resolver. County tax-sale
+      // facts remain available separately.
+      allowCountyLandUseRules: countyLandUseAuthority.status === 'VERIFIED',
     }),
     investor,
     strategy: 'TAX_DEED' as const,
   }
 
   const evaluatedExits = evaluateExits(ctx)
-  const exitResults = governingGeography?.countyLandUseAuthorityStatus === 'VERIFIED'
+  const exitResults = countyLandUseAuthority.status === 'VERIFIED'
     ? evaluatedExits
     : evaluatedExits.map(result => EXIT_META[result.exitKey].family !== 'LIEN'
       ? {
@@ -253,7 +299,7 @@ export async function POST(req: Request) {
       resolved: governingGeography,
       // Geography resolution identifies scope; it does not select a zoning or permitting authority.
       municipalityScope: governingGeography?.municipalityStatus ?? 'UNKNOWN',
-      landUseAuthority: governingGeography?.countyLandUseAuthorityStatus ?? 'UNRESOLVED',
+      landUseAuthority: countyLandUseAuthority,
     },
     location: {
       status: locationStatus,
