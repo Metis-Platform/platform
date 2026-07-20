@@ -239,6 +239,21 @@
         "persistedOutcome": "The fixture tenant key is configured and removed only by an owner; each change has an AI_KEY_CONFIGURATION_CHANGED audit event carrying its response request ID without the credential.",
         "cleanup": "The integration fixture reset removes the dedicated fixture credential and related audit events."
       }
+    },
+    {
+      "id": "owner-save-investor-profile",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/investor-profile.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated owner tenant and deterministic restoration of investment assumptions.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "INVESTOR_PROFILE_UPDATED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureDealId}",
+        "actions": [{ "userAction": "Save fixture investor assumptions in exit options", "expectedRequest": "POST /api/tenants/investor-profile" }],
+        "persistedOutcome": "The fixture tenant investor profile is updated by an owner and its INVESTOR_PROFILE_UPDATED event carries the response request ID without financial assumptions or licenses.",
+        "cleanup": "The integration fixture reset restores the investor profile and related audit event."
+      }
     }
   ]
 }
