@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
+import { hasRole } from '@/lib/auth'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const investorProfileSchema = z.object({
   maxPurchasePrice: z.number().positive().optional(),
@@ -22,20 +24,33 @@ export async function GET() {
   return NextResponse.json({ profile })
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const synced = await syncUserToDatabase()
   if (!synced) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasRole(synced.user.role, 'OWNER')) {
+    return NextResponse.json({ error: 'Only owners can manage investor profile assumptions' }, { status: 403 })
+  }
 
   const parsed = investorProfileSchema.safeParse(await req.json())
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const profile = await db.investorProfile.upsert({
-    where: { tenantId: synced.tenant.id },
-    create: {
-      tenantId: synced.tenant.id,
-      ...parsed.data,
-    },
-    update: parsed.data,
+  const profile = await db.$transaction(async tx => {
+    const updated = await tx.investorProfile.upsert({
+      where: { tenantId: synced.tenant.id },
+      create: { tenantId: synced.tenant.id, ...parsed.data },
+      update: parsed.data,
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: synced.tenant.id,
+        userId: synced.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'INVESTOR_PROFILE_UPDATED',
+        // Investment assumptions and licenses are intentionally excluded.
+        meta: { profileId: updated.id },
+      },
+    })
+    return updated
   })
 
   return NextResponse.json({ profile })
