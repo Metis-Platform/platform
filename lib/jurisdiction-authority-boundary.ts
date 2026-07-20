@@ -38,6 +38,30 @@ export function isAuthorityBoundarySchemaPending(error: unknown): boolean {
     && error.message.includes('does not exist')
 }
 
+export type CurrentAuthorityBoundary = {
+  id: string
+  claimId: string
+  createdAt: Date
+}
+
+export async function listCurrentUnincorporatedAuthorityBoundaries(
+  jurisdictionId: string,
+): Promise<CurrentAuthorityBoundary[]> {
+  try {
+    return await db.$queryRaw<CurrentAuthorityBoundary[]>`
+      SELECT id, claim_id AS "claimId", created_at AS "createdAt"
+      FROM jurisdiction_authority_boundaries
+      WHERE jurisdiction_id = ${jurisdictionId}
+        AND scope = 'UNINCORPORATED_COUNTY'
+        AND superseded_by_id IS NULL
+      ORDER BY created_at DESC
+    `
+  } catch (error) {
+    if (isAuthorityBoundarySchemaPending(error)) return []
+    throw error
+  }
+}
+
 export async function publishUnincorporatedAuthorityBoundary(input: {
   jurisdictionId: string
   claimId: string
