@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getCurrentUser, hasRole } from '@/lib/auth'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const schema = z.object({
   role: z.enum(['OWNER', 'ANALYST', 'ATTORNEY', 'ASSISTANT', 'READ_ONLY']),
@@ -22,12 +23,23 @@ export async function PATCH(
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
 
-  // Ensure target user belongs to same tenant
-  const target = await db.user.findUnique({ where: { id } })
-  if (!target || target.tenantId !== result.tenant.id) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
-  }
+  const updated = await db.$transaction(async tx => {
+    // Ensure target user belongs to the same tenant before changing access.
+    const target = await tx.user.findUnique({ where: { id } })
+    if (!target || target.tenantId !== result.tenant.id) return null
 
-  const updated = await db.user.update({ where: { id }, data: { role: parsed.data.role } })
+    const changed = await tx.user.update({ where: { id }, data: { role: parsed.data.role } })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: result.tenant.id,
+        userId: result.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'TEAM_MEMBER_ROLE_CHANGED',
+        meta: { memberId: id, role: parsed.data.role },
+      },
+    })
+    return changed
+  })
+  if (!updated) return NextResponse.json({ error: 'User not found' }, { status: 404 })
   return NextResponse.json(updated)
 }

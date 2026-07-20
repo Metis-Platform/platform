@@ -2,6 +2,8 @@ import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getCurrentUser, hasRole } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const schema = z.object({ email: z.string().email() })
 
@@ -25,6 +27,17 @@ export async function POST(req: Request) {
     emailAddress: parsed.data.email,
     role: 'org:member',
     inviterUserId: result.user.clerkUserId,
+  })
+
+  await db.auditEvent.create({
+    data: {
+      tenantId: result.tenant.id,
+      userId: result.user.id,
+      requestId: requestIdFromHeaders(req.headers),
+      action: 'TEAM_MEMBER_INVITED',
+      // Do not retain the invitee's email address in the audit ledger.
+      meta: { organizationId: orgId },
+    },
   })
 
   return NextResponse.json({ ok: true })
