@@ -176,6 +176,48 @@
         "persistedOutcome": "The fixture member has the selected role and its TEAM_MEMBER_ROLE_CHANGED audit event carries the response request ID.",
         "cleanup": "The integration fixture reset restores the fixture member role."
       }
+    },
+    {
+      "id": "tenant-create-workflow-rule",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/workflow-rule-create.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated tenant member and deterministic workflow-rule cleanup.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "WORKFLOW_RULE_CREATED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/settings/workflow",
+        "actions": [
+          { "userAction": "Complete the fixture-safe workflow rule form and save", "expectedRequest": "POST /api/settings/workflow" }
+        ],
+        "persistedOutcome": "A fixture-tenant workflow rule exists and its WORKFLOW_RULE_CREATED audit event carries the response request ID without action configuration.",
+        "cleanup": "The integration fixture reset removes the workflow rule and its audit event."
+      }
+    },
+    {
+      "id": "tenant-update-delete-workflow-rule",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/workflow-rule-update-delete.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires a fixture workflow rule and deterministic restoration before deletion cleanup.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "WORKFLOW_RULE_UPDATED and WORKFLOW_RULE_DELETED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/settings/workflow",
+        "actions": [
+          { "userAction": "Toggle the fixture workflow rule and then delete it", "expectedRequest": "PATCH then DELETE /api/settings/workflow/{fixtureWorkflowRuleId}" }
+        ],
+        "persistedOutcome": "The fixture workflow rule records a correlated WORKFLOW_RULE_UPDATED event, then is removed with a correlated WORKFLOW_RULE_DELETED event.",
+        "cleanup": "The integration fixture reset restores or removes any fixture workflow rule and related audit events."
+      }
     }
   ]
 }
