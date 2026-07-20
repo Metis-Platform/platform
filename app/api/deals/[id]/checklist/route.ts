@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 import { computeMissingItems } from '@/lib/checklists/instantiate'
 import { buildJurisdictionChecklistTemplate } from '@/lib/jurisdiction-checklist'
 import {
@@ -9,7 +10,7 @@ import {
 } from '@/lib/jurisdiction-research'
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const result = await getCurrentUser()
@@ -80,18 +81,30 @@ export async function POST(
     return NextResponse.json({ created: 0, message: 'All checklist items already exist' })
   }
 
-  await db.task.createMany({
-    data: toCreate.map(spec => ({
-      dealId,
-      tenantId: tenant.id,
-      checklistKey: spec.checklistKey,
-      title:        spec.title,
-      description:  spec.description ?? null,
-      taskType:     spec.taskType as Parameters<typeof db.task.create>[0]['data']['taskType'],
-      priority:     spec.priority as Parameters<typeof db.task.create>[0]['data']['priority'],
-      dueDate:      spec.dueDate ?? null,
-      status:       'OPEN' as const,
-    })),
+  await db.$transaction(async tx => {
+    await tx.task.createMany({
+      data: toCreate.map(spec => ({
+        dealId,
+        tenantId: tenant.id,
+        checklistKey: spec.checklistKey,
+        title:        spec.title,
+        description:  spec.description ?? null,
+        taskType:     spec.taskType as Parameters<typeof db.task.create>[0]['data']['taskType'],
+        priority:     spec.priority as Parameters<typeof db.task.create>[0]['data']['priority'],
+        dueDate:      spec.dueDate ?? null,
+        status:       'OPEN' as const,
+      })),
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: result.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'CHECKLIST_CREATED',
+        // Checklist text can contain investor-specific instructions; retain only identity and count.
+        meta: { dealId, created: toCreate.length },
+      },
+    })
   })
 
   return NextResponse.json({ created: toCreate.length }, { status: 201 })
