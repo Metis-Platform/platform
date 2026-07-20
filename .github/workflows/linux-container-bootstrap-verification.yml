@@ -1,0 +1,29 @@
+name: Linux container bootstrap verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-container-bootstrap:
+    name: Fresh Linux dev-container verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build tracked development container
+        run: docker build --file .devcontainer/Dockerfile --tag metis-devcontainer .devcontainer
+
+      - name: Bootstrap and verify inside the container
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
+            --volume "$GITHUB_WORKSPACE:/workspace" \
+            --workdir /workspace \
+            metis-devcontainer \
+            bash -lc 'npm run bootstrap && npm run context:check && npx tsc --noEmit && npm test && npm run build'
