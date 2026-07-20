@@ -11,7 +11,7 @@ const SOURCE_LABELS: Record<string, string> = {
   usgs_padus: 'USGS protected-area map',
   epa_echo: 'EPA CWA facility search',
   walk_score: 'neighborhood access score',
-  hifld: 'electric utility coverage',
+  hifld: 'HIFLD retail service territory map',
   postgis_zoning: 'zoning map',
 }
 
