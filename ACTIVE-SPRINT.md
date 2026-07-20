@@ -53,6 +53,7 @@
 - [x] **Development dependency audit maintenance (#408)** — non-breaking transitive esbuild, Hono, and JS-YAML findings are remediated. Production audit remains clean; the remaining three moderate findings are in Prisma 7’s development-server chain and `npm audit` offers only a breaking Prisma 6 downgrade, which was intentionally not applied.
 - [ ] **Portable reproducible development (#295)** — one container/bootstrap contract for WSL, macOS, and an approved cloud host; remove root dependence on original WSL paths
 - [x] **Container bootstrap parity (#404)** — dev containers now invoke the same Node-20-pinned bootstrap contract as native WSL/macOS clones, including ignored local environment-template setup and Prisma client generation.
+- [x] **Vercel Node runtime parity (#416)** — `package.json` now makes Node 20.x authoritative for Vercel builds/functions, matching `.nvmrc`, the dev container, bootstrap, types, and required CI without a dashboard-only setting.
 - [x] **Auction feed availability truth (#396)** — unimplemented GovEase, RealAuction FL, and Tax Sale Resources routes return explicit skipped results before any write; the admin calendar no longer claims weekly-sync coverage.
 - [x] **QA provisioning owner handoff (#398)** — tracked no-secrets runbook for distinct QA services, LastPass distribution, preflight, and reset-rehearsal authorization.
 
