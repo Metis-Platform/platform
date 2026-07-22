@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
   fetchOfficialVolusiaParcelFacts: vi.fn(),
+  fetchOfficialOrangeParcelFacts: vi.fn(),
   fetchOfficialHarrisParcelFacts: vi.fn(),
   fetchFlDorParcel: vi.fn(),
 }))
@@ -60,6 +61,11 @@ vi.mock('./sources/harris-property-appraiser', () => ({
   harrisParcelQueryUrl: (apn: string) => `https://services.arcgis.com/su8ic9KbA7PYVxPS/arcgis/rest/services/Harris_County_Parcels/FeatureServer/1/query?where=HCAD_NUM%3D%27${apn}%27`,
   fetchOfficialHarrisParcelFacts: mocks.fetchOfficialHarrisParcelFacts,
 }))
+vi.mock('./sources/orange-property-appraiser', () => ({
+  ORANGE_FIPS: '12095',
+  orangeParcelQueryUrl: (apn: string) => `https://vgispublic.ocpafl.org/server/rest/services/DynamicForJs/OCPA/MapServer/4/query?where=PARCEL%3D%27${apn}%27`,
+  fetchOfficialOrangeParcelFacts: mocks.fetchOfficialOrangeParcelFacts,
+}))
 vi.mock('./sources/census-acs', () => ({
   CENSUS_ACS_2024_SOURCE_URL: 'https://api.census.gov/data/2024/acs/acs5',
   fetchDemographics: mocks.fetchDemographics,
@@ -97,6 +103,9 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
     mocks.fetchOfficialVolusiaParcelFacts.mockResolvedValue({
       lotSizeSqFt: 5_000, lotSizeAcres: 0.1148, landUseCode: 'VACANT RES', improved: false,
+    })
+    mocks.fetchOfficialOrangeParcelFacts.mockResolvedValue({
+      lotSizeSqFt: 10_890, lotSizeAcres: 0.25, assessedValue: 125_000, landUseCode: '0100', improved: true,
     })
     mocks.fetchOfficialHarrisParcelFacts.mockResolvedValue({
       lotSizeSqFt: 11_988, lotSizeAcres: 0.2752, assessedValue: 77_920,
@@ -160,7 +169,7 @@ describe('parcel enrichment cache provenance', () => {
   })
 
   it('reports unsupported Florida parcel coverage without pretending to make an API call', async () => {
-    const result = await enrichParcel('1234567890', '12095', undefined, undefined, 'tenant-1')
+    const result = await enrichParcel('1234567890', '12097', undefined, undefined, 'tenant-1')
 
     expect(result.apiCalls).toBe(2)
     expect(result.errors).toEqual([])
@@ -190,6 +199,23 @@ describe('parcel enrichment cache provenance', () => {
     expect(result.gaps).toContainEqual({
       source: 'harris_property_appraiser', fields: ['assessedYear', 'landUseCode', 'improved', 'marketValueEstimate'],
     })
+  })
+
+  it('uses the official Orange parcel baseline and preserves exact query provenance', async () => {
+    const result = await enrichParcel('152541080010', '12095', undefined, undefined, 'tenant-1')
+
+    expect(mocks.fetchOfficialOrangeParcelFacts).toHaveBeenCalledWith({ apn: '152541080010', fipsCounty: '12095' })
+    expect(mocks.fetchFlDorParcel).not.toHaveBeenCalled()
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'orange_property_appraiser', field: 'assessedValue', normalized: 125_000,
+        metadata: {
+          source: 'orange_property_appraiser',
+          sourceUrl: 'https://vgispublic.ocpafl.org/server/rest/services/DynamicForJs/OCPA/MapServer/4/query?where=PARCEL%3D%27152541080010%27',
+        },
+      }),
+    }))
+    expect(result.gaps).toContainEqual({ source: 'orange_property_appraiser', fields: ['assessedYear', 'marketValueEstimate'] })
   })
 
   it('reports empty and partial source output without mislabeling explicit negative evidence', async () => {

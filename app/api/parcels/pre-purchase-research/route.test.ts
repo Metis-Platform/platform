@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   resolveCensusAddressLocation: vi.fn(),
   resolveOfficialParcelLocation: vi.fn(),
   resolveMaricopaOfficialParcelLocation: vi.fn(),
+  resolveOrangeOfficialParcelLocation: vi.fn(),
   enrichParcel: vi.fn(),
   lookupUnincorporatedAuthorityBoundaryClaimIds: vi.fn(),
 }))
@@ -42,6 +43,9 @@ vi.mock('@/lib/parcel/sources/volusia-property-appraiser', () => ({
 vi.mock('@/lib/parcel/sources/maricopa-property-assessor', () => ({
   resolveMaricopaOfficialParcelLocation: mocks.resolveMaricopaOfficialParcelLocation,
 }))
+vi.mock('@/lib/parcel/sources/orange-property-appraiser', () => ({
+  resolveOrangeOfficialParcelLocation: mocks.resolveOrangeOfficialParcelLocation,
+}))
 
 import { POST } from './route'
 
@@ -52,6 +56,7 @@ describe('pre-purchase research governing geography', () => {
     mocks.rateLimitCount.mockResolvedValue(0)
     mocks.resolveOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveMaricopaOfficialParcelLocation.mockResolvedValue(null)
+    mocks.resolveOrangeOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveCensusAddressLocation.mockResolvedValue(null)
     mocks.enrichParcel.mockResolvedValue({ cacheHits: 0, apiCalls: 0, errors: [], gaps: [] })
     mocks.lookupUnincorporatedAuthorityBoundaryClaimIds.mockResolvedValue(new Set())

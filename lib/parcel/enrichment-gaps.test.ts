@@ -29,4 +29,9 @@ describe('parcel enrichment data gaps', () => {
     expect(parcelEnrichmentGapLabels([], [{ source: 'harris_property_appraiser' }]))
       .toEqual(['Harris Central Appraisal District parcel facts'])
   })
+
+  it('names an incomplete official Orange parcel response', () => {
+    expect(parcelEnrichmentGapLabels([], [{ source: 'orange_property_appraiser' }]))
+      .toEqual(['Orange County Property Appraiser parcel facts'])
+  })
 })
