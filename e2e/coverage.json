@@ -374,6 +374,36 @@
         "persistedOutcome": "The fixture task receives a correlated TASK_COMMENT_CREATED event containing only task/comment identity, never the comment body or user PII.",
         "cleanup": "The integration fixture reset removes the fixture comment and related audit event."
       }
+    },
+    {
+      "id": "analyst-create-buyer-profile",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/buyer-profile.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture and deterministic buyer/contact/audit cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "BUYER_PROFILE_CREATED" },
+      "journey": {
+        "entryPoint": "/dashboard/buyers/new",
+        "actions": [{ "userAction": "Enter fixture-safe buyer details and save", "expectedRequest": "Buyer-profile create server action" }],
+        "persistedOutcome": "A fixture buyer contact/profile exists with a correlated BUYER_PROFILE_CREATED event containing only buyer identity.",
+        "cleanup": "The integration fixture reset removes the buyer contact/profile and related audit event."
+      }
+    },
+    {
+      "id": "analyst-update-buyer-profile",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/buyer-profile.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture, fixture buyer profile, and deterministic restoration.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "BUYER_PROFILE_UPDATED" },
+      "journey": {
+        "entryPoint": "/dashboard/buyers/{fixtureBuyerContactId}",
+        "actions": [{ "userAction": "Edit fixture-safe buyer details and save", "expectedRequest": "Buyer-profile update server action" }],
+        "persistedOutcome": "The fixture buyer profile is updated with a correlated BUYER_PROFILE_UPDATED event containing only buyer identity.",
+        "cleanup": "The integration fixture reset restores the buyer profile and related audit event."
+      }
     }
   ]
 }

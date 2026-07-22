@@ -2,9 +2,11 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type BuyerFormState = {
   error?: string
@@ -41,6 +43,7 @@ export async function createBuyer(_prev: BuyerFormState, formData: FormData): Pr
   const preferredPropTypes = propTypesRaw
     ? propTypesRaw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
     : []
+  const requestId = requestIdFromHeaders(await headers())
 
   await db.$transaction(async tx => {
     const contact = await tx.contact.create({
@@ -64,6 +67,15 @@ export async function createBuyer(_prev: BuyerFormState, formData: FormData): Pr
         preferredStates,
         preferredPropTypes,
         notes,
+      },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'BUYER_PROFILE_CREATED',
+        meta: { contactId: contact.id },
       },
     })
   })
@@ -107,6 +119,7 @@ export async function updateBuyerProfile(
   const preferredPropTypes = propTypesRaw
     ? propTypesRaw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
     : []
+  const requestId = requestIdFromHeaders(await headers())
 
   await db.$transaction(async tx => {
     await tx.contact.update({
@@ -134,6 +147,15 @@ export async function updateBuyerProfile(
         preferredPropTypes,
         isActive,
         notes,
+      },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'BUYER_PROFILE_UPDATED',
+        meta: { contactId },
       },
     })
   })
