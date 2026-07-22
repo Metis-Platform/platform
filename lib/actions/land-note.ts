@@ -5,7 +5,6 @@ import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { emitAuditEvent } from '@/lib/audit'
 import { hasStrategy } from '@/lib/entitlements'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
 
@@ -126,7 +125,7 @@ export async function recordPayment(
 
   const { noteId, amount, date } = parsed.data
 
-  const note = await db.landNote.findUnique({ where: { id: noteId, tenantId: tenant.id } })
+  const note = await db.landNote.findFirst({ where: { id: noteId, dealId, tenantId: tenant.id } })
   if (!note) return { message: 'Note not found.' }
   if (note.status !== 'ACTIVE') return { message: 'Note is not active.' }
 
@@ -143,10 +142,11 @@ export async function recordPayment(
   })
   const expectedDate = new Date(note.firstPaymentDate.getTime() + paymentCount * 30 * 86_400_000)
   const isLate = paymentDate > expectedDate
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     await db.$transaction(async (tx) => {
-      await tx.financialTransaction.create({
+      const transaction = await tx.financialTransaction.create({
         data: {
           dealId,
           tenantId: tenant.id,
@@ -161,6 +161,16 @@ export async function recordPayment(
       await tx.landNote.update({
         where: { id: noteId },
         data: { balance: newBalance, status: newStatus },
+      })
+
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId,
+          requestId,
+          action: 'NOTE_PAYMENT_LOGGED',
+          meta: { dealId, noteId, transactionId: transaction.id },
+        },
       })
 
       if (isLate) {
@@ -195,7 +205,6 @@ export async function recordPayment(
     return { message: 'Failed to record payment. Please try again.' }
   }
 
-  await emitAuditEvent(tenant.id, 'NOTE_PAYMENT_LOGGED', { dealId, noteId, amount }, userId)
   revalidatePath(`/dashboard/deals/${dealId}`)
   return {}
 }
