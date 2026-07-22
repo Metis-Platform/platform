@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
@@ -10,6 +11,7 @@ import { emitAuditEvent } from '@/lib/audit'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type LienFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -511,17 +513,32 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
 export async function markNotWon(dealId: string, note: string | null): Promise<{ error?: string }> {
   const result = await getCurrentUser()
   if (!result) return { error: 'Not authenticated.' }
-  const { tenant } = result
+  const { tenant, user } = result
 
   try {
     const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
     if (!deal) return { error: 'Deal not found.' }
     if (deal.status !== 'LEAD') return { error: 'Only Lead deals can be marked Not Won.' }
 
-    await db.deal.update({
-      where: { id: dealId },
-      data: { status: 'NOT_WON' as DealStatus, notes: note || deal.notes || null },
+    const requestId = requestIdFromHeaders(await headers())
+    const changed = await db.$transaction(async tx => {
+      const updated = await tx.deal.updateMany({
+        where: { id: dealId, tenantId: tenant.id, status: DealStatus.LEAD },
+        data: { status: DealStatus.NOT_WON, notes: note || deal.notes || null },
+      })
+      if (updated.count !== 1) return false
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'DEAL_MARKED_NOT_WON',
+          meta: { dealId },
+        },
+      })
+      return true
     })
+    if (!changed) return { error: 'Only Lead deals can be marked Not Won.' }
     return {}
   } catch (err) {
     console.error('[markNotWon]', err)
@@ -536,7 +553,7 @@ export async function markNotWon(dealId: string, note: string | null): Promise<{
 export async function relistAsLead(dealId: string, auctionDate: string | null): Promise<{ error?: string }> {
   const result = await getCurrentUser()
   if (!result) return { error: 'Not authenticated.' }
-  const { tenant } = result
+  const { tenant, user } = result
 
   try {
     const deal = await db.deal.findUnique({
@@ -546,14 +563,32 @@ export async function relistAsLead(dealId: string, auctionDate: string | null): 
     if (!deal) return { error: 'Deal not found.' }
     if ((deal.status as string) !== 'NOT_WON') return { error: 'Only Not Won deals can be re-listed.' }
 
-    await db.deal.update({ where: { id: dealId }, data: { status: DealStatus.LEAD } })
+    const requestId = requestIdFromHeaders(await headers())
+    const changed = await db.$transaction(async tx => {
+      const updated = await tx.deal.updateMany({
+        where: { id: dealId, tenantId: tenant.id, status: DealStatus.NOT_WON },
+        data: { status: DealStatus.LEAD },
+      })
+      if (updated.count !== 1) return false
 
-    if (auctionDate) {
-      const dateVal = new Date(`${auctionDate}T12:00:00.000Z`)
-      if (deal.taxLien) await db.dealTaxLien.update({ where: { dealId }, data: { auctionDate: dateVal } })
-      else if (deal.taxDeed) await db.dealTaxDeed.update({ where: { dealId }, data: { auctionDate: dateVal } })
-      else if (deal.foreclosure) await db.dealForeclosure.update({ where: { dealId }, data: { auctionDate: dateVal } })
-    }
+      if (auctionDate) {
+        const dateVal = new Date(`${auctionDate}T12:00:00.000Z`)
+        if (deal.taxLien) await tx.dealTaxLien.update({ where: { dealId }, data: { auctionDate: dateVal } })
+        else if (deal.taxDeed) await tx.dealTaxDeed.update({ where: { dealId }, data: { auctionDate: dateVal } })
+        else if (deal.foreclosure) await tx.dealForeclosure.update({ where: { dealId }, data: { auctionDate: dateVal } })
+      }
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'DEAL_RELISTED_AS_LEAD',
+          meta: { dealId },
+        },
+      })
+      return true
+    })
+    if (!changed) return { error: 'Only Not Won deals can be re-listed.' }
     return {}
   } catch (err) {
     console.error('[relistAsLead]', err)
@@ -573,20 +608,20 @@ export async function recordRedemption(
 ): Promise<{ error?: string }> {
   const result = await getCurrentUser()
   if (!result) return { error: 'Not authenticated.' }
-  const { tenant } = result
+  const { tenant, user } = result
 
   try {
-    const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
-    if (!deal) return { error: 'Deal not found.' }
-
     const dateVal = redemptionDate ?? new Date()
+    const requestId = requestIdFromHeaders(await headers())
 
-    await db.$transaction([
-      db.dealTaxLien.update({
+    const recorded = await db.$transaction(async tx => {
+      const deal = await tx.deal.findFirst({ where: { id: dealId, tenantId: tenant.id }, select: { id: true } })
+      if (!deal) return false
+      await tx.dealTaxLien.update({
         where: { dealId },
         data: { redemptionAmount, redemptionDate: dateVal, isRedeemed: true },
-      }),
-      db.financialTransaction.create({
+      })
+      const transaction = await tx.financialTransaction.create({
         data: {
           dealId,
           tenantId: tenant.id,
@@ -595,8 +630,19 @@ export async function recordRedemption(
           date: dateVal,
           description: 'Redemption received',
         },
-      }),
-    ])
+      })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'LIEN_REDEMPTION_RECORDED',
+          meta: { dealId, transactionId: transaction.id },
+        },
+      })
+      return true
+    })
+    if (!recorded) return { error: 'Deal not found.' }
 
     return {}
   } catch (err) {
@@ -616,7 +662,23 @@ export async function deleteLien(dealId: string): Promise<{ error?: string }> {
   if (!hasRole(user.role, 'ANALYST')) return { error: 'Insufficient permissions.' }
 
   try {
-    await db.deal.delete({ where: { id: dealId, tenantId: tenant.id } })
+    const requestId = requestIdFromHeaders(await headers())
+    const deleted = await db.$transaction(async tx => {
+      const deal = await tx.deal.findFirst({ where: { id: dealId, tenantId: tenant.id }, select: { id: true } })
+      if (!deal) return false
+      await tx.deal.delete({ where: { id: deal.id } })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'DEAL_DELETED',
+          meta: { dealId: deal.id },
+        },
+      })
+      return true
+    })
+    if (!deleted) return { error: 'Deal not found.' }
     return {}
   } catch (err) {
     console.error('[deleteLien]', err)
