@@ -45,7 +45,8 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | FEMA county declaration context (#494) | Merged: preliminary research retrieves a short, exact-FIPS OpenFEMA declaration summary nationwide with source provenance and explicit county-level limitations. |
 | Dependency audit remediation (#497) | Merged: production Sharp and compatible development-only dependency findings are patched through pinned overrides; production audit is clean and only Prisma development-server findings remain. |
 | Clark County NV discovery candidates (#500) | Merged: exact official Assessor, Recorder, GIS, Planning, and Building leads are available for Clark County; planning/building remain explicitly limited to unincorporated county area pending jurisdiction resolution. |
-| Evidence-based coverage tiers (#502) | In progress: the coverage dashboard derives Tier B only from a complete current, unblocked, verified critical-claim bundle with a verified authority, reports demand-weighted Tier B readiness, and keeps Tier A reserved for future canonical acceptance evidence. |
+| Evidence-based coverage tiers (#502) | Merged — PR #503: the coverage dashboard derives Tier B only from a complete current, unblocked, verified critical-claim bundle with a verified authority and reports demand-weighted readiness. |
+| Canonical county acceptance (#504) | In progress: an append-only, super-admin-only acceptance record stores the exact contract version, case reference, immutable evidence link, outcome, reviewer/time, and nonsensitive summary. Only a current passed record layered on live Tier B evidence derives Tier A; replacements, failures, and old contracts cannot. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---

@@ -34,26 +34,26 @@ model Tenant {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
-  users            User[]
-  properties       Property[]
-  deals            Deal[]
-  contacts         Contact[]
-  documents        Document[]
-  auditLogs        AuditLog[]
-  auditEvents      AuditEvent[]
-  emailEvents      EmailEvent[]
-  modules          TenantModule[]
-  workflowRules    TenantWorkflowRule[]
-  parcelDataCaches ParcelDataCache[]
-  prePurchaseResearchSnapshots PrePurchaseResearchSnapshot[]
-  exitEvaluations  ExitEvaluation[]
-  investorProfile  InvestorProfile?
-  parcelResearchRequests ParcelResearchRequest[]
-  jurisdictionResearchDemands JurisdictionResearchDemand[]
+  users                             User[]
+  properties                        Property[]
+  deals                             Deal[]
+  contacts                          Contact[]
+  documents                         Document[]
+  auditLogs                         AuditLog[]
+  auditEvents                       AuditEvent[]
+  emailEvents                       EmailEvent[]
+  modules                           TenantModule[]
+  workflowRules                     TenantWorkflowRule[]
+  parcelDataCaches                  ParcelDataCache[]
+  prePurchaseResearchSnapshots      PrePurchaseResearchSnapshot[]
+  exitEvaluations                   ExitEvaluation[]
+  investorProfile                   InvestorProfile?
+  parcelResearchRequests            ParcelResearchRequest[]
+  jurisdictionResearchDemands       JurisdictionResearchDemand[]
   jurisdictionCoverageNotifications JurisdictionCoverageNotification[]
-  mfLpInvestors    DealMfLpInvestor[]
-  mfWaterfalls     DealMfWaterfall[]
-  checklistTemplates ChecklistTemplate[]
+  mfLpInvestors                     DealMfLpInvestor[]
+  mfWaterfalls                      DealMfWaterfall[]
+  checklistTemplates                ChecklistTemplate[]
 }
 
 model TenantWorkflowRule {
@@ -166,21 +166,22 @@ model Jurisdiction {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  ruleSets             RuleSet[]
-  properties           Property[]
-  strategyData         JurisdictionStrategyData[]
-  profile              JurisdictionProfile?
-  sourceUrls           JurisdictionSourceUrl[]
-  sourceDiscoveryLeads JurisdictionSourceDiscoveryLead[]
-  evidenceSnapshots    JurisdictionEvidenceSnapshot[]
-  extractionCandidates ExtractionCandidate[]
-  claims               JurisdictionClaim[]
-  claimContradictionReviews JurisdictionClaimContradictionReview[]
-  sourceAuthorityReviews JurisdictionSourceAuthorityReview[]
-  auctionSaleFeeds     AuctionSaleFeed[]
-  researchWork         JurisdictionResearchWork?
-  researchDemands      JurisdictionResearchDemand[]
-  coverageNotifications JurisdictionCoverageNotification[]
+  ruleSets                     RuleSet[]
+  properties                   Property[]
+  strategyData                 JurisdictionStrategyData[]
+  profile                      JurisdictionProfile?
+  sourceUrls                   JurisdictionSourceUrl[]
+  sourceDiscoveryLeads         JurisdictionSourceDiscoveryLead[]
+  evidenceSnapshots            JurisdictionEvidenceSnapshot[]
+  extractionCandidates         ExtractionCandidate[]
+  claims                       JurisdictionClaim[]
+  claimContradictionReviews    JurisdictionClaimContradictionReview[]
+  sourceAuthorityReviews       JurisdictionSourceAuthorityReview[]
+  canonicalAcceptances         JurisdictionCanonicalAcceptance[]
+  auctionSaleFeeds             AuctionSaleFeed[]
+  researchWork                 JurisdictionResearchWork?
+  researchDemands              JurisdictionResearchDemand[]
+  coverageNotifications        JurisdictionCoverageNotification[]
   prePurchaseResearchSnapshots PrePurchaseResearchSnapshot[]
 
   @@unique([state, county])
@@ -190,23 +191,23 @@ model Jurisdiction {
 // a statewide directory or other starting point; it is not evidence that a
 // county office URL is authoritative or suitable for extraction.
 model JurisdictionSourceDiscoveryLead {
-  id                 String                            @id @default(cuid())
-  jurisdictionId     String
-  jurisdiction       Jurisdiction                      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
-  adapterId          String
-  officeType         String
-  url                String
-  authorityOwner     String?
-  authorityRationale String                            @db.Text
-  candidateScope     JurisdictionSourceDiscoveryCandidateScope @default(DISCOVERY_ENTRYPOINT)
-  status             JurisdictionSourceDiscoveryStatus @default(PENDING_REVIEW)
+  id                  String                                    @id @default(cuid())
+  jurisdictionId      String
+  jurisdiction        Jurisdiction                              @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  adapterId           String
+  officeType          String
+  url                 String
+  authorityOwner      String?
+  authorityRationale  String                                    @db.Text
+  candidateScope      JurisdictionSourceDiscoveryCandidateScope @default(DISCOVERY_ENTRYPOINT)
+  status              JurisdictionSourceDiscoveryStatus         @default(PENDING_REVIEW)
   promotedSourceUrlId String?
-  promotedSourceUrl   JurisdictionSourceUrl?           @relation("DiscoveryLeadPromotion", fields: [promotedSourceUrlId], references: [id], onDelete: SetNull)
+  promotedSourceUrl   JurisdictionSourceUrl?                    @relation("DiscoveryLeadPromotion", fields: [promotedSourceUrlId], references: [id], onDelete: SetNull)
   promotedAt          DateTime?
   promotedBy          String?
-  discoveredAt       DateTime
-  createdAt          DateTime                          @default(now())
-  updatedAt          DateTime                          @updatedAt
+  discoveredAt        DateTime
+  createdAt           DateTime                                  @default(now())
+  updatedAt           DateTime                                  @updatedAt
 
   @@unique([jurisdictionId, adapterId, officeType, url])
   @@index([jurisdictionId, status])
@@ -287,23 +288,23 @@ model JurisdictionResearchDemand {
 // Durable tenant-scoped delivery work. A notification is created only for an
 // evidence-backed verified coverage version; it is not a research-work verdict.
 model JurisdictionCoverageNotification {
-  id              String   @id @default(cuid())
-  demandId        String
-  demand          JurisdictionResearchDemand @relation(fields: [demandId], references: [id], onDelete: Cascade)
-  tenantId        String
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  jurisdictionId  String
-  jurisdiction    Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
-  coverageVersion String
-  kind            String   @default("VERIFIED_COVERAGE")
-  recipientEmail  String?
-  status          String   @default("PENDING") // PENDING, SENT, SUNK, SKIPPED_NO_RECIPIENT, FAILED
-  attemptedAt     DateTime?
-  deliveredAt     DateTime?
+  id                String                     @id @default(cuid())
+  demandId          String
+  demand            JurisdictionResearchDemand @relation(fields: [demandId], references: [id], onDelete: Cascade)
+  tenantId          String
+  tenant            Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jurisdictionId    String
+  jurisdiction      Jurisdiction               @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  coverageVersion   String
+  kind              String                     @default("VERIFIED_COVERAGE")
+  recipientEmail    String?
+  status            String                     @default("PENDING") // PENDING, SENT, SUNK, SKIPPED_NO_RECIPIENT, FAILED
+  attemptedAt       DateTime?
+  deliveredAt       DateTime?
   providerMessageId String?
-  failureCode     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  failureCode       String?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
 
   @@unique([tenantId, jurisdictionId, coverageVersion, kind])
   @@index([status, createdAt])
@@ -326,13 +327,13 @@ model JurisdictionSourceUrl {
   createdAt           DateTime                          @default(now())
   updatedAt           DateTime                          @updatedAt
 
-  candidates       ExtractionCandidate[]
-  claimEvidence    JurisdictionClaimEvidence[]
-  authorityReviews JurisdictionSourceAuthorityReview[]
-  evidenceSnapshots JurisdictionEvidenceSnapshot[]
-  claimReReviews JurisdictionClaimReReview[]
+  candidates                ExtractionCandidate[]
+  claimEvidence             JurisdictionClaimEvidence[]
+  authorityReviews          JurisdictionSourceAuthorityReview[]
+  evidenceSnapshots         JurisdictionEvidenceSnapshot[]
+  claimReReviews            JurisdictionClaimReReview[]
   claimContradictionReviews JurisdictionClaimContradictionReview[]
-  discoveryLeadPromotions JurisdictionSourceDiscoveryLead[] @relation("DiscoveryLeadPromotion")
+  discoveryLeadPromotions   JurisdictionSourceDiscoveryLead[]      @relation("DiscoveryLeadPromotion")
 
   @@unique([jurisdictionId, officeType, url])
   @@index([jurisdictionId])
@@ -344,7 +345,7 @@ model JurisdictionSourceAuthorityReview {
   jurisdictionId    String
   jurisdiction      Jurisdiction                      @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
   sourceUrlId       String?
-  sourceUrlRecord   JurisdictionSourceUrl?             @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  sourceUrlRecord   JurisdictionSourceUrl?            @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
   sourceUrl         String
   officeType        String
   sourceContentHash String?
@@ -362,14 +363,35 @@ model JurisdictionSourceAuthorityReview {
   @@index([decision, reviewedAt])
 }
 
+// Append-only operator acceptance decisions for the versioned county coverage
+// contract. A replacement supersedes the prior decision; the current decision
+// is the only one eligible to elevate a fully verified county to Tier A.
+model JurisdictionCanonicalAcceptance {
+  id                     String                                @id @default(cuid())
+  jurisdictionId         String
+  jurisdiction           Jurisdiction                          @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  contractVersion        String
+  caseReference          String
+  evidenceUrl            String
+  result                 JurisdictionCanonicalAcceptanceResult
+  summary                String                                @db.Text
+  reviewedAt             DateTime                              @default(now())
+  reviewedBy             String
+  supersedesAcceptanceId String?                               @unique
+  supersedesAcceptance   JurisdictionCanonicalAcceptance?      @relation("JurisdictionCanonicalAcceptanceSupersession", fields: [supersedesAcceptanceId], references: [id], onDelete: SetNull)
+  supersededByAcceptance JurisdictionCanonicalAcceptance?      @relation("JurisdictionCanonicalAcceptanceSupersession")
+
+  @@index([jurisdictionId, reviewedAt])
+}
+
 // Append-only retrieval events. The R2 object is immutable and content-addressed;
 // repeated retrievals of unchanged bytes intentionally create distinct rows.
 model JurisdictionEvidenceSnapshot {
-  id                      String                                @id @default(cuid())
+  id                      String                               @id @default(cuid())
   jurisdictionId          String
-  jurisdiction            Jurisdiction                          @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  jurisdiction            Jurisdiction                         @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
   sourceUrlId             String?
-  sourceUrlRecord         JurisdictionSourceUrl?                 @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  sourceUrlRecord         JurisdictionSourceUrl?               @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
   sourceUrl               String
   retrievedAt             DateTime
   retrievalAdapter        JurisdictionEvidenceRetrievalAdapter
@@ -377,12 +399,12 @@ model JurisdictionEvidenceSnapshot {
   contentHash             String
   storageKey              String
   byteLength              Int
-  createdAt               DateTime                              @default(now())
+  createdAt               DateTime                             @default(now())
 
-  candidates    ExtractionCandidate[]
-  claimEvidence JurisdictionClaimEvidence[]
-  freshnessProjections JurisdictionClaimFreshness[] @relation("FreshnessLastSnapshot")
-  claimReReviews JurisdictionClaimReReview[]
+  candidates                ExtractionCandidate[]
+  claimEvidence             JurisdictionClaimEvidence[]
+  freshnessProjections      JurisdictionClaimFreshness[]           @relation("FreshnessLastSnapshot")
+  claimReReviews            JurisdictionClaimReReview[]
   claimContradictionReviews JurisdictionClaimContradictionReview[]
 
   @@index([jurisdictionId, retrievedAt])
@@ -392,26 +414,26 @@ model JurisdictionEvidenceSnapshot {
 }
 
 model ExtractionCandidate {
-  id             String                 @id @default(cuid())
-  jurisdictionId String
-  jurisdiction   Jurisdiction           @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
-  sourceUrlId    String?
-  sourceUrl      JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  id                 String                        @id @default(cuid())
+  jurisdictionId     String
+  jurisdiction       Jurisdiction                  @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  sourceUrlId        String?
+  sourceUrl          JurisdictionSourceUrl?        @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
   evidenceSnapshotId String?
   evidenceSnapshot   JurisdictionEvidenceSnapshot? @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
-  section        String
-  fieldKey       String
-  extractedValue Json
-  confidence     Float
-  sourceSnippet  String?
-  modelUsed      String
-  status         ExtractionStatus       @default(PENDING)
-  reviewedAt     DateTime?
-  reviewedBy     String?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
+  section            String
+  fieldKey           String
+  extractedValue     Json
+  confidence         Float
+  sourceSnippet      String?
+  modelUsed          String
+  status             ExtractionStatus              @default(PENDING)
+  reviewedAt         DateTime?
+  reviewedBy         String?
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
 
-  claimEvidence JurisdictionClaimEvidence[]
+  claimEvidence        JurisdictionClaimEvidence[]
   contradictionReviews JurisdictionClaimContradictionReview[]
 
   @@index([jurisdictionId])
@@ -437,8 +459,8 @@ model JurisdictionClaim {
   sourceAuthorityVerifiedAt DateTime?
   sourceAuthorityVerifiedBy String?
   verificationState         JurisdictionClaimVerificationState @default(REVIEWED)
-  risk                      JurisdictionClaimRisk                @default(UNKNOWN)
-  volatility                JurisdictionClaimVolatility          @default(UNKNOWN)
+  risk                      JurisdictionClaimRisk              @default(UNKNOWN)
+  volatility                JurisdictionClaimVolatility        @default(UNKNOWN)
   geographicScope           String?
   effectiveAt               DateTime?
   reviewedAt                DateTime
@@ -448,10 +470,10 @@ model JurisdictionClaim {
   supersededByClaim         JurisdictionClaim?                 @relation("JurisdictionClaimSupersession")
   createdAt                 DateTime                           @default(now())
 
-  evidence JurisdictionClaimEvidence[]
-  freshness JurisdictionClaimFreshness?
-  reReviews JurisdictionClaimReReview[]
-  contradictionReviewsAsExisting JurisdictionClaimContradictionReview[] @relation("ContradictionExistingClaim")
+  evidence                          JurisdictionClaimEvidence[]
+  freshness                         JurisdictionClaimFreshness?
+  reReviews                         JurisdictionClaimReReview[]
+  contradictionReviewsAsExisting    JurisdictionClaimContradictionReview[] @relation("ContradictionExistingClaim")
   contradictionReviewsAsReplacement JurisdictionClaimContradictionReview[] @relation("ContradictionReplacementClaim")
 
   @@index([jurisdictionId, questionId, createdAt])
@@ -461,16 +483,16 @@ model JurisdictionClaim {
 
 // Mutable scheduling projection. Claim values and re-review decisions remain append-only.
 model JurisdictionClaimFreshness {
-  claimId                 String   @id
-  claim                   JurisdictionClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claimId                 String                        @id
+  claim                   JurisdictionClaim             @relation(fields: [claimId], references: [id], onDelete: Cascade)
   lastEvidenceSnapshotId  String?
   lastEvidenceSnapshot    JurisdictionEvidenceSnapshot? @relation("FreshnessLastSnapshot", fields: [lastEvidenceSnapshotId], references: [id], onDelete: SetNull)
   lastEvidenceRetrievedAt DateTime
   reviewDueAt             DateTime
   staleAt                 DateTime
   policyVersion           String
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime                      @updatedAt
 
   @@index([reviewDueAt])
   @@index([staleAt])
@@ -478,13 +500,13 @@ model JurisdictionClaimFreshness {
 
 // Append-only human reconfirmations against a newer unchanged evidence snapshot.
 model JurisdictionClaimReReview {
-  id                      String   @id @default(cuid())
+  id                      String                               @id @default(cuid())
   claimId                 String
-  claim                   JurisdictionClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claim                   JurisdictionClaim                    @relation(fields: [claimId], references: [id], onDelete: Cascade)
   evidenceSnapshotId      String
-  evidenceSnapshot        JurisdictionEvidenceSnapshot @relation(fields: [evidenceSnapshotId], references: [id], onDelete: Restrict)
+  evidenceSnapshot        JurisdictionEvidenceSnapshot         @relation(fields: [evidenceSnapshotId], references: [id], onDelete: Restrict)
   sourceUrlId             String?
-  sourceUrlRecord         JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  sourceUrlRecord         JurisdictionSourceUrl?               @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
   sourceUrl               String
   contentHash             String
   storageKey              String
@@ -492,14 +514,14 @@ model JurisdictionClaimReReview {
   representationMediaType String
   byteLength              Int
   evidenceRetrievedAt     DateTime
-  decision                JurisdictionClaimReReviewDecision @default(RECONFIRMED)
+  decision                JurisdictionClaimReReviewDecision    @default(RECONFIRMED)
   previousReviewDueAt     DateTime
   previousStaleAt         DateTime
   nextReviewDueAt         DateTime
   nextStaleAt             DateTime
   policyVersion           String
-  explanation             String @db.Text
-  reviewedAt              DateTime @default(now())
+  explanation             String                               @db.Text
+  reviewedAt              DateTime                             @default(now())
   reviewedBy              String
 
   @@index([claimId, reviewedAt])
@@ -509,32 +531,32 @@ model JurisdictionClaimReReview {
 
 // Append-only operator decisions for a pending candidate that disagreed with the active claim.
 model JurisdictionClaimContradictionReview {
-  id                          String   @id @default(cuid())
+  id                          String                                 @id @default(cuid())
   jurisdictionId              String
-  jurisdiction                Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  jurisdiction                Jurisdiction                           @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
   questionId                  String
   questionSchemaVersion       String
   section                     String
   fieldKey                    String
   existingClaimId             String
-  existingClaim               JurisdictionClaim @relation("ContradictionExistingClaim", fields: [existingClaimId], references: [id], onDelete: Cascade)
+  existingClaim               JurisdictionClaim                      @relation("ContradictionExistingClaim", fields: [existingClaimId], references: [id], onDelete: Cascade)
   replacementClaimId          String?
-  replacementClaim            JurisdictionClaim? @relation("ContradictionReplacementClaim", fields: [replacementClaimId], references: [id], onDelete: SetNull)
+  replacementClaim            JurisdictionClaim?                     @relation("ContradictionReplacementClaim", fields: [replacementClaimId], references: [id], onDelete: SetNull)
   candidateId                 String?
-  candidate                   ExtractionCandidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  candidate                   ExtractionCandidate?                   @relation(fields: [candidateId], references: [id], onDelete: SetNull)
   candidateReferenceId        String
   candidateUpdatedAt          DateTime
   evidenceSnapshotId          String?
-  evidenceSnapshot            JurisdictionEvidenceSnapshot? @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
+  evidenceSnapshot            JurisdictionEvidenceSnapshot?          @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
   evidenceSnapshotReferenceId String
   sourceUrlId                 String?
-  sourceUrlRecord             JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  sourceUrlRecord             JurisdictionSourceUrl?                 @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
   existingValue               Json
   proposedValue               Json
   existingNormalizedUnit      String?
   proposedNormalizedUnit      String?
   sourceUrl                   String
-  sourceSnippet               String   @db.Text
+  sourceSnippet               String                                 @db.Text
   evidenceRetrievedAt         DateTime
   contentHash                 String
   storageKey                  String
@@ -543,10 +565,10 @@ model JurisdictionClaimContradictionReview {
   byteLength                  Int
   modelUsed                   String
   decision                    JurisdictionClaimContradictionDecision
-  explanation                 String   @db.Text
-  reviewedAt                  DateTime @default(now())
+  explanation                 String                                 @db.Text
+  reviewedAt                  DateTime                               @default(now())
   reviewedBy                  String
-  createdAt                   DateTime @default(now())
+  createdAt                   DateTime                               @default(now())
 
   @@index([jurisdictionId, section, fieldKey, reviewedAt])
   @@index([existingClaimId, reviewedAt])
@@ -557,25 +579,25 @@ model JurisdictionClaimContradictionReview {
 
 // Evidence is copied at publication time so provenance survives source/candidate cleanup.
 model JurisdictionClaimEvidence {
-  id              String                 @id @default(cuid())
-  claimId         String
-  claim           JurisdictionClaim      @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  sourceUrlId     String?
-  sourceUrlRecord JurisdictionSourceUrl? @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
-  candidateId     String?
-  candidate       ExtractionCandidate?   @relation(fields: [candidateId], references: [id], onDelete: SetNull)
-  evidenceSnapshotId String?
-  evidenceSnapshot   JurisdictionEvidenceSnapshot? @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
-  sourceUrl       String
-  sourceSnippet   String                 @db.Text
-  retrievedAt     DateTime
-  contentHash     String?
-  storageKey      String?
-  retrievalAdapter JurisdictionEvidenceRetrievalAdapter?
+  id                      String                                @id @default(cuid())
+  claimId                 String
+  claim                   JurisdictionClaim                     @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  sourceUrlId             String?
+  sourceUrlRecord         JurisdictionSourceUrl?                @relation(fields: [sourceUrlId], references: [id], onDelete: SetNull)
+  candidateId             String?
+  candidate               ExtractionCandidate?                  @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  evidenceSnapshotId      String?
+  evidenceSnapshot        JurisdictionEvidenceSnapshot?         @relation(fields: [evidenceSnapshotId], references: [id], onDelete: SetNull)
+  sourceUrl               String
+  sourceSnippet           String                                @db.Text
+  retrievedAt             DateTime
+  contentHash             String?
+  storageKey              String?
+  retrievalAdapter        JurisdictionEvidenceRetrievalAdapter?
   representationMediaType String?
-  byteLength      Int?
-  modelUsed       String?
-  createdAt       DateTime               @default(now())
+  byteLength              Int?
+  modelUsed               String?
+  createdAt               DateTime                              @default(now())
 
   @@index([claimId])
   @@index([sourceUrlId])
@@ -691,14 +713,14 @@ model ParcelDataCache {
 // A bounded, tenant-scoped record of the output shown to an investor before
 // they choose to create a deal. It is evidence, not verified property data.
 model PrePurchaseResearchSnapshot {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   tenantId       String
-  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   jurisdictionId String
   jurisdiction   Jurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
   apn            String
   payload        Json
-  createdAt      DateTime @default(now())
+  createdAt      DateTime     @default(now())
   expiresAt      DateTime
   consumedAt     DateTime?
   consumedDealId String?
@@ -727,18 +749,18 @@ model Contact {
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
-  properties        Property[]       @relation("PropertyContacts")
-  deals             Deal[]
-  buyerProfile      BuyerProfile?
-  wholesaleDeals    DealWholesale[]  @relation("WholesaleBuyer")
-  buyerBlastSends   BuyerBlastSend[]
-  activities        ContactActivity[]
-  fixFlipContracts  DealFixFlip[]
-  buyHoldTenancies  DealBuyHold[]    @relation("BuyHoldTenant")
-  buyHoldManagedProps DealBuyHold[]  @relation("BuyHoldPM")
-  multifamilyManaged DealMultifamily[] @relation("MultifamilyPM")
-  landNotesBuyer    LandNote[]       @relation("LandNoteBuyer")
-  mfLpInvestments   DealMfLpInvestor[] @relation("MfLpInvestor")
+  properties          Property[]         @relation("PropertyContacts")
+  deals               Deal[]
+  buyerProfile        BuyerProfile?
+  wholesaleDeals      DealWholesale[]    @relation("WholesaleBuyer")
+  buyerBlastSends     BuyerBlastSend[]
+  activities          ContactActivity[]
+  fixFlipContracts    DealFixFlip[]
+  buyHoldTenancies    DealBuyHold[]      @relation("BuyHoldTenant")
+  buyHoldManagedProps DealBuyHold[]      @relation("BuyHoldPM")
+  multifamilyManaged  DealMultifamily[]  @relation("MultifamilyPM")
+  landNotesBuyer      LandNote[]         @relation("LandNoteBuyer")
+  mfLpInvestments     DealMfLpInvestor[] @relation("MfLpInvestor")
 
   @@index([tenantId])
   @@index([tenantId, type])
@@ -799,26 +821,26 @@ model Deal {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  taxLien         DealTaxLien?
-  taxDeed         DealTaxDeed?
-  foreclosure     DealForeclosure?
-  fixFlip         DealFixFlip?
-  land            DealLand?
-  wholesale       DealWholesale?
-  buyHold         DealBuyHold?
-  multifamily     DealMultifamily?
-  events          Event[]
-  tasks           Task[]
-  transactions    FinancialTransaction[]
-  documents       Document[]
-  auditLogs       AuditLog[]
-  landNotes       LandNote[]
-  landComps       LandComp[]
-  buyerBlastSends BuyerBlastSend[]
-  exitEvaluations ExitEvaluation[]
+  taxLien                DealTaxLien?
+  taxDeed                DealTaxDeed?
+  foreclosure            DealForeclosure?
+  fixFlip                DealFixFlip?
+  land                   DealLand?
+  wholesale              DealWholesale?
+  buyHold                DealBuyHold?
+  multifamily            DealMultifamily?
+  events                 Event[]
+  tasks                  Task[]
+  transactions           FinancialTransaction[]
+  documents              Document[]
+  auditLogs              AuditLog[]
+  landNotes              LandNote[]
+  landComps              LandComp[]
+  buyerBlastSends        BuyerBlastSend[]
+  exitEvaluations        ExitEvaluation[]
   parcelResearchRequests ParcelResearchRequest[]
-  mfLpInvestors   DealMfLpInvestor[]
-  mfWaterfall     DealMfWaterfall?
+  mfLpInvestors          DealMfLpInvestor[]
+  mfWaterfall            DealMfWaterfall?
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -826,21 +848,21 @@ model Deal {
 }
 
 model ParcelResearchRequest {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   tenantId        String
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   dealId          String
-  deal            Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  deal            Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
   apnNormalized   String
   fipsCounty      String
   status          String
   priority        String
-  requestedAt     DateTime @default(now())
+  requestedAt     DateTime  @default(now())
   startedAt       DateTime?
   completedAt     DateTime?
   adminUserId     String?
   notes           String?
-  fieldsCompleted String[] @default([])
+  fieldsCompleted String[]  @default([])
 
   @@index([tenantId, status])
   @@index([status, requestedAt])
@@ -940,28 +962,28 @@ model DealFixFlip {
 
 // Extension table — Land Investing strategy
 model DealLand {
-  id                 String                 @id @default(cuid())
-  dealId             String                 @unique
-  deal               Deal                   @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  zoning             String?
-  access             LandAccess?
-  utilities          Json? // { water, sewer, electric, gas, notes }
-  floodZone          String?
-  wetlandsPercent    Decimal?               @db.Decimal(5, 2)
-  hoaName            String?
-  hoaFees            Decimal?               @db.Decimal(14, 2)
-  optionExpiry       DateTime?
-  sellerFinanceTerms Json?
-  buyerFinanceTerms  Json?
+  id                   String                 @id @default(cuid())
+  dealId               String                 @unique
+  deal                 Deal                   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  zoning               String?
+  access               LandAccess?
+  utilities            Json? // { water, sewer, electric, gas, notes }
+  floodZone            String?
+  wetlandsPercent      Decimal?               @db.Decimal(5, 2)
+  hoaName              String?
+  hoaFees              Decimal?               @db.Decimal(14, 2)
+  optionExpiry         DateTime?
+  sellerFinanceTerms   Json?
+  buyerFinanceTerms    Json?
   // Disposition funnel
-  dispositionStatus  LandDispositionStatus?
-  listedPrice        Decimal?               @db.Decimal(14, 2)
-  dispositionDate    DateTime?
+  dispositionStatus    LandDispositionStatus?
+  listedPrice          Decimal?               @db.Decimal(14, 2)
+  dispositionDate      DateTime?
   // AI parcel summary — regenerated on demand, never auto-refreshed
-  aiSummary           String?               @db.Text
+  aiSummary            String?                @db.Text
   aiSummaryGeneratedAt DateTime?
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 }
 
 // Comparable raw land sale logged against a Land deal for valuation context
@@ -1052,74 +1074,74 @@ model DealWholesale {
 
 // Extension table — Buy & Hold / Section 8 strategy
 model DealBuyHold {
-  id                     String    @id @default(cuid())
-  dealId                 String    @unique
-  deal                   Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  rentalStrategy         String? // LONG_TERM | SHORT_TERM | MID_TERM | SECTION_8
-  targetMonthlyRent      Decimal?  @db.Decimal(14, 2)
-  actualMonthlyRent      Decimal?  @db.Decimal(14, 2)
-  securityDeposit        Decimal?  @db.Decimal(14, 2)
-  leaseStartDate         DateTime?
-  leaseEndDate           DateTime?
-  tenantContactId        String?
-  tenantContact          Contact?  @relation("BuyHoldTenant", fields: [tenantContactId], references: [id], onDelete: SetNull)
-  tenantName             String?
-  tenantPhone            String?
-  tenantEmail            String?
+  id                       String    @id @default(cuid())
+  dealId                   String    @unique
+  deal                     Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  rentalStrategy           String? // LONG_TERM | SHORT_TERM | MID_TERM | SECTION_8
+  targetMonthlyRent        Decimal?  @db.Decimal(14, 2)
+  actualMonthlyRent        Decimal?  @db.Decimal(14, 2)
+  securityDeposit          Decimal?  @db.Decimal(14, 2)
+  leaseStartDate           DateTime?
+  leaseEndDate             DateTime?
+  tenantContactId          String?
+  tenantContact            Contact?  @relation("BuyHoldTenant", fields: [tenantContactId], references: [id], onDelete: SetNull)
+  tenantName               String?
+  tenantPhone              String?
+  tenantEmail              String?
   propertyManagerContactId String?
-  propertyManagerContact Contact?  @relation("BuyHoldPM", fields: [propertyManagerContactId], references: [id], onDelete: SetNull)
-  propertyManagerName    String?
-  propertyManagerPhone   String?
-  propertyManagerEmail   String?
-  section8VoucherAmount  Decimal?  @db.Decimal(14, 2)
-  housingAuthorityName   String?
-  inspectionStatus       String?
+  propertyManagerContact   Contact?  @relation("BuyHoldPM", fields: [propertyManagerContactId], references: [id], onDelete: SetNull)
+  propertyManagerName      String?
+  propertyManagerPhone     String?
+  propertyManagerEmail     String?
+  section8VoucherAmount    Decimal?  @db.Decimal(14, 2)
+  housingAuthorityName     String?
+  inspectionStatus         String?
   // Section 8 premium fields
-  hapContractNumber      String?
-  hapMonthlyAmount       Decimal?  @db.Decimal(14, 2)
-  tenantPortion          Decimal?  @db.Decimal(14, 2)
-  hapAnniversary         DateTime?
-  nextHqsDate            DateTime?
-  hqsResult              String? // PASS | FAIL | PENDING
-  fmrBedrooms            Int?
-  rentIncreaseNoticeDays Int?      @default(60)
-  operatingExpenses      Json?
-  maintenanceReserve     Decimal?  @db.Decimal(14, 2)
-  notes                  String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  hapContractNumber        String?
+  hapMonthlyAmount         Decimal?  @db.Decimal(14, 2)
+  tenantPortion            Decimal?  @db.Decimal(14, 2)
+  hapAnniversary           DateTime?
+  nextHqsDate              DateTime?
+  hqsResult                String? // PASS | FAIL | PENDING
+  fmrBedrooms              Int?
+  rentIncreaseNoticeDays   Int?      @default(60)
+  operatingExpenses        Json?
+  maintenanceReserve       Decimal?  @db.Decimal(14, 2)
+  notes                    String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 }
 
 // Extension table — Multifamily strategy
 model DealMultifamily {
-  id                   String    @id @default(cuid())
-  dealId               String    @unique
-  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  unitCount            Int?
-  occupiedUnits        Int?
-  averageMonthlyRent   Decimal?  @db.Decimal(14, 2)
-  grossScheduledIncome Decimal?  @db.Decimal(14, 2)
-  vacancyRate          Decimal?  @db.Decimal(5, 2)
-  operatingExpenses    Json?
-  netOperatingIncome   Decimal?  @db.Decimal(14, 2)
-  capRate              Decimal?  @db.Decimal(6, 4)
-  dscr                 Decimal?  @db.Decimal(6, 4)
-  loanAmount           Decimal?  @db.Decimal(14, 2)
-  interestRate         Decimal?  @db.Decimal(6, 4)
-  amortizationYears    Int?
-  annualDebtService    Decimal?  @db.Decimal(14, 2)
-  loanMaturityDate     DateTime?
-  rentRoll             Json?
-  t12Financials        Json?
-  businessPlan         Json?
+  id                       String    @id @default(cuid())
+  dealId                   String    @unique
+  deal                     Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  unitCount                Int?
+  occupiedUnits            Int?
+  averageMonthlyRent       Decimal?  @db.Decimal(14, 2)
+  grossScheduledIncome     Decimal?  @db.Decimal(14, 2)
+  vacancyRate              Decimal?  @db.Decimal(5, 2)
+  operatingExpenses        Json?
+  netOperatingIncome       Decimal?  @db.Decimal(14, 2)
+  capRate                  Decimal?  @db.Decimal(6, 4)
+  dscr                     Decimal?  @db.Decimal(6, 4)
+  loanAmount               Decimal?  @db.Decimal(14, 2)
+  interestRate             Decimal?  @db.Decimal(6, 4)
+  amortizationYears        Int?
+  annualDebtService        Decimal?  @db.Decimal(14, 2)
+  loanMaturityDate         DateTime?
+  rentRoll                 Json?
+  t12Financials            Json?
+  businessPlan             Json?
   propertyManagerContactId String?
   propertyManagerContact   Contact?  @relation("MultifamilyPM", fields: [propertyManagerContactId], references: [id], onDelete: SetNull)
-  propertyManagerName  String?
-  propertyManagerPhone String?
-  propertyManagerEmail String?
-  notes                String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  propertyManagerName      String?
+  propertyManagerPhone     String?
+  propertyManagerEmail     String?
+  notes                    String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 }
 
 // LP investor record for a multifamily syndication deal
@@ -1463,6 +1485,11 @@ enum JurisdictionClaimVerificationState {
   STALE
   BLOCKED
   SUPERSEDED
+}
+
+enum JurisdictionCanonicalAcceptanceResult {
+  PASSED
+  FAILED
 }
 
 enum PlanTier {

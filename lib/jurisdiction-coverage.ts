@@ -9,6 +9,7 @@ import {
 } from './jurisdiction-profile'
 import {
   JURISDICTION_QUESTIONS,
+  JURISDICTION_QUESTION_SCHEMA_VERSION,
   getJurisdictionQuestion,
 } from './jurisdiction-question-library'
 
@@ -49,16 +50,28 @@ export type JurisdictionCoverageRow = {
   researchRequestCount: number
   criticalQuestionCount: number
   verifiedCurrentCriticalClaimCount: number
+  canonicalAcceptance: CoverageCanonicalAcceptance | null
   launchTier: JurisdictionLaunchTier
 }
 
-export type JurisdictionLaunchTier = 'TIER_B' | 'TIER_C'
+export type CoverageCanonicalAcceptance = {
+  id: string
+  contractVersion: string
+  evidenceUrl: string
+  result: 'PASSED' | 'FAILED'
+  reviewedAt: Date
+}
+
+export type JurisdictionLaunchTier = 'TIER_A' | 'TIER_B' | 'TIER_C'
 
 export type JurisdictionLaunchTierSummary = {
+  tierACountyCount: number
   tierBCountyCount: number
   tierCCountyCount: number
+  tierADemandCount: number
   tierBDemandCount: number
   tierCDemandCount: number
+  tierAOrBDemandShare: number | null
   tierBDemandShare: number | null
 }
 
@@ -73,6 +86,7 @@ export type JurisdictionCoverageInput = {
   verifiedSourceCount: number
   trackedPropertyCount: number
   researchRequestCount: number
+  canonicalAcceptance?: CoverageCanonicalAcceptance | null
   now?: Date
 }
 
@@ -159,6 +173,7 @@ export function summarizeJurisdictionCoverage(
     verifiedSourceCount: input.verifiedSourceCount,
     staleClaimCount,
     blockedClaimCount,
+    canonicalAcceptance: input.canonicalAcceptance ?? null,
   })
 
   return {
@@ -182,6 +197,7 @@ export function summarizeJurisdictionCoverage(
     researchRequestCount: input.researchRequestCount,
     criticalQuestionCount: criticalQuestionKeys.size,
     verifiedCurrentCriticalClaimCount,
+    canonicalAcceptance: input.canonicalAcceptance ?? null,
     launchTier,
   }
 }
@@ -192,6 +208,7 @@ export function deriveJurisdictionLaunchTier(input: {
   verifiedSourceCount: number
   staleClaimCount: number
   blockedClaimCount: number
+  canonicalAcceptance: CoverageCanonicalAcceptance | null
 }): JurisdictionLaunchTier {
   if (
     input.criticalQuestionCount > 0 &&
@@ -199,20 +216,31 @@ export function deriveJurisdictionLaunchTier(input: {
     input.verifiedSourceCount > 0 &&
     input.staleClaimCount === 0 &&
     input.blockedClaimCount === 0
-  ) return 'TIER_B'
+  ) {
+    if (
+      input.canonicalAcceptance?.result === 'PASSED' &&
+      input.canonicalAcceptance.contractVersion === JURISDICTION_QUESTION_SCHEMA_VERSION
+    ) return 'TIER_A'
+    return 'TIER_B'
+  }
   return 'TIER_C'
 }
 
 export function summarizeJurisdictionLaunchTiers(rows: JurisdictionCoverageRow[]): JurisdictionLaunchTierSummary {
+  const tierARows = rows.filter(row => row.launchTier === 'TIER_A')
   const tierBRows = rows.filter(row => row.launchTier === 'TIER_B')
   const demand = (row: JurisdictionCoverageRow) => row.researchRequestCount + row.trackedPropertyCount
+  const tierADemandCount = tierARows.reduce((sum, row) => sum + demand(row), 0)
   const tierBDemandCount = tierBRows.reduce((sum, row) => sum + demand(row), 0)
   const totalDemand = rows.reduce((sum, row) => sum + demand(row), 0)
   return {
+    tierACountyCount: tierARows.length,
     tierBCountyCount: tierBRows.length,
-    tierCCountyCount: rows.length - tierBRows.length,
+    tierCCountyCount: rows.length - tierARows.length - tierBRows.length,
+    tierADemandCount,
     tierBDemandCount,
-    tierCDemandCount: totalDemand - tierBDemandCount,
+    tierCDemandCount: totalDemand - tierADemandCount - tierBDemandCount,
+    tierAOrBDemandShare: totalDemand === 0 ? null : (tierADemandCount + tierBDemandCount) / totalDemand,
     tierBDemandShare: totalDemand === 0 ? null : tierBDemandCount / totalDemand,
   }
 }

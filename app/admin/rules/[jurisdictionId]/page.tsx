@@ -6,6 +6,7 @@ import RulesClient from './RulesClient'
 import StrategyDataClient from './StrategyDataClient'
 import AuthorityBoundaryClient from './AuthorityBoundaryClient'
 import AuthorityScopeClaimClient from './AuthorityScopeClaimClient'
+import CanonicalAcceptanceClient from './CanonicalAcceptanceClient'
 import { getStateInfo, investmentTypeBadgeClass } from '@/lib/state-info'
 import { AuctionFeedSource } from '@/app/generated/prisma'
 import { DISABLED_AUCTION_FEEDS } from '@/lib/auction-feed-availability'
@@ -16,6 +17,7 @@ import {
 } from '@/lib/jurisdiction-land-use-authority'
 import { listCurrentUnincorporatedAuthorityBoundaries } from '@/lib/jurisdiction-authority-boundary'
 import { COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD } from '@/lib/jurisdiction-question-library'
+import { JURISDICTION_QUESTION_SCHEMA_VERSION } from '@/lib/jurisdiction-question-library'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +37,7 @@ export default async function JurisdictionRulesPage({
 
   const { jurisdictionId } = await params
 
-  const [jurisdiction, strategyDataRows, upcomingSales, authorityClaims, authorityBoundaries, authoritySources] = await Promise.all([
+  const [jurisdiction, strategyDataRows, upcomingSales, authorityClaims, authorityBoundaries, authoritySources, canonicalAcceptance] = await Promise.all([
     db.jurisdiction.findUnique({
       where: { id: jurisdictionId },
       include: {
@@ -111,6 +113,11 @@ export default async function JurisdictionRulesPage({
         },
       },
       orderBy: { updatedAt: 'desc' },
+    }),
+    db.jurisdictionCanonicalAcceptance.findFirst({
+      where: { jurisdictionId, supersededByAcceptance: null },
+      select: { id: true, contractVersion: true, caseReference: true, evidenceUrl: true, result: true, reviewedAt: true },
+      orderBy: { reviewedAt: 'desc' },
     }),
   ])
 
@@ -294,6 +301,15 @@ export default async function JurisdictionRulesPage({
           sources={authoritySources.flatMap(source => source.evidenceSnapshots[0]
             ? [{ id: source.id, url: source.url, retrievedAt: source.evidenceSnapshots[0].retrievedAt.toISOString() }]
             : [])}
+        />
+      </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-900 mb-1">Canonical county acceptance</h2>
+        <CanonicalAcceptanceClient
+          jurisdictionId={jurisdictionId}
+          contractVersion={JURISDICTION_QUESTION_SCHEMA_VERSION}
+          currentAcceptance={canonicalAcceptance && { ...canonicalAcceptance, reviewedAt: canonicalAcceptance.reviewedAt.toISOString() }}
         />
       </div>
 

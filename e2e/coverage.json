@@ -144,6 +144,27 @@
       }
     },
     {
+      "id": "super-admin-record-canonical-county-acceptance",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/canonical-acceptance.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated super-admin fixture and deterministic reset of canonical acceptance history.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "JURISDICTION_CANONICAL_ACCEPTANCE_RECORDED"
+      },
+      "journey": {
+        "entryPoint": "/admin/rules/{fixtureJurisdictionId}",
+        "actions": [
+          { "userAction": "Enter the exact contract case, immutable evidence reference, outcome, and summary, then record acceptance", "expectedRequest": "POST /api/admin/jurisdictions/{fixtureJurisdictionId}/canonical-acceptance" }
+        ],
+        "persistedOutcome": "The fixture jurisdiction has the current acceptance decision and its JURISDICTION_CANONICAL_ACCEPTANCE_RECORDED audit event carries the response request ID without the summary or evidence URL.",
+        "cleanup": "The integration fixture reset removes canonical acceptance records."
+      }
+    },
+    {
       "id": "owner-invite-team-member",
       "risk": "critical",
       "mode": "mutation",
