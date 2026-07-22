@@ -329,6 +329,21 @@
         "persistedOutcome": "The fixture contact lifecycle has correlated create, update, and delete events without PII, contact stage/type, or notes in audit metadata.",
         "cleanup": "The integration fixture reset removes or restores the fixture contact and related audit events."
       }
+    },
+    {
+      "id": "analyst-create-delete-contact-activity",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/contact-activity.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture, fixture contact, and deterministic activity cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "CONTACT_ACTIVITY_CREATED and CONTACT_ACTIVITY_DELETED" },
+      "journey": {
+        "entryPoint": "/dashboard/contacts/{fixtureContactId}",
+        "actions": [{ "userAction": "Save a fixture-safe contact activity and then delete it", "expectedRequest": "POST /api/contacts/{fixtureContactId}/activity then DELETE /api/contacts/{fixtureContactId}/activity/{fixtureActivityId}" }],
+        "persistedOutcome": "The fixture contact has correlated activity create and delete events without activity type, notes, or timestamps in audit metadata.",
+        "cleanup": "The integration fixture reset removes or restores the fixture activity and related audit events."
+      }
     }
   ]
 }
