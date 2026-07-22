@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
@@ -9,7 +10,7 @@ import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
 import { generateWholesaleEvents } from '@/lib/wholesale-events'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
-import { emitAuditEvent } from '@/lib/audit'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type WholesaleFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -67,6 +68,7 @@ export async function createWholesale(
 
   const d = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     const property = await db.property.upsert({
@@ -82,35 +84,40 @@ export async function createWholesale(
 
     const hasContract = !!(d.contractDate || d.contractPrice)
 
-    const deal = await db.deal.create({
-      data: {
-        tenantId:     tenant.id,
-        propertyId:   property.id,
-        strategyType: StrategyType.WHOLESALE,
-        status:       hasContract ? DealStatus.ACTIVE : DealStatus.LEAD,
-        notes:        d.notes || null,
-        wholesale: {
-          create: {
-            leadSource:         d.leadSource || null,
-            contractDate:       d.contractDate ?? null,
-            contractPrice:      d.contractPrice !== undefined ? Number(d.contractPrice) : null,
-            earnestMoney:       d.earnestMoney !== undefined ? Number(d.earnestMoney) : null,
-            inspectionDeadline: d.inspectionDeadline ?? null,
-            closingDeadline:    d.closingDeadline ?? null,
-            assignmentFee:      d.assignmentFee !== undefined ? Number(d.assignmentFee) : null,
-            buyerName:          d.buyerName || null,
-            buyerEmail:         d.buyerEmail || null,
-            buyerPhone:         d.buyerPhone || null,
-            marketingNotes:     d.marketingNotes || null,
-            dispositionStatus:  hasContract ? 'MARKETING' : null,
+    const deal = await db.$transaction(async tx => {
+      const created = await tx.deal.create({
+        data: {
+          tenantId: tenant.id,
+          propertyId: property.id,
+          strategyType: StrategyType.WHOLESALE,
+          status: hasContract ? DealStatus.ACTIVE : DealStatus.LEAD,
+          notes: d.notes || null,
+          wholesale: {
+            create: {
+              leadSource: d.leadSource || null,
+              contractDate: d.contractDate ?? null,
+              contractPrice: d.contractPrice !== undefined ? Number(d.contractPrice) : null,
+              earnestMoney: d.earnestMoney !== undefined ? Number(d.earnestMoney) : null,
+              inspectionDeadline: d.inspectionDeadline ?? null,
+              closingDeadline: d.closingDeadline ?? null,
+              assignmentFee: d.assignmentFee !== undefined ? Number(d.assignmentFee) : null,
+              buyerName: d.buyerName || null,
+              buyerEmail: d.buyerEmail || null,
+              buyerPhone: d.buyerPhone || null,
+              marketingNotes: d.marketingNotes || null,
+              dispositionStatus: hasContract ? 'MARKETING' : null,
+            },
           },
         },
-      },
+      })
+      await tx.auditEvent.create({
+        data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+      })
+      return created
     })
     dealId = deal.id
     await generateWholesaleEvents(dealId, tenant.id)
     await applyTenantWorkflowRules(tenant.id, dealId)
-    await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId, strategy: 'WHOLESALE' }, userId)
   } catch (err) {
     console.error('[createWholesale]', err)
     return { message: 'Failed to save. Please try again.' }
