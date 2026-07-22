@@ -60,6 +60,21 @@ const ADAPTERS: JurisdictionAdapter[] = [
     },
   },
   {
+    id: 'az-apache-county-offices-v1',
+    state: 'AZ',
+    county: 'Apache',
+    officeTypes: ['assessor', 'recorder', 'gis', 'planning_zoning', 'building'],
+    authorityOwner: 'Apache County elected offices and government departments',
+    scopeNote: 'Community Development candidates require parcel-level resolution of municipal, tribal, and other governing authority before relying on county development sources.',
+    sourceUrls: {
+      assessor: 'https://www.apachecountyaz.gov/assessor',
+      recorder: 'https://www.apachecountyaz.gov/Recorder/',
+      gis: 'https://www.apachecountyaz.gov/GIS',
+      planning_zoning: 'https://www.apachecountyaz.gov/Community-Development',
+      building: 'https://www.apachecountyaz.gov/Community-Development',
+    },
+  },
+  {
     id: 'tx-harris-county-offices-v1',
     state: 'TX',
     county: 'Harris',
