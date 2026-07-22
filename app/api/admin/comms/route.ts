@@ -77,7 +77,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       sent,
       sunk,
       failed,
-      subject: parsed.data.subject,
     }, userId ?? undefined)
 
     return NextResponse.json({ sent, sunk, failed })
@@ -100,7 +99,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     })
 
     await emitAuditEvent(tenant.id, 'ADMIN_EMAIL_SENT', {
-      subject: parsed.data.subject,
       recipients: delivery === 'sent' ? recipients.length : 0,
       sunk: delivery === 'sunk' ? recipients.length : 0,
     }, userId ?? undefined)
