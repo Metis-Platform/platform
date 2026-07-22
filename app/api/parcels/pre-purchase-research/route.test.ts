@@ -153,6 +153,14 @@ describe('pre-purchase research governing geography', () => {
       geography: { status: 'RESOLVED' },
       handoff: { id: 'snapshot-1' },
     })
+    expect(body.bidGates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'ZONING_BUILD', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'FLOOD_WETLANDS', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'ACCESS_UTILITIES', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'HOA_POA', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'TITLE_TAX_DEED', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'ECONOMICS', status: 'REVIEW_REQUIRED' }),
+    ]))
     expect(builder).toMatchObject({
       verdict: 'CONDITIONAL',
       blockers: [],

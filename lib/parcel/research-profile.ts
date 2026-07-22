@@ -18,6 +18,8 @@ const CACHE_PROFILE_FIELDS = new Set([
   'landUseCode',
   'improved',
   'marketValueEstimate',
+  'frontageLinearFt',
+  'lotDepthFt',
   'zoning',
   'zoningDescription',
   'floodZone',

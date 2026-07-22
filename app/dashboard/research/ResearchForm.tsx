@@ -8,6 +8,7 @@ import type { MaoResult } from '@/lib/mao/calculator'
 import { researchDealHref } from '@/lib/research-deal-handoff'
 import { PARCEL_FACT_PROVENANCE_LABEL, parcelFactProvenance, parcelFactTimestampLabel } from '@/lib/parcel/provenance'
 import { parcelEnrichmentGapLabels } from '@/lib/parcel/enrichment-gaps'
+import type { BidGate } from '@/lib/parcel/bid-gates'
 
 type Jurisdiction = {
   id: string
@@ -21,6 +22,7 @@ type ResearchResponse = {
   parcel: ParcelProfile
   results: ExitResult[]
   mao: MaoResult[]
+  bidGates: BidGate[]
   jurisdiction: { id: string; state: string; county: string } | null
   handoff?: { id: string; expiresAt: string } | null
   location?: {
@@ -445,6 +447,27 @@ export default function ResearchForm({ jurisdictions }: Props) {
             </div>
           )}
 
+          <section className="rounded-xl border border-zinc-200 bg-white p-6">
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-zinc-900">Bid research gates</h2>
+              <p className="mt-1 text-xs text-zinc-500">These are the parcel-specific checks that must be resolved before Metis can support a bid decision. A review-required item is not a clearance.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {data.bidGates.map(gate => (
+                <article key={gate.key} className={`rounded-lg border p-4 ${gate.status === 'FLAGGED' ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-zinc-900">{gate.label}</h3>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${gate.status === 'FLAGGED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {gate.status === 'FLAGGED' ? 'Flagged' : 'Review required'}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-700">{gate.evidence}</p>
+                  <p className="mt-2 text-xs font-medium text-zinc-700">Next: {gate.nextStep}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
           {/* Parcel summary */}
           <section className="rounded-xl border border-zinc-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
@@ -458,6 +481,8 @@ export default function ResearchForm({ jurisdictions }: Props) {
               <ParcelFact label="County" value={data.jurisdiction ? `${data.jurisdiction.county}, ${data.jurisdiction.state}` : undefined} />
               <ParcelFact label="Improved" field="improved" parcel={data.parcel} value={data.parcel.improved == null ? undefined : data.parcel.improved ? 'Yes' : 'No — vacant lot'} />
               <ParcelFact label="Lot size" field="lotSizeSqFt" parcel={data.parcel} value={data.parcel.lotSizeSqFt != null ? `${data.parcel.lotSizeSqFt.toLocaleString()} sq ft` : undefined} />
+              <ParcelFact label="Frontage" field="frontageLinearFt" parcel={data.parcel} value={data.parcel.frontageLinearFt != null ? `${data.parcel.frontageLinearFt.toLocaleString()} ft` : undefined} />
+              <ParcelFact label="Lot depth" field="lotDepthFt" parcel={data.parcel} value={data.parcel.lotDepthFt != null ? `${data.parcel.lotDepthFt.toLocaleString()} ft` : undefined} />
               <ParcelFact label="Zoning" field="zoning" parcel={data.parcel} value={data.parcel.zoning} />
               <ParcelFact label="Flood zone" field="floodZone" parcel={data.parcel} value={data.parcel.floodZone} />
               <ParcelFact label="FEMA recent county declarations" field="femaDisasterDeclarationStatus" parcel={data.parcel} value={data.parcel.femaDisasterDeclarationStatus === 'RECENT_DECLARATIONS_FOUND' ? data.parcel.femaRecentDisasterDeclarations?.map(declaration => `${declaration.declarationDate.slice(0, 10)} — ${declaration.incidentType} (DR-${declaration.disasterNumber})`).join('; ') : data.parcel.femaDisasterDeclarationStatus === 'NO_RECENT_DECLARATIONS_RETURNED' ? 'No declarations returned (not a parcel-risk or clearance determination)' : undefined} />

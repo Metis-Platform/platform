@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
   fetchOfficialVolusiaParcelFacts: vi.fn(),
+  fetchOfficialPalmBeachParcelFacts: vi.fn(),
   fetchOfficialOrangeParcelFacts: vi.fn(),
   fetchOfficialHarrisParcelFacts: vi.fn(),
   fetchFlDorParcel: vi.fn(),
@@ -61,6 +62,11 @@ vi.mock('./sources/harris-property-appraiser', () => ({
   harrisParcelQueryUrl: (apn: string) => `https://services.arcgis.com/su8ic9KbA7PYVxPS/arcgis/rest/services/Harris_County_Parcels/FeatureServer/1/query?where=HCAD_NUM%3D%27${apn}%27`,
   fetchOfficialHarrisParcelFacts: mocks.fetchOfficialHarrisParcelFacts,
 }))
+vi.mock('./sources/palm-beach-property-appraiser', () => ({
+  PALM_BEACH_FIPS: '12099',
+  palmBeachParcelQueryUrl: (apn: string) => `https://pbcpao.gov/Property/Details?parcelId=${apn}`,
+  fetchOfficialPalmBeachParcelFacts: mocks.fetchOfficialPalmBeachParcelFacts,
+}))
 vi.mock('./sources/orange-property-appraiser', () => ({
   ORANGE_FIPS: '12095',
   orangeParcelQueryUrl: (apn: string) => `https://vgispublic.ocpafl.org/server/rest/services/DynamicForJs/OCPA/MapServer/4/query?where=PARCEL%3D%27${apn}%27`,
@@ -103,6 +109,11 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
     mocks.fetchOfficialVolusiaParcelFacts.mockResolvedValue({
       lotSizeSqFt: 5_000, lotSizeAcres: 0.1148, landUseCode: 'VACANT RES', improved: false,
+    })
+    mocks.fetchOfficialPalmBeachParcelFacts.mockResolvedValue({
+      lotSizeSqFt: 50_094, lotSizeAcres: 1.15, assessedValue: 92_060, assessedYear: 2025,
+      landUseCode: 'VACANT', improved: false, frontageLinearFt: 209, lotDepthFt: 239,
+      zoning: 'AR', zoningDescription: 'AGRICULTURAL RESIDENTIAL',
     })
     mocks.fetchOfficialOrangeParcelFacts.mockResolvedValue({
       lotSizeSqFt: 10_890, lotSizeAcres: 0.25, assessedValue: 125_000, landUseCode: '0100', improved: true,
@@ -216,6 +227,24 @@ describe('parcel enrichment cache provenance', () => {
       }),
     }))
     expect(result.gaps).toContainEqual({ source: 'orange_property_appraiser', fields: ['assessedYear', 'marketValueEstimate'] })
+  })
+
+  it('uses the official Palm Beach parcel baseline without promoting assessor value into market value', async () => {
+    const result = await enrichParcel('00414218000001860', '12099', undefined, undefined, 'tenant-1')
+
+    expect(mocks.fetchOfficialPalmBeachParcelFacts).toHaveBeenCalledWith({ apn: '00414218000001860', fipsCounty: '12099' })
+    expect(mocks.fetchFlDorParcel).not.toHaveBeenCalled()
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'palm_beach_property_appraiser', field: 'frontageLinearFt', normalized: 209,
+        metadata: {
+          source: 'palm_beach_property_appraiser',
+          sourceUrl: 'https://pbcpao.gov/Property/Details?parcelId=00414218000001860',
+        },
+      }),
+    }))
+    expect(result.profile).not.toHaveProperty('marketValueEstimate')
+    expect(result.gaps).toContainEqual({ source: 'palm_beach_property_appraiser', fields: ['marketValueEstimate'] })
   })
 
   it('reports empty and partial source output without mislabeling explicit negative evidence', async () => {

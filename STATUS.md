@@ -50,6 +50,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Migration connectivity resilience (#506) | Merged — PR #507: after the #505 migration workflow hit a transient Neon P1001 and succeeded unchanged on retry, the main-only deploy now retries connectivity failures only. |
 | Apache County AZ discovery candidates (#508) | Merged — PR #509: demand-backed Apache County now has exact official review-only candidates with municipal, tribal, and other authority limitations retained. |
 | Orange County FL parcel baseline (#510) | Merged — PR #511: the official OCPA service supplies parcel interior location, acreage, assessed value, land-use code, and conservative improvement evidence with exact query provenance; it never supplies zoning, market value, permitting, or buildability conclusions. |
+| Palm Beach County parcel bid gates (#495) | PR #498 adds official PBCPA parcel acreage, dimensions, land use, improvement state, zoning label, and assessed-value evidence with exact provenance. The investor result keeps zoning/buildability, flood/wetlands, access/utilities, HOA/POA, title/tax-deed, and economics gates unresolved until independent diligence; assessor value is not promoted into market value or a bid clearance. |
 | Mutation verification inventory (#512) | Merged — PR #513 inventories every mutating API route and PR #514 inventories server-action modules. This branch tightens that CI guard to every exported server action, so all currently unproven click/save operations are individually deferred with their exact fixture/audit evidence. |
 | Tax-lien lifecycle trace coverage | Merged — PR #517 atomically records opaque request-correlated evidence for Not Won, relist, redemption, and deletion. The feature catalog declares the exact four-save browser journey and cleanup; hosted execution remains blocked by #289. |
 | Land Note payment trace coverage | Merged — PR #518 makes payment recording tenant/deal-scoped and atomic with an opaque request-correlated audit event. The catalog declares its independent save journey and cleanup; hosted execution remains blocked by #289. |
@@ -220,7 +221,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 ## Next Up
 
 1. Finish the founding Volusia acceptance evidence: authoritative frontage/depth, governing zoning scope, and the county/title/permitting nonconforming-lot determination remain unresolved.
-2. Continue demand-driven national and county parcel-source coverage; Orange County now has an official OCPA baseline, while unsupported Florida counties still remain explicit gaps.
+2. Continue demand-driven national and county parcel-source coverage; Orange and Palm Beach now have official assessor baselines, while unsupported Florida counties still remain explicit gaps.
 3. Reduce #512's individually tracked server-action verification debt, then execute the catalog only after owner-authorized isolated QA provisioning.
 
 ---
