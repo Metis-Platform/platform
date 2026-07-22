@@ -35,6 +35,12 @@ export default async function JurisdictionCoveragePage({ searchParams }: Props) 
           select: { section: true, fieldKey: true, extractedValue: true },
         },
         sourceUrls: { where: { authorityStatus: 'VERIFIED' }, select: { id: true } },
+        canonicalAcceptances: {
+          where: { supersededByAcceptance: null },
+          select: { id: true, contractVersion: true, evidenceUrl: true, result: true, reviewedAt: true },
+          take: 1,
+          orderBy: { reviewedAt: 'desc' },
+        },
         _count: { select: { properties: true } },
       },
     }),
@@ -52,6 +58,7 @@ export default async function JurisdictionCoveragePage({ searchParams }: Props) 
     verifiedSourceCount: jurisdiction.sourceUrls.length,
     trackedPropertyCount: jurisdiction._count.properties,
     researchRequestCount: jurisdiction.fips ? requestsByFips.get(jurisdiction.fips) ?? 0 : 0,
+    canonicalAcceptance: jurisdiction.canonicalAcceptances[0] ?? null,
   }))
   const demandedCount = rows.filter(row => row.trackedPropertyCount + row.researchRequestCount > 0).length
   const tiers = summarizeJurisdictionLaunchTiers(rows)
@@ -83,7 +90,7 @@ export default async function JurisdictionCoveragePage({ searchParams }: Props) 
         <Metric label="Claim-backed fields" value={totals.claims} />
         <Metric label="Legacy fields" value={totals.legacy} />
         <Metric label="Verified authorities" value={totals.verifiedSources} />
-        <Metric label="Tier B demand readiness" value={tiers.tierBDemandShare == null ? 'No demand yet' : `${Math.round(tiers.tierBDemandShare * 100)}%`} />
+        <Metric label="Tier A/B demand readiness" value={tiers.tierAOrBDemandShare == null ? 'No demand yet' : `${Math.round(tiers.tierAOrBDemandShare * 100)}%`} />
       </div>
       <form className="flex flex-wrap gap-3 rounded-xl border border-zinc-200 bg-white p-4" method="get">
         <select aria-label="State" name="state" defaultValue={params.state ?? ''} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -108,7 +115,7 @@ export default async function JurisdictionCoveragePage({ searchParams }: Props) 
           <tbody className="divide-y divide-zinc-100">
             {filtered.slice(0, 250).map(row => <tr key={row.id}>
               <td className="px-3 py-3"><Link className="font-medium text-blue-700 hover:underline" href={`/admin/rules/${row.id}`}>{row.county}, {row.state}</Link></td>
-              <td className="px-3 py-3">{row.launchTier === 'TIER_B' ? 'Tier B — current core evidence' : 'Tier C — on-demand preliminary'}</td>
+              <td className="px-3 py-3">{row.launchTier === 'TIER_A' ? <span>Tier A — <a className="text-blue-700 hover:underline" href={row.canonicalAcceptance?.evidenceUrl} target="_blank" rel="noopener noreferrer">accepted evidence ↗</a></span> : row.launchTier === 'TIER_B' ? 'Tier B — current core evidence' : 'Tier C — on-demand preliminary'}</td>
               <td className="px-3 py-3">{row.researchRequestCount} requests · {row.trackedPropertyCount} properties</td>
               <td className="px-3 py-3">{row.claimBackedFieldCount}</td><td className="px-3 py-3">{row.criticalUntrustedFieldCount}</td>
               <td className="px-3 py-3">{row.catalogGapCount}</td><td className="px-3 py-3">{row.staleClaimCount} stale · {row.blockedClaimCount} blocked</td>
@@ -116,7 +123,7 @@ export default async function JurisdictionCoveragePage({ searchParams }: Props) 
             </tr>)}
           </tbody>
         </table>
-        <p className="border-t border-zinc-200 px-4 py-3 text-xs text-zinc-500">Tier B requires every critical catalog question to have a current, unblocked, verified claim plus a current verified authority. Tier A is intentionally reserved until canonical acceptance evidence exists. Tier C is on-demand preliminary only. Legacy and invalid projections never count as coverage.</p>
+        <p className="border-t border-zinc-200 px-4 py-3 text-xs text-zinc-500">Tier A requires every Tier B condition plus the current passed canonical acceptance for the exact question contract; failed, superseded, or older-contract evidence cannot elevate a county. Tier B requires every critical catalog question to have a current, unblocked, verified claim plus a current verified authority. Tier C is on-demand preliminary only. Legacy and invalid projections never count as coverage.</p>
       </div>
     </div>
   )
