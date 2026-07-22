@@ -2,7 +2,7 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-20
+> Last updated: 2026-07-21
 
 ---
 
@@ -110,7 +110,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Authority-boundary operations | Issue #432 makes the #430 control usable by super-admins in the county rules console: it lists only eligible claims, links the reviewed evidence, shows the current replacement target, and submits Polygon/MultiPolygon GeoJSON through the protected authority-boundary endpoint. |
 | Authority-scope operations | Issue #434 completes the operator chain by publishing the authority scope itself from a verified LOCAL_OFFICIAL source and its immutable snapshot, with a human authority citation, through the same append-only claim ledger used by all jurisdiction facts. |
 | Evidence-gated county coverage notification | Issue #363 adds a durable, tenant-scoped outbox only when the exact current claim projection reaches fully verified/current coverage. Discovery, pending candidates, stale/blocked claims, and unverified authority cannot queue a message. A policy-gated scheduled delivery uses an idempotency key and exposes aggregate delivery state to super-admin operators. Hosted delivery remains unproven until the isolated QA reset/access gate is cleared. |
-| Development portability verification | PR #288 shipped a platform-neutral bootstrap, context/env checks, and dev-container contract. The bootstrap now also generates Prisma’s ignored client, so a fresh clone can proceed directly to TypeScript verification. Issue #295 remains open because macOS and approved remote-Linux acceptance runs have not yet been evidenced; each host must use its own revocable non-production secrets and must not mutate shared integration or production. |
+| Development portability verification | PR #475 completes Issue #295's retained acceptance contract. Fresh WSL, macOS run `29891120348`, and Linux-container run `29891121239` each verified bootstrap, tracked context, type check, lint, tests, and production build without secrets or hosted mutations. GitHub is canonical; LastPass is the documented human-access vault for per-machine, revocable non-production QA credentials. |
 | macOS fresh-clone verification | PR #443 adds a manually dispatched macOS GitHub runner for the tracked bootstrap, context, type, test, and production-build contract. It uses no secrets and performs no hosted mutation; a completed run supplies repeatable macOS acceptance evidence for #295. |
 | Remote Linux container verification | PR #445 adds a manually dispatched Ubuntu runner that builds `.devcontainer/Dockerfile` and executes the same bootstrap, context, type, test, and production-build contract inside the container. It uses no secrets and performs no hosted mutation; corrected run `29780265511` passed the full contract, supplying repeatable remote-Linux evidence for #295. |
 | Remote Linux container defect resolved | Initial run `29779985759` correctly failed before project bootstrap because the tracked Dockerfile referenced the non-existent `javascript-node:1-24-bookworm` image. PR #447 switches to the published `24-bookworm` tag; the corrected container run passed and the initial failure remains retained diagnostic evidence. |

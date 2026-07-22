@@ -26,4 +26,4 @@ jobs:
             --volume "$GITHUB_WORKSPACE:/workspace" \
             --workdir /workspace \
             metis-devcontainer \
-            bash -lc 'npm run bootstrap && npm run context:check && npx tsc --noEmit && npm test && npm run build'
+            bash -lc 'npm run bootstrap && npm run context:check && npx tsc --noEmit && npm run lint && npm test && npm run build'
