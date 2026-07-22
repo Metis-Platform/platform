@@ -359,6 +359,21 @@
         "persistedOutcome": "Only a tenant-owned fixture deal receives upload capability; the fixture document has correlated create and delete events without filename, key, MIME type, size, type, or content in audit metadata.",
         "cleanup": "The integration fixture reset removes the document record, R2 object, and related audit events."
       }
+    },
+    {
+      "id": "analyst-add-task-comment",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/task-comment.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture, fixture task, and deterministic comment/audit cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "TASK_COMMENT_CREATED" },
+      "journey": {
+        "entryPoint": "/dashboard/tasks?dealId={fixtureDealId}",
+        "actions": [{ "userAction": "Open the fixture task, enter a fixture-safe comment, and save", "expectedRequest": "POST /api/tasks/{fixtureTaskId}/comments" }],
+        "persistedOutcome": "The fixture task receives a correlated TASK_COMMENT_CREATED event containing only task/comment identity, never the comment body or user PII.",
+        "cleanup": "The integration fixture reset removes the fixture comment and related audit event."
+      }
     }
   ]
 }
