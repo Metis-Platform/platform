@@ -134,6 +134,7 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
 
   const data = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     if (data.status === 'LEAD' && data.researchSnapshotId) {
@@ -165,9 +166,11 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
           },
         })
         await tx.prePurchaseResearchSnapshot.update({ where: { id: data.researchSnapshotId }, data: { consumedDealId: created.id } })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
         return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN', status: 'LEAD', researchSnapshotId: data.researchSnapshotId }, userId)
       dealId = deal.id
       redirect(`/dashboard/deals/${dealId}`)
     }
@@ -179,41 +182,51 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
     })
 
     if (data.status === 'LEAD') {
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_LIEN, status: DealStatus.LEAD,
-          notes: data.notes || null,
-          taxLien: {
-            create: {
-              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
-              maxBid: (data.maxBid && data.maxBid !== '') ? Number(data.maxBid) : null,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_LIEN, status: DealStatus.LEAD,
+            notes: data.notes || null,
+            taxLien: {
+              create: {
+                auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+                maxBid: (data.maxBid && data.maxBid !== '') ? Number(data.maxBid) : null,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof ActiveSchema>
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_LIEN, status: DealStatus.ACTIVE,
-          notes: d.notes || null,
-          taxLien: {
-            create: {
-              certificateNumber: d.certificateNumber,
-              faceAmount: d.faceAmount,
-              interestRate: d.interestRate / 100,
-              issueDate: new Date(`${d.issueDate}T12:00:00.000Z`),
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_LIEN, status: DealStatus.ACTIVE,
+            notes: d.notes || null,
+            taxLien: {
+              create: {
+                certificateNumber: d.certificateNumber,
+                faceAmount: d.faceAmount,
+                interestRate: d.interestRate / 100,
+                issueDate: new Date(`${d.issueDate}T12:00:00.000Z`),
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
       await generateEventsForDeal(deal.id, tenant.id)
       await applyTenantWorkflowRules(tenant.id, deal.id)
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN' }, userId)
       dealId = deal.id
     }
   } catch (err) {

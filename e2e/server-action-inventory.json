@@ -33,7 +33,7 @@
     { "target": "lib/actions/lien.ts#convertToActive", "status": "deferred", "issue": "#512", "reason": "Lien lifecycle transition needs a reset-safe fixture and audit proof." },
     { "target": "lib/actions/lien.ts#createDeed", "status": "deferred", "issue": "#512", "reason": "Tax-deed creation needs a reset-safe fixture and direct action audit proof." },
     { "target": "lib/actions/lien.ts#createForeclosure", "status": "deferred", "issue": "#512", "reason": "Foreclosure creation needs a reset-safe fixture and direct action audit proof." },
-    { "target": "lib/actions/lien.ts#createLien", "status": "deferred", "issue": "#512", "reason": "Lien creation has a journey; direct browser execution awaits the isolated QA fixture." },
+    { "target": "lib/actions/lien.ts#createLien", "status": "covered", "storyId": "investor-create-save-delete-deal" },
     { "target": "lib/actions/lien.ts#deleteLien", "status": "deferred", "issue": "#512", "reason": "Lien deletion needs a reset-safe fixture and audit proof." },
     { "target": "lib/actions/lien.ts#markNotWon", "status": "deferred", "issue": "#512", "reason": "Auction outcome transition needs a reset-safe fixture and audit proof." },
     { "target": "lib/actions/lien.ts#recordRedemption", "status": "deferred", "issue": "#512", "reason": "Redemption recording needs deterministic financial fixture cleanup and audit proof." },
