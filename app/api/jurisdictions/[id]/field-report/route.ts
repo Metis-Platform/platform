@@ -1,7 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { Prisma } from '@/app/generated/prisma'
 import { db } from '@/lib/db'
 import { isJurisdictionProfileSection } from '@/lib/jurisdiction-profile'
 import { syncUserToDatabase } from '@/lib/sync-user'
@@ -42,11 +41,9 @@ export async function POST(
       userId,
       requestId: requestIdFromHeaders(req.headers),
       action: 'JURISDICTION_PROFILE_FLAGGED',
-      meta: {
-        jurisdictionId: jurisdiction.id,
-        jurisdiction: `${jurisdiction.county} County, ${jurisdiction.state}`,
-        ...parsed.data,
-      } satisfies Prisma.InputJsonValue,
+      // The report body can contain investor-supplied details. Preserve only
+      // the target identity needed to correlate the semantic audit event.
+      meta: { jurisdictionId: jurisdiction.id },
     },
   })
 

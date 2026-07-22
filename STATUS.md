@@ -39,6 +39,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Land Note buyer isolation (#482) | PR #483 confirms that a Land Note buyer contact belongs to the active tenant and is a BUYER before creating the note; note creation and its safe request-correlated audit event are atomic. |
 | Harris County official parcel baseline (#484) | Merged — PR #485 adds the official HCAD GIS layer as a tenant-cached, non-PII parcel baseline for Harris County, TX. It exposes only lot area and appraised value with exact query provenance; it does not infer market value, zoning, authority, or improvement state. |
 | Feature verification console (#486) | In progress: the CI-enforced feature catalog is now exposed through a super-admin, read-only page so every declared click/save journey, expected request, audit evidence, persisted outcome, and cleanup rule is inspectable without a repository checkout. Blocked journeys remain explicitly unexecuted until #289 QA authorization. |
+| Field-report audit privacy (#488) | In progress: jurisdiction field-report audit events retain only tenant/user/request correlation and jurisdiction identity. Submitted strategy, field, label, and free-text reason are excluded from the audit ledger; route coverage proves the privacy boundary. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
