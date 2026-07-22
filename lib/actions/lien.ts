@@ -337,6 +337,7 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
 
   const data = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     if (data.status === 'LEAD' && data.researchSnapshotId) {
@@ -356,9 +357,11 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
           taxDeed: { create: { auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null, maxBid: data.maxBid ? Number(data.maxBid) : null } },
         } })
         await tx.prePurchaseResearchSnapshot.update({ where: { id: data.researchSnapshotId }, data: { consumedDealId: created.id } })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
         return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED', status: 'LEAD', researchSnapshotId: data.researchSnapshotId }, userId)
       dealId = deal.id
       redirect(`/dashboard/deals/${dealId}`)
     }
@@ -370,20 +373,25 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
     })
 
     if (data.status === 'LEAD') {
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_DEED, status: DealStatus.LEAD,
-          notes: data.notes || null,
-          taxDeed: {
-            create: {
-              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
-              maxBid: data.maxBid ? Number(data.maxBid) : null,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_DEED, status: DealStatus.LEAD,
+            notes: data.notes || null,
+            taxDeed: {
+              create: {
+                auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+                maxBid: data.maxBid ? Number(data.maxBid) : null,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof DeedActiveSchema>
@@ -392,24 +400,29 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
         ? new Date(saleDateObj.getTime() + d.redemptionPeriodDays * 86_400_000)
         : null
 
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_DEED, status: DealStatus.ACTIVE,
-          notes: d.notes || null,
-          taxDeed: {
-            create: {
-              saleDate: saleDateObj,
-              openingBid: d.openingBid ? Number(d.openingBid) : null,
-              winningBid: d.winningBid,
-              redemptionPeriodDays: d.redemptionPeriodDays ?? null,
-              redemptionDeadline,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_DEED, status: DealStatus.ACTIVE,
+            notes: d.notes || null,
+            taxDeed: {
+              create: {
+                saleDate: saleDateObj,
+                openingBid: d.openingBid ? Number(d.openingBid) : null,
+                winningBid: d.winningBid,
+                redemptionPeriodDays: d.redemptionPeriodDays ?? null,
+                redemptionDeadline,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
       await generateEventsForDeal(deal.id, tenant.id)
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED' }, userId)
       dealId = deal.id
     }
   } catch (err) {

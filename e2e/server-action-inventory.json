@@ -31,7 +31,7 @@
     { "target": "lib/actions/land.ts#syncLandFromResearch", "status": "deferred", "issue": "#512", "reason": "Research sync needs a deterministic parcel fixture and audit proof." },
     { "target": "lib/actions/land.ts#updateLand", "status": "deferred", "issue": "#512", "reason": "Deal update needs a reset-safe fixture and direct action audit proof." },
     { "target": "lib/actions/lien.ts#convertToActive", "status": "deferred", "issue": "#512", "reason": "Lien lifecycle transition needs a reset-safe fixture and audit proof." },
-    { "target": "lib/actions/lien.ts#createDeed", "status": "deferred", "issue": "#512", "reason": "Tax-deed creation needs a reset-safe fixture and direct action audit proof." },
+    { "target": "lib/actions/lien.ts#createDeed", "status": "covered", "storyId": "investor-create-tax-deed-deal" },
     { "target": "lib/actions/lien.ts#createForeclosure", "status": "deferred", "issue": "#512", "reason": "Foreclosure creation needs a reset-safe fixture and direct action audit proof." },
     { "target": "lib/actions/lien.ts#createLien", "status": "covered", "storyId": "investor-create-save-delete-deal" },
     { "target": "lib/actions/lien.ts#deleteLien", "status": "covered", "storyId": "investor-trace-tax-lien-lifecycle" },
