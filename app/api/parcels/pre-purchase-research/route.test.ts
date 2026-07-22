@@ -168,6 +168,10 @@ describe('pre-purchase research governing geography', () => {
     expect(builder.buildableEnvelope).toBeUndefined()
     expect(builder.conditions).toContain('Governing local land-use authority is unresolved')
     expect(body.geography.landUseAuthority).toEqual({ status: 'UNRESOLVED' })
+    expect(body.decision).toMatchObject({
+      status: 'VERIFY_BEFORE_ACTION',
+      recommendedExit: 'VACANT_SELL_TO_BUILDER',
+    })
     expect(landMao).toMatchObject({
       scenario: { conservative: 40_000, moderate: 55_000, aggressive: 70_000 },
       basis: 'Market value estimate $100K × 40-70%',

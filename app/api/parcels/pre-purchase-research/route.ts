@@ -9,6 +9,7 @@ import { EXIT_META } from '@/lib/exit-engine/keys'
 import { evaluateExits } from '@/lib/exit-engine/engine'
 import { assembleResearchProfile } from '@/lib/parcel/research-profile'
 import { buildBidGates } from '@/lib/parcel/bid-gates'
+import { buildInvestmentDecision } from '@/lib/investment-decision/decision'
 import { computeMao } from '@/lib/mao/calculator'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
 import {
@@ -287,6 +288,7 @@ export async function POST(req: Request) {
       : result)
   const mao = computeMao(parcel, exitResults)
   const bidGates = buildBidGates(parcel, countyLandUseAuthority.status)
+  const decision = buildInvestmentDecision(parcel, exitResults, bidGates, mao)
   const handoff = jurisdiction
     ? await db.prePurchaseResearchSnapshot.create({
         data: {
@@ -305,6 +307,7 @@ export async function POST(req: Request) {
     results:      exitResults,
     mao,
     bidGates,
+    decision,
     jurisdiction: jurisdiction
       ? { id: jurisdiction.id, state: jurisdiction.state, county: jurisdiction.county }
       : null,
