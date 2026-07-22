@@ -55,6 +55,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Land Note payment trace coverage | Merged — PR #518 makes payment recording tenant/deal-scoped and atomic with an opaque request-correlated audit event. The catalog declares its independent save journey and cleanup; hosted execution remains blocked by #289. |
 | Land disposition trace coverage | Merged — PR #519 records tenant/deal-scoped, request-correlated evidence for disposition updates and same-deal Land Note defaults. The catalog declares the save/default journey and cleanup; hosted execution remains blocked by #289. |
 | Land Comp trace coverage | Raw Land Comp creation and deletion now write atomic, tenant-scoped, request-correlated evidence containing only deal/comp identity. The catalog declares the create/delete journey and reset cleanup; hosted execution remains blocked by #289. |
+| Tax Lien creation trace coverage | Tax Lien lead, active, and research-handoff creation now record `DEAL_CREATED` atomically with the deal. The event contains only deal identity; APN, address, bid, and notes remain outside audit metadata. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
