@@ -11,6 +11,11 @@ import {
   HARRIS_FIPS,
   harrisParcelQueryUrl,
 } from './sources/harris-property-appraiser'
+import {
+  fetchOfficialPalmBeachParcelFacts,
+  PALM_BEACH_FIPS,
+  palmBeachParcelQueryUrl,
+} from './sources/palm-beach-property-appraiser'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
@@ -54,6 +59,14 @@ const PARCEL_FACT_FIELDS = [
   'landUseCode',
   'improved',
   'marketValueEstimate',
+] as const
+
+const PARCEL_DIMENSION_FIELDS = [
+  ...PARCEL_FACT_FIELDS,
+  'frontageLinearFt',
+  'lotDepthFt',
+  'zoning',
+  'zoningDescription',
 ] as const
 
 export async function enrichParcel(
@@ -259,6 +272,21 @@ function parcelBaselinePlan(apnNormalized: string, fipsCounty: string): SourcePl
     }
   }
 
+  if (fipsCounty === PALM_BEACH_FIPS) {
+    let sourceUrl: string | undefined
+    try {
+      sourceUrl = palmBeachParcelQueryUrl(apnNormalized)
+    } catch {
+      // The fetch path reports an invalid identifier as a fail-closed source gap.
+    }
+    return {
+      source: 'palm_beach_property_appraiser',
+      sourceUrl,
+      fields: [...PARCEL_DIMENSION_FIELDS],
+      fetch: async () => fetchOfficialPalmBeachParcelFacts({ apn: apnNormalized, fipsCounty }),
+    }
+  }
+
   if (fipsCounty.startsWith('12')) {
     return {
       source: 'fl_dor',
@@ -333,6 +361,8 @@ function assignProfileValue(profile: Partial<ParcelProfile>, field: string, valu
 function isProfileKey(field: string): field is keyof ParcelProfile {
   return [
     ...PARCEL_FACT_FIELDS,
+    'frontageLinearFt',
+    'lotDepthFt',
     'floodZone',
     'floodPanel',
     'wetlandsPresent',

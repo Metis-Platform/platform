@@ -8,6 +8,7 @@ import { buildJurisdictionFacts } from '@/lib/exit-engine/jurisdiction-facts'
 import { EXIT_META } from '@/lib/exit-engine/keys'
 import { evaluateExits } from '@/lib/exit-engine/engine'
 import { assembleResearchProfile } from '@/lib/parcel/research-profile'
+import { buildBidGates } from '@/lib/parcel/bid-gates'
 import { computeMao } from '@/lib/mao/calculator'
 import { requestIdFromHeaders } from '@/lib/request-correlation'
 import {
@@ -280,6 +281,7 @@ export async function POST(req: Request) {
         }
       : result)
   const mao = computeMao(parcel, exitResults)
+  const bidGates = buildBidGates(parcel, countyLandUseAuthority.status)
   const handoff = jurisdiction
     ? await db.prePurchaseResearchSnapshot.create({
         data: {
@@ -297,6 +299,7 @@ export async function POST(req: Request) {
     parcel,
     results:      exitResults,
     mao,
+    bidGates,
     jurisdiction: jurisdiction
       ? { id: jurisdiction.id, state: jurisdiction.state, county: jurisdiction.county }
       : null,

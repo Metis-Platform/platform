@@ -41,8 +41,9 @@ export function computeMao(parcel: ParcelProfile, exitResults: ExitResult[]): Ma
 
   // Exits explicitly ruled out (NOT_VIABLE) vs just missing data (INSUFFICIENT_DATA)
   const buildExplicitlyBlocked = exitResults.some(r =>
-    r.verdict === 'NOT_VIABLE' &&
-    (VACANT_BUILD_EXIT_KEYS.has(r.exitKey) || IMPROVED_EXIT_KEYS.has(r.exitKey)),
+    r.verdict === 'NOT_VIABLE'
+    && (r.exitKey === 'VACANT_SELL_TO_BUILDER' || r.exitKey === 'VACANT_BUILD_AND_SELL')
+    && r.blockers.some(isParcelConstructionBlocker),
   )
   const buildDataGapOnly = !buildExplicitlyBlocked && exitResults.some(r =>
     r.verdict === 'INSUFFICIENT_DATA' &&
@@ -147,6 +148,16 @@ export function computeMao(parcel: ParcelProfile, exitResults: ExitResult[]): Ma
   }
 
   return results
+}
+
+function isParcelConstructionBlocker(blocker: string): boolean {
+  return [
+    'Lot is smaller than jurisdiction minimum lot size',
+    'Lot frontage is smaller than jurisdiction minimum width',
+    'Flood zone plus wetlands creates buildability risk',
+    'Landlocked parcel lacks legal/physical road frontage',
+    'Jurisdiction setbacks leave no buildable envelope',
+  ].includes(blocker)
 }
 
 function clamp(value: number): number {

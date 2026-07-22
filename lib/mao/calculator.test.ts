@@ -54,4 +54,14 @@ describe('computeMao raw land bands', () => {
 
     expect(result?.basis).toBe('Assessed value proxy $100K × 25-50%')
   })
+
+  it('does not call a parcel unbuildable when build-and-sell is blocked only by investor capital', () => {
+    const result = computeMao({ ...baseParcel, landMarketType: 'INFILL' }, [{
+      exitKey: 'VACANT_BUILD_AND_SELL', verdict: 'NOT_VIABLE', confidence: 1,
+      blockers: ['Investor improvement capital is below estimated construction cost'],
+      conditions: [], dataGaps: [],
+    }]).find(m => m.strategy === 'LAND')
+
+    expect(result?.warningType).toBeUndefined()
+  })
 })

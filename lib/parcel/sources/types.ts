@@ -3,6 +3,7 @@ import type { ParcelProfile } from '@/lib/exit-engine/types'
 export type ParcelSourceName =
   | 'fl_dor'
   | 'volusia_property_appraiser'
+  | 'palm_beach_property_appraiser'
   | 'harris_property_appraiser'
   | 'regrid'
   | 'fema_nfhl'
@@ -28,6 +29,7 @@ export interface ParcelSourcePayload {
 export const SOURCE_TTL_HOURS: Record<ParcelSourceName, number> = {
   fl_dor: 24 * 180,
   volusia_property_appraiser: 24 * 180,
+  palm_beach_property_appraiser: 24 * 180,
   harris_property_appraiser: 24 * 180,
   regrid: 24 * 180,
   fema_nfhl: 24 * 365,
