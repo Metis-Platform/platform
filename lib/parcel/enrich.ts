@@ -4,6 +4,7 @@ import type { ParcelProfile } from '@/lib/exit-engine/types'
 import { CENSUS_ACS_2024_SOURCE_URL, fetchDemographics } from './sources/census-acs'
 import { EPA_ECHO_CWA_SOURCE_URL, fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
+import { FEMA_DISASTER_DECLARATIONS_SOURCE_URL, fetchFemaDisasterDeclarations } from './sources/fema-disaster-declarations'
 import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
 import { fetchElectricUtility, HIFLD_ELECTRIC_RETAIL_TERRITORIES_SOURCE_URL } from './sources/hifld-electric'
 import {
@@ -159,6 +160,12 @@ function buildSourcePlans(
       sourceUrl: CENSUS_ACS_2024_SOURCE_URL,
       fields: ['medianHouseholdIncome', 'renterOccupancyPct', 'vacancyRatePct', 'populationDensity'],
       fetch: async () => fetchDemographics(fipsCounty),
+    },
+    {
+      source: 'fema_disaster_declarations',
+      sourceUrl: FEMA_DISASTER_DECLARATIONS_SOURCE_URL,
+      fields: ['femaDisasterDeclarationStatus', 'femaRecentDisasterDeclarations'],
+      fetch: async () => fetchFemaDisasterDeclarations(fipsCounty),
     },
   ]
 
@@ -335,6 +342,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     ...PARCEL_FACT_FIELDS,
     'floodZone',
     'floodPanel',
+    'femaDisasterDeclarationStatus',
+    'femaRecentDisasterDeclarations',
     'wetlandsPresent',
     'wetlandsNwiStatus',
     'soilMapUnitKey',
