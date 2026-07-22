@@ -34,7 +34,7 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
-import { createLien } from './lien'
+import { createDeed, createLien } from './lien'
 
 describe('createLien', () => {
   beforeEach(() => {
@@ -70,5 +70,41 @@ describe('createLien', () => {
     expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'DEAL_CREATED', meta: { dealId: 'deal-1' } }) }))
     expect(mocks.generateEvents).toHaveBeenCalledWith('deal-1', 'tenant-1')
     expect(mocks.applyWorkflowRules).toHaveBeenCalledWith('tenant-1', 'deal-1')
+  })
+})
+
+describe('createDeed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.auth.mockResolvedValue({ userId: 'user-1', orgId: 'org-1' })
+    mocks.tenant.mockResolvedValue({ id: 'tenant-1' })
+    mocks.hasStrategy.mockResolvedValue(true)
+    mocks.property.mockResolvedValue({ id: 'property-1' })
+    mocks.deal.mockResolvedValue({ id: 'deal-1' })
+    mocks.headers.mockResolvedValue(new Headers({ 'x-request-id': '00000000-0000-4000-8000-000000000512' }))
+  })
+
+  it('atomically traces a lead creation without property or bid data', async () => {
+    const form = new FormData()
+    form.set('status', 'LEAD'); form.set('jurisdictionId', 'jurisdiction-1'); form.set('apn', 'sensitive-apn')
+    form.set('address', 'Sensitive Address'); form.set('maxBid', '150000'); form.set('notes', 'Sensitive notes')
+
+    await createDeed({}, form)
+
+    expect(mocks.audit).toHaveBeenCalledWith({
+      data: { tenantId: 'tenant-1', userId: 'user-1', requestId: '00000000-0000-4000-8000-000000000512', action: 'DEAL_CREATED', meta: { dealId: 'deal-1' } },
+    })
+    expect(JSON.stringify(mocks.audit.mock.calls[0][0])).not.toMatch(/sensitive-apn|Sensitive Address|150000|Sensitive notes/)
+  })
+
+  it('atomically traces active creation before scheduling deal events', async () => {
+    const form = new FormData()
+    form.set('status', 'ACTIVE'); form.set('jurisdictionId', 'jurisdiction-1'); form.set('apn', 'apn-1')
+    form.set('saleDate', '2026-01-01'); form.set('winningBid', '1000')
+
+    await createDeed({}, form)
+
+    expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'DEAL_CREATED', meta: { dealId: 'deal-1' } }) }))
+    expect(mocks.generateEvents).toHaveBeenCalledWith('deal-1', 'tenant-1')
   })
 })
