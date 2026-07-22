@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { readE2eCoverage } from './e2e-coverage'
 
 const entrySchema = z.object({
-  target: z.string().startsWith('app/api/').endsWith('/route.ts'),
+  target: z.string().min(1),
   status: z.enum(['covered', 'deferred', 'excluded']),
   storyId: z.string().min(1).optional(),
   issue: z.string().regex(/^#\d+$/).optional(),
@@ -20,7 +20,7 @@ const entrySchema = z.object({
 
 const inventorySchema = z.object({
   version: z.literal(1),
-  scope: z.literal('app-api-mutations'),
+  scope: z.enum(['app-api-mutations', 'server-action-modules']),
   entries: z.array(entrySchema).min(1),
 }).superRefine((inventory, context) => {
   const seen = new Set<string>()
@@ -45,6 +45,10 @@ export function discoverMutationRouteTargets(root = 'app/api'): string[] {
     if (!path.endsWith('/route.ts')) return false
     return /export async function (POST|PUT|PATCH|DELETE)\b/.test(readFileSync(path, 'utf8'))
   }).sort()
+}
+
+export function discoverServerActionTargets(root = 'lib/actions'): string[] {
+  return walk(root).filter(path => /['\"]use server['\"]/.test(readFileSync(path, 'utf8')) && /export async function/.test(readFileSync(path, 'utf8'))).sort()
 }
 
 export function featureVerificationInventoryGaps(

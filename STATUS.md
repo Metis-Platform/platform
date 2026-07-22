@@ -50,7 +50,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Migration connectivity resilience (#506) | Merged — PR #507: after the #505 migration workflow hit a transient Neon P1001 and succeeded unchanged on retry, the main-only deploy now retries connectivity failures only. |
 | Apache County AZ discovery candidates (#508) | Merged — PR #509: demand-backed Apache County now has exact official review-only candidates with municipal, tribal, and other authority limitations retained. |
 | Orange County FL parcel baseline (#510) | Merged — PR #511: the official OCPA service supplies parcel interior location, acreage, assessed value, land-use code, and conservative improvement evidence with exact query provenance; it never supplies zoning, market value, permitting, or buildability conclusions. |
-| Mutation verification inventory (#512) | Complete in this branch: CI now inventories every mutating API route and requires a real linked journey/spec, an issue-linked fixture need, or a narrow non-UI exclusion. Server actions remain the next explicit phase. |
+| Mutation verification inventory (#512) | Merged — PR #513 inventories every mutating API route. This branch extends the same CI guard to every server-action module; all currently unproven actions are explicitly deferred with their required fixture/audit evidence. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
