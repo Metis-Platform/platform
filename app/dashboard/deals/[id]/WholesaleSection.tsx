@@ -94,6 +94,13 @@ export type LinkedBuyerContact = {
   phone: string | null
 }
 
+export type BuyerOutreach = {
+  id: string
+  type: string
+  notes: string | null
+  occurredAt: string
+}
+
 export type BlastSend = {
   contactId: string
   name: string
@@ -117,6 +124,7 @@ export type WholesaleData = {
   dispositionStatus: string | null
   marketingNotes: string | null
   linkedBuyer: LinkedBuyerContact | null
+  buyerOutreach: BuyerOutreach[]
   matchingBuyers: MatchedBuyer[]
   hasWholesalePremium: boolean
   blastHistory: BlastSend[]
@@ -183,7 +191,7 @@ export default function WholesaleSection({ data }: { data: WholesaleData }) {
     dealId, dealStatus, leadSource, contractDate, contractPrice, earnestMoney,
     inspectionDeadline, closingDeadline, assignmentFee, buyerName, buyerEmail,
     buyerPhone, dispositionStatus, marketingNotes, linkedBuyer, matchingBuyers,
-    hasWholesalePremium, blastHistory,
+    hasWholesalePremium, blastHistory, buyerOutreach,
   } = data
 
   const isLead   = dealStatus === 'LEAD'
@@ -321,6 +329,33 @@ export default function WholesaleSection({ data }: { data: WholesaleData }) {
           </div>
         )}
       </div>
+
+      {linkedBuyer && (
+        <div className="bg-white rounded-xl border border-zinc-200 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900">Buyer Outreach</h3>
+              <p className="mt-0.5 text-xs text-zinc-500">Recent CRM history for {linkedBuyer.name}.</p>
+            </div>
+            <Link href={`/dashboard/contacts/${linkedBuyer.id}`} className="text-xs font-medium text-blue-600 hover:underline">Open CRM →</Link>
+          </div>
+          {buyerOutreach.length === 0 ? (
+            <p className="text-sm text-zinc-500">No outreach logged for this buyer yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {buyerOutreach.map(activity => (
+                <div key={activity.id} className="border-l-2 border-zinc-200 pl-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-medium text-zinc-700">{activity.type.replace('_', ' ')}</span>
+                    <span className="text-zinc-400">{new Date(activity.occurredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                  {activity.notes && <p className="mt-0.5 whitespace-pre-wrap text-sm text-zinc-600">{activity.notes}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Matching buyers — shown during MARKETING stage */}
       {isActive && dispositionStatus === 'MARKETING' && !linkedBuyer && matchingBuyers.length > 0 && (

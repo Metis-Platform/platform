@@ -43,6 +43,7 @@ import JurisdictionContextPanel from './JurisdictionContextPanel'
 import ExitOptionsPanel from './ExitOptionsPanel'
 import type { ScopeOfWork } from '@/lib/actions/rehab-budget'
 import type { RentalExpenses } from '@/lib/actions/rental-expenses'
+import { recentBuyerOutreach } from '@/lib/wholesale-outreach'
 
 export default async function LienDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -74,7 +75,16 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         fixFlip: { include: { contractorContact: true } },
         buyHold: { include: { tenantContact: true, propertyManagerContact: true } },
         multifamily: { include: { propertyManagerContact: true } },
-        wholesale: { include: { buyerContact: { include: { buyerProfile: true } } } },
+        wholesale: {
+          include: {
+            buyerContact: {
+              include: {
+                buyerProfile: true,
+                activities: { orderBy: { occurredAt: 'desc' }, take: 5 },
+              },
+            },
+          },
+        },
         events: { orderBy: { dueDate: 'asc' } },
         landNotes: { include: { buyerContact: true }, orderBy: { createdAt: 'desc' } },
         landComps: { orderBy: { saleDate: 'desc' } },
@@ -374,6 +384,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         phone: linkedBuyerContact.phone,
       }
     : null
+  const buyerOutreach = linkedBuyerContact ? recentBuyerOutreach(linkedBuyerContact.activities) : []
 
   // Blast send history
   const rawBlastSends = isWholesale ? await db.buyerBlastSend.findMany({
@@ -439,6 +450,7 @@ export default async function LienDetailPage({ params }: { params: Promise<{ id:
         dispositionStatus:    wholesale?.dispositionStatus ?? null,
         marketingNotes:       wholesale?.marketingNotes ?? null,
         linkedBuyer,
+        buyerOutreach,
         matchingBuyers,
         hasWholesalePremium,
         blastHistory,

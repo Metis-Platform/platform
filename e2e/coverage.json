@@ -10,6 +10,14 @@
       "notes": "Run npm run e2e:readonly only against an explicitly supplied non-production URL. The runner refuses the production domain."
     },
     {
+      "id": "wholesale-inspect-linked-buyer-outreach",
+      "risk": "medium",
+      "mode": "read-only",
+      "spec": "e2e/wholesale-buyer-outreach.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an authenticated reset-safe fixture buyer with CRM activity. The read-only journey verifies that a linked Wholesale deal shows recent buyer outreach and links back to the buyer CRM record."
+    },
+    {
       "id": "investor-create-save-delete-deal",
       "risk": "critical",
       "mode": "mutation",

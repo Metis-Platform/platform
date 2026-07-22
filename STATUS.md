@@ -41,6 +41,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Feature verification console (#486) | In progress: the CI-enforced feature catalog is now exposed through a super-admin, read-only page so every declared click/save journey, expected request, audit evidence, persisted outcome, and cleanup rule is inspectable without a repository checkout. Blocked journeys remain explicitly unexecuted until #289 QA authorization. |
 | Field-report audit privacy (#488) | In progress: jurisdiction field-report audit events retain only tenant/user/request correlation and jurisdiction identity. Submitted strategy, field, label, and free-text reason are excluded from the audit ledger; route coverage proves the privacy boundary. |
 | Admin email audit privacy (#490) | In progress: super-admin email audit events retain only safe delivery totals and target scope. Submitted subject and body never enter audit metadata; broadcast and tenant-targeted route coverage prove the boundary. |
+| Wholesale buyer outreach (#492) | In progress: a linked Buyer contact’s five most recent CRM activities are now shown read-only on its Wholesale deal with a direct CRM handoff. The declared browser inspection journey is explicit about its authenticated QA-fixture prerequisite. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
