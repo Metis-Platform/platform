@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { featureVerificationInventoryGaps, validateFeatureVerificationInventory } from './feature-verification-inventory'
+import { featureVerificationInventoryGaps, validateFeatureVerificationInventory, discoverServerActionTargets } from './feature-verification-inventory'
 
 const covered = {
   version: 1,
@@ -29,5 +29,15 @@ describe('feature verification mutation inventory', () => {
       invalidStoryIds: ['app/api/example/route.ts'],
       missingSpecs: ['app/api/example/route.ts'],
     })
+  })
+
+  it('discovers each exported server action rather than only its module', () => {
+    expect(discoverServerActionTargets('lib/actions')).toEqual(expect.arrayContaining([
+      'lib/actions/contact.ts#createContact',
+      'lib/actions/contact.ts#deleteContact',
+      'lib/actions/lien.ts#createLien',
+      'lib/actions/lien.ts#updateLien',
+    ]))
+    expect(discoverServerActionTargets('lib/actions')).not.toContain('lib/actions/contact.ts')
   })
 })

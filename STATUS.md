@@ -50,7 +50,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Migration connectivity resilience (#506) | Merged — PR #507: after the #505 migration workflow hit a transient Neon P1001 and succeeded unchanged on retry, the main-only deploy now retries connectivity failures only. |
 | Apache County AZ discovery candidates (#508) | Merged — PR #509: demand-backed Apache County now has exact official review-only candidates with municipal, tribal, and other authority limitations retained. |
 | Orange County FL parcel baseline (#510) | Merged — PR #511: the official OCPA service supplies parcel interior location, acreage, assessed value, land-use code, and conservative improvement evidence with exact query provenance; it never supplies zoning, market value, permitting, or buildability conclusions. |
-| Mutation verification inventory (#512) | Merged — PR #513 inventories every mutating API route. This branch extends the same CI guard to every server-action module; all currently unproven actions are explicitly deferred with their required fixture/audit evidence. |
+| Mutation verification inventory (#512) | Merged — PR #513 inventories every mutating API route and PR #514 inventories server-action modules. This branch tightens that CI guard to every exported server action, so all currently unproven click/save operations are individually deferred with their exact fixture/audit evidence. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
@@ -212,7 +212,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 
 1. Finish the founding Volusia acceptance evidence: authoritative frontage/depth, governing zoning scope, and the county/title/permitting nonconforming-lot determination remain unresolved.
 2. Continue demand-driven national and county parcel-source coverage; Orange County now has an official OCPA baseline, while unsupported Florida counties still remain explicit gaps.
-3. Extend #512 from API routes to every user-facing server action, then execute the catalog only after owner-authorized isolated QA provisioning.
+3. Reduce #512's individually tracked server-action verification debt, then execute the catalog only after owner-authorized isolated QA provisioning.
 
 ---
 

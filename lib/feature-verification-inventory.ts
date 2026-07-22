@@ -20,7 +20,7 @@ const entrySchema = z.object({
 
 const inventorySchema = z.object({
   version: z.literal(1),
-  scope: z.enum(['app-api-mutations', 'server-action-modules']),
+  scope: z.enum(['app-api-mutations', 'server-actions']),
   entries: z.array(entrySchema).min(1),
 }).superRefine((inventory, context) => {
   const seen = new Set<string>()
@@ -48,7 +48,11 @@ export function discoverMutationRouteTargets(root = 'app/api'): string[] {
 }
 
 export function discoverServerActionTargets(root = 'lib/actions'): string[] {
-  return walk(root).filter(path => /['\"]use server['\"]/.test(readFileSync(path, 'utf8')) && /export async function/.test(readFileSync(path, 'utf8'))).sort()
+  return walk(root).flatMap(path => {
+    const source = readFileSync(path, 'utf8')
+    if (!/['\"]use server['\"]/.test(source)) return []
+    return [...source.matchAll(/^export async function ([A-Za-z0-9_]+)\b/gm)].map(match => `${path}#${match[1]}`)
+  }).sort()
 }
 
 export function featureVerificationInventoryGaps(

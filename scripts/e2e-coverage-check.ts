@@ -32,7 +32,7 @@ if (!result.success) {
         console.error(`Feature-verification inventory gaps: ${JSON.stringify({ routes: gaps, actions: actionGaps, actionSchema: actions.success ? undefined : actions.error.flatten() })}`)
         process.exitCode = 1
       } else {
-        console.log(`E2E coverage contract passed for ${result.data.stories.length} stories, ${inventory.data.entries.length} mutation routes, and ${actions.data.entries.length} server-action modules.`)
+        console.log(`E2E coverage contract passed for ${result.data.stories.length} stories, ${inventory.data.entries.length} mutation routes, and ${actions.data.entries.length} server actions.`)
       }
     }
   }
