@@ -181,10 +181,27 @@ export async function linkBuyerToDeal(
 
   const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
   if (!deal) return { error: 'Deal not found' }
+  const buyer = await db.contact.findFirst({
+    where: { id: contactId, tenantId: tenant.id, type: 'BUYER' },
+    select: { id: true },
+  })
+  if (!buyer) return { error: 'Buyer not found' }
+  const requestId = requestIdFromHeaders(await headers())
 
-  await db.dealWholesale.update({
-    where: { dealId },
-    data: { buyerContactId: contactId },
+  await db.$transaction(async tx => {
+    await tx.dealWholesale.update({
+      where: { dealId },
+      data: { buyerContactId: buyer.id },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'BUYER_LINKED_TO_DEAL',
+        meta: { dealId, contactId: buyer.id },
+      },
+    })
   })
 
   revalidatePath(`/dashboard/deals/${dealId}`)
@@ -206,10 +223,27 @@ export async function unlinkBuyerFromDeal(
 
   const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
   if (!deal) return { error: 'Deal not found' }
-
-  await db.dealWholesale.update({
+  const wholesale = await db.dealWholesale.findUnique({
     where: { dealId },
-    data: { buyerContactId: null },
+    select: { buyerContactId: true },
+  })
+  if (!wholesale?.buyerContactId) return {}
+  const requestId = requestIdFromHeaders(await headers())
+
+  await db.$transaction(async tx => {
+    await tx.dealWholesale.update({
+      where: { dealId },
+      data: { buyerContactId: null },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'BUYER_UNLINKED_FROM_DEAL',
+        meta: { dealId, contactId: wholesale.buyerContactId },
+      },
+    })
   })
 
   revalidatePath(`/dashboard/deals/${dealId}`)

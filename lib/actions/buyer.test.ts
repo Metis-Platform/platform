@@ -7,11 +7,15 @@ const mocks = vi.hoisted(() => ({
   redirect: vi.fn(),
   revalidatePath: vi.fn(),
   findContact: vi.fn(),
+  findBuyer: vi.fn(),
+  findDeal: vi.fn(),
+  findWholesale: vi.fn(),
   createContact: vi.fn(),
   createProfile: vi.fn(),
   updateContact: vi.fn(),
   upsertProfile: vi.fn(),
   auditCreate: vi.fn(),
+  updateWholesale: vi.fn(),
 }))
 
 vi.mock('@clerk/nextjs/server', () => ({ auth: mocks.auth }))
@@ -21,16 +25,19 @@ vi.mock('next/navigation', () => ({ redirect: mocks.redirect }))
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }))
 vi.mock('@/lib/db', () => ({
   db: {
-    contact: { findUnique: mocks.findContact },
+    contact: { findUnique: mocks.findContact, findFirst: mocks.findBuyer },
+    deal: { findUnique: mocks.findDeal },
+    dealWholesale: { findUnique: mocks.findWholesale },
     $transaction: async (callback: (tx: unknown) => unknown) => callback({
       contact: { create: mocks.createContact, update: mocks.updateContact },
       buyerProfile: { create: mocks.createProfile, upsert: mocks.upsertProfile },
+      dealWholesale: { update: mocks.updateWholesale },
       auditEvent: { create: mocks.auditCreate },
     }),
   },
 }))
 
-import { createBuyer, updateBuyerProfile } from './buyer'
+import { createBuyer, linkBuyerToDeal, unlinkBuyerFromDeal, updateBuyerProfile } from './buyer'
 
 const form = () => {
   const value = new FormData()
@@ -51,6 +58,9 @@ describe('buyer actions', () => {
     mocks.headers.mockResolvedValue(new Headers({ 'x-request-id': '00000000-0000-4000-8000-000000000131' }))
     mocks.createContact.mockResolvedValue({ id: 'buyer-1' })
     mocks.findContact.mockResolvedValue({ id: 'buyer-1', tenantId: 'tenant-1' })
+    mocks.findDeal.mockResolvedValue({ id: 'deal-1', tenantId: 'tenant-1' })
+    mocks.findBuyer.mockResolvedValue({ id: 'buyer-1' })
+    mocks.findWholesale.mockResolvedValue({ buyerContactId: 'buyer-1' })
   })
 
   it('atomically records buyer creation without PII or investment preferences', async () => {
@@ -100,5 +110,39 @@ describe('buyer actions', () => {
     expect(result).toEqual({ error: 'Buyer not found' })
     expect(mocks.updateContact).not.toHaveBeenCalled()
     expect(mocks.auditCreate).not.toHaveBeenCalled()
+  })
+
+  it('atomically links only a tenant buyer and records opaque identity evidence', async () => {
+    await linkBuyerToDeal('deal-1', 'buyer-1', {}, new FormData())
+
+    expect(mocks.updateWholesale).toHaveBeenCalledWith({ where: { dealId: 'deal-1' }, data: { buyerContactId: 'buyer-1' } })
+    expect(mocks.auditCreate).toHaveBeenCalledWith({
+      data: {
+        tenantId: 'tenant-1', userId: 'analyst-1', requestId: '00000000-0000-4000-8000-000000000131',
+        action: 'BUYER_LINKED_TO_DEAL', meta: { dealId: 'deal-1', contactId: 'buyer-1' },
+      },
+    })
+  })
+
+  it('does not link or audit a buyer outside the tenant', async () => {
+    mocks.findBuyer.mockResolvedValue(null)
+
+    const result = await linkBuyerToDeal('deal-1', 'foreign-buyer', {}, new FormData())
+
+    expect(result).toEqual({ error: 'Buyer not found' })
+    expect(mocks.updateWholesale).not.toHaveBeenCalled()
+    expect(mocks.auditCreate).not.toHaveBeenCalled()
+  })
+
+  it('atomically unlinks a current buyer with correlated identity evidence', async () => {
+    await unlinkBuyerFromDeal('deal-1', {}, new FormData())
+
+    expect(mocks.updateWholesale).toHaveBeenCalledWith({ where: { dealId: 'deal-1' }, data: { buyerContactId: null } })
+    expect(mocks.auditCreate).toHaveBeenCalledWith({
+      data: {
+        tenantId: 'tenant-1', userId: 'analyst-1', requestId: '00000000-0000-4000-8000-000000000131',
+        action: 'BUYER_UNLINKED_FROM_DEAL', meta: { dealId: 'deal-1', contactId: 'buyer-1' },
+      },
+    })
   })
 })

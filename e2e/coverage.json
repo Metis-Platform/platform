@@ -404,6 +404,36 @@
         "persistedOutcome": "The fixture buyer profile is updated with a correlated BUYER_PROFILE_UPDATED event containing only buyer identity.",
         "cleanup": "The integration fixture reset restores the buyer profile and related audit event."
       }
+    },
+    {
+      "id": "analyst-link-buyer-to-deal",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/buyer-link.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture with a same-tenant buyer/deal pair and deterministic relation cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "BUYER_LINKED_TO_DEAL" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureWholesaleDealId}",
+        "actions": [{ "userAction": "Select Link Buyer beside a same-tenant fixture buyer", "expectedRequest": "Buyer-link server action" }],
+        "persistedOutcome": "Only a same-tenant buyer is linked to the fixture deal with a correlated BUYER_LINKED_TO_DEAL event containing only deal/contact identity.",
+        "cleanup": "The integration fixture reset removes the fixture relation and related audit event."
+      }
+    },
+    {
+      "id": "analyst-unlink-buyer-from-deal",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/buyer-link.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture with a linked buyer/deal pair and deterministic relation cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "BUYER_UNLINKED_FROM_DEAL" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureWholesaleDealId}",
+        "actions": [{ "userAction": "Select Unlink Buyer for the fixture deal", "expectedRequest": "Buyer-unlink server action" }],
+        "persistedOutcome": "The fixture deal clears its linked buyer with a correlated BUYER_UNLINKED_FROM_DEAL event containing only deal/contact identity.",
+        "cleanup": "The integration fixture reset restores or removes the fixture relation and related audit event."
+      }
     }
   ]
 }
