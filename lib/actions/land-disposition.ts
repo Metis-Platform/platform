@@ -3,9 +3,11 @@
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import type { LandDispositionStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type DispositionFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -40,6 +42,7 @@ export async function updateLandDisposition(
   const { targetStatus, listedPrice } = parsed.data
   const isSold = SOLD_STATUSES.includes(targetStatus as LandDispositionStatus)
   const isRelisted = targetStatus === 'RELISTED'
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     await db.$transaction(async (tx) => {
@@ -57,6 +60,15 @@ export async function updateLandDisposition(
       } else if (isRelisted && deal.status === 'SOLD') {
         await tx.deal.update({ where: { id: dealId }, data: { status: 'ACTIVE' } })
       }
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId,
+          requestId,
+          action: 'LAND_DISPOSITION_UPDATED',
+          meta: { dealId },
+        },
+      })
     })
   } catch (err) {
     console.error('[updateLandDisposition]', err)
@@ -81,9 +93,10 @@ export async function defaultLandNote(
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return { message: 'Account not found.' }
 
-  const note = await db.landNote.findUnique({ where: { id: noteId, tenantId: tenant.id } })
+  const note = await db.landNote.findFirst({ where: { id: noteId, dealId, tenantId: tenant.id } })
   if (!note) return { message: 'Note not found.' }
   if (note.status !== 'ACTIVE') return { message: 'Note is not active.' }
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     await db.$transaction(async (tx) => {
@@ -93,6 +106,15 @@ export async function defaultLandNote(
         data: { dispositionStatus: 'RELISTED', dispositionDate: new Date() },
       })
       await tx.deal.update({ where: { id: dealId }, data: { status: 'ACTIVE' } })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId,
+          requestId,
+          action: 'LAND_NOTE_DEFAULTED',
+          meta: { dealId, noteId },
+        },
+      })
     })
   } catch (err) {
     console.error('[defaultLandNote]', err)
