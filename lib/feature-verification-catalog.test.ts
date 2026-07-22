@@ -6,7 +6,7 @@ describe('feature verification catalog', () => {
     const catalog = featureVerificationCatalog()
 
     expect(catalog.version).toBe(1)
-    expect(catalog.stories).toHaveLength(30)
+    expect(catalog.stories).toHaveLength(31)
     expect(catalog.stories.find(story => story.id === 'investor-create-save-delete-deal')).toMatchObject({
       mode: 'mutation',
       evidence: { responseHeader: 'x-request-id', auditAction: 'DEAL_CREATED' },
@@ -16,11 +16,11 @@ describe('feature verification catalog', () => {
 
   it('reports honest execution and QA-blocking totals', () => {
     expect(summarizeFeatureVerificationCatalog()).toEqual({
-      total: 30,
+      total: 31,
       active: 1,
-      mutation: 28,
-      blocked: 29,
-      critical: 14,
+      mutation: 29,
+      blocked: 30,
+      critical: 15,
     })
   })
 })

@@ -514,6 +514,21 @@
         "persistedOutcome": "Only a note owned by the fixture deal records a payment, balance update, and correlated NOTE_PAYMENT_LOGGED event containing only deal/note/transaction identity.",
         "cleanup": "The integration fixture reset restores the note balance and removes the payment transaction and related audit event."
       }
+    },
+    {
+      "id": "analyst-update-land-disposition-and-default-note",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/land-disposition.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated Land deal and note fixture with deterministic restoration of disposition, note status, and audit events.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "LAND_DISPOSITION_UPDATED and LAND_NOTE_DEFAULTED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureLandDealId}",
+        "actions": [{ "userAction": "Save a fixture disposition, then default the fixture Land Note", "expectedRequest": "Land server actions updateLandDisposition and defaultLandNote" }],
+        "persistedOutcome": "The fixture deal records correlated disposition/default events containing only deal/note identity; a note belonging to any other deal is refused.",
+        "cleanup": "The integration fixture reset restores disposition/note state and removes related audit evidence."
+      }
     }
   ]
 }
