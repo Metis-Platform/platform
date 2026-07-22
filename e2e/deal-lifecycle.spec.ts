@@ -16,6 +16,10 @@ test('investor creates a Land deal with correlated audit evidence', async () => 
   test.skip(true, 'Blocked until the isolated QA fixture reset rehearsal in #289 is authorized and passes.')
 })
 
+test('investor creates a Wholesale deal with correlated audit evidence', async () => {
+  test.skip(true, 'Blocked until the isolated QA fixture reset rehearsal in #289 is authorized and passes.')
+})
+
 test('investor traces tax-lien lifecycle saves with correlated audit evidence', async () => {
   test.skip(true, 'Blocked until the isolated QA fixture reset rehearsal in #289 is authorized and passes.')
 })

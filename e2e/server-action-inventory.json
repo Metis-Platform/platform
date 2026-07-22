@@ -62,7 +62,7 @@
     { "target": "lib/actions/rules.ts#toggleJurisdictionAvailable", "status": "deferred", "issue": "#512", "reason": "Jurisdiction availability changes need an isolated jurisdiction fixture." },
     { "target": "lib/actions/rules.ts#updateRule", "status": "deferred", "issue": "#512", "reason": "Admin rule update needs an isolated jurisdiction fixture." },
     { "target": "lib/actions/section8.ts#saveSection8", "status": "deferred", "issue": "#512", "reason": "Section 8 save needs deterministic fixture cleanup and audit proof." },
-    { "target": "lib/actions/wholesale.ts#createWholesale", "status": "deferred", "issue": "#512", "reason": "Deal creation needs a reset-safe fixture and direct action audit proof." },
+    { "target": "lib/actions/wholesale.ts#createWholesale", "status": "covered", "storyId": "investor-create-wholesale-deal" },
     { "target": "lib/actions/wholesale.ts#updateWholesale", "status": "deferred", "issue": "#512", "reason": "Deal update needs a reset-safe fixture and direct action audit proof." },
     { "target": "lib/actions/wholesale.ts#updateWholesaleDisposition", "status": "deferred", "issue": "#512", "reason": "Disposition update needs a reset-safe fixture and audit proof." }
   ]
