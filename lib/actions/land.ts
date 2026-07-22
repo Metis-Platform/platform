@@ -2,17 +2,18 @@
 
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { generateLandEvents } from '@/lib/land-events'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
-import { emitAuditEvent } from '@/lib/audit'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
 import { normalizeApn } from '@/lib/parcel/apn'
 import { assembleParcelProfile } from '@/lib/parcel/profile'
 import { deriveLandSyncFields } from '@/lib/parcel/land-sync'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type LandFormState = { errors?: Record<string, string[]>; message?: string }
 export type LandSyncState = { message?: string; updated?: string[] }
@@ -63,6 +64,7 @@ export async function createLand(_prev: LandFormState, formData: FormData): Prom
 
   const d = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     const property = await db.property.upsert({
@@ -80,32 +82,37 @@ export async function createLand(_prev: LandFormState, formData: FormData): Prom
       },
     })
 
-    const deal = await db.deal.create({
-      data: {
-        tenantId:      tenant.id,
-        propertyId:    property.id,
-        strategyType:  StrategyType.LAND,
-        status:        d.status === 'ACTIVE' ? DealStatus.ACTIVE : DealStatus.LEAD,
-        purchasePrice: d.purchasePrice ? Number(d.purchasePrice) : null,
-        purchaseDate:  d.purchaseDate ? new Date(`${d.purchaseDate}T12:00:00.000Z`) : null,
-        notes:         d.notes || null,
-        land: {
-          create: {
-            zoning:          d.zoning || null,
-            access:          d.access ?? null,
-            floodZone:       d.floodZone || null,
-            wetlandsPercent: d.wetlandsPercent !== undefined ? Number(d.wetlandsPercent) : null,
-            hoaName:         d.hoaName || null,
-            hoaFees:         d.hoaFees !== undefined ? Number(d.hoaFees) : null,
-            optionExpiry:    d.optionExpiry ? new Date(`${d.optionExpiry}T12:00:00.000Z`) : null,
+    const deal = await db.$transaction(async tx => {
+      const created = await tx.deal.create({
+        data: {
+          tenantId: tenant.id,
+          propertyId: property.id,
+          strategyType: StrategyType.LAND,
+          status: d.status === 'ACTIVE' ? DealStatus.ACTIVE : DealStatus.LEAD,
+          purchasePrice: d.purchasePrice ? Number(d.purchasePrice) : null,
+          purchaseDate: d.purchaseDate ? new Date(`${d.purchaseDate}T12:00:00.000Z`) : null,
+          notes: d.notes || null,
+          land: {
+            create: {
+              zoning: d.zoning || null,
+              access: d.access ?? null,
+              floodZone: d.floodZone || null,
+              wetlandsPercent: d.wetlandsPercent !== undefined ? Number(d.wetlandsPercent) : null,
+              hoaName: d.hoaName || null,
+              hoaFees: d.hoaFees !== undefined ? Number(d.hoaFees) : null,
+              optionExpiry: d.optionExpiry ? new Date(`${d.optionExpiry}T12:00:00.000Z`) : null,
+            },
           },
         },
-      },
+      })
+      await tx.auditEvent.create({
+        data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+      })
+      return created
     })
     dealId = deal.id
     await generateLandEvents(dealId, tenant.id)
     await applyTenantWorkflowRules(tenant.id, dealId)
-    await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId, strategy: 'LAND' }, userId)
   } catch (err) {
     console.error('[createLand]', err)
     return { message: 'Failed to save. Please try again.' }

@@ -4,9 +4,11 @@ export type ParcelSourceName =
   | 'fl_dor'
   | 'volusia_property_appraiser'
   | 'palm_beach_property_appraiser'
+  | 'orange_property_appraiser'
   | 'harris_property_appraiser'
   | 'regrid'
   | 'fema_nfhl'
+  | 'fema_disaster_declarations'
   | 'fws_nwi'
   | 'usda_ssurgo'
   | 'usgs_3dep'
@@ -30,9 +32,11 @@ export const SOURCE_TTL_HOURS: Record<ParcelSourceName, number> = {
   fl_dor: 24 * 180,
   volusia_property_appraiser: 24 * 180,
   palm_beach_property_appraiser: 24 * 180,
+  orange_property_appraiser: 24 * 180,
   harris_property_appraiser: 24 * 180,
   regrid: 24 * 180,
   fema_nfhl: 24 * 365,
+  fema_disaster_declarations: 24,
   fws_nwi: 24 * 365,
   usda_ssurgo: 24 * 365,
   usgs_3dep: 24 * 365,

@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   resolveCensusAddressLocation: vi.fn(),
   resolveOfficialParcelLocation: vi.fn(),
   resolveMaricopaOfficialParcelLocation: vi.fn(),
+  resolveOrangeOfficialParcelLocation: vi.fn(),
   enrichParcel: vi.fn(),
   lookupUnincorporatedAuthorityBoundaryClaimIds: vi.fn(),
 }))
@@ -42,6 +43,9 @@ vi.mock('@/lib/parcel/sources/volusia-property-appraiser', () => ({
 vi.mock('@/lib/parcel/sources/maricopa-property-assessor', () => ({
   resolveMaricopaOfficialParcelLocation: mocks.resolveMaricopaOfficialParcelLocation,
 }))
+vi.mock('@/lib/parcel/sources/orange-property-appraiser', () => ({
+  resolveOrangeOfficialParcelLocation: mocks.resolveOrangeOfficialParcelLocation,
+}))
 
 import { POST } from './route'
 
@@ -52,6 +56,7 @@ describe('pre-purchase research governing geography', () => {
     mocks.rateLimitCount.mockResolvedValue(0)
     mocks.resolveOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveMaricopaOfficialParcelLocation.mockResolvedValue(null)
+    mocks.resolveOrangeOfficialParcelLocation.mockResolvedValue(null)
     mocks.resolveCensusAddressLocation.mockResolvedValue(null)
     mocks.enrichParcel.mockResolvedValue({ cacheHits: 0, apiCalls: 0, errors: [], gaps: [] })
     mocks.lookupUnincorporatedAuthorityBoundaryClaimIds.mockResolvedValue(new Set())
@@ -148,6 +153,14 @@ describe('pre-purchase research governing geography', () => {
       geography: { status: 'RESOLVED' },
       handoff: { id: 'snapshot-1' },
     })
+    expect(body.bidGates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'ZONING_BUILD', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'FLOOD_WETLANDS', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'ACCESS_UTILITIES', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'HOA_POA', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'TITLE_TAX_DEED', status: 'REVIEW_REQUIRED' }),
+      expect.objectContaining({ key: 'ECONOMICS', status: 'REVIEW_REQUIRED' }),
+    ]))
     expect(builder).toMatchObject({
       verdict: 'CONDITIONAL',
       blockers: [],

@@ -28,8 +28,8 @@ describe('Palm Beach County Property Appraiser parcel baseline', () => {
       zoningDescription: 'AGRICULTURAL RESIDENTIAL',
       assessedValue: 92_060,
       assessedYear: 2025,
-      marketValueEstimate: 182_850,
     })
+    expect(normalizePalmBeachParcelModel(model)).not.toHaveProperty('marketValueEstimate')
   })
 
   it('reads the public assessor page and retains only the supported parcel facts', async () => {

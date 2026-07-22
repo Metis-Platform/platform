@@ -21,7 +21,7 @@ export function buildBidGates(
     {
       key: 'ZONING_BUILD',
       label: 'Zoning and buildability',
-      status: landUseAuthorityStatus === 'VERIFIED' ? 'REVIEW_REQUIRED' : 'REVIEW_REQUIRED',
+      status: 'REVIEW_REQUIRED',
       evidence: parcel.zoning
         ? `Zoning shown as ${parcel.zoning}${parcel.zoningDescription ? ` — ${parcel.zoningDescription}` : ''}.`
         : 'No zoning code was returned.',
@@ -64,7 +64,7 @@ export function buildBidGates(
     {
       key: 'ECONOMICS',
       label: 'Economics and comparable sales',
-      status: parcel.comps?.length ? 'REVIEW_REQUIRED' : 'REVIEW_REQUIRED',
+      status: 'REVIEW_REQUIRED',
       evidence: parcel.comps?.length
         ? `${parcel.comps.length} parcel comps are attached.`
         : 'No raw-land or completed-home comparable dataset is attached to this research record.',

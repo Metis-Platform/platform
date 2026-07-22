@@ -44,6 +44,25 @@ describe('jurisdiction source adapters', () => {
     expect(result.sources.every(source => source.authorityRationale.includes('unincorporated Maricopa County'))).toBe(true)
   })
 
+  it('returns exact Apache County candidates while keeping municipal and tribal authority conditional', () => {
+    const result = discoverJurisdictionSources({
+      state: 'AZ', county: 'Apache County', requestedOfficeTypes: ['assessor', 'recorder', 'gis', 'planning_zoning', 'building'], now: new Date('2026-07-22T00:00:00Z'),
+    })
+
+    expect(result.sources).toEqual([
+      expect.objectContaining({ adapterId: 'az-apache-county-offices-v1', officeType: 'assessor', url: 'https://www.apachecountyaz.gov/assessor' }),
+      expect.objectContaining({ adapterId: 'az-apache-county-offices-v1', officeType: 'recorder', url: 'https://www.apachecountyaz.gov/Recorder/' }),
+      expect.objectContaining({ adapterId: 'az-apache-county-offices-v1', officeType: 'gis', url: 'https://www.apachecountyaz.gov/GIS' }),
+      expect.objectContaining({ adapterId: 'az-apache-county-offices-v1', officeType: 'planning_zoning' }),
+      expect.objectContaining({ adapterId: 'az-apache-county-offices-v1', officeType: 'building' }),
+    ])
+    expect(result.sources.every(source => source.candidateScope === 'COUNTY_OFFICE_CANDIDATE')).toBe(true)
+    expect(result.sources.every(source => source.authorityRationale.includes('municipal, tribal, and other governing authority'))).toBe(true)
+    expect(discoverJurisdictionSources({ state: 'AZ', county: 'Navajo', requestedOfficeTypes: ['assessor'] })).toEqual({
+      status: 'DISCOVERY_NEEDED', sources: [],
+    })
+  })
+
   it('keeps Harris County development discovery conditional on municipal ETJ and no county zoning', () => {
     const result = discoverJurisdictionSources({
       state: 'TX', county: 'Harris County',
@@ -62,6 +81,25 @@ describe('jurisdiction source adapters', () => {
     expect(result.sources.every(source => source.candidateScope === 'COUNTY_OFFICE_CANDIDATE')).toBe(true)
     expect(result.sources.every(source => source.authorityRationale.includes('no zoning regulations'))).toBe(true)
     expect(result.sources.every(source => source.authorityRationale.includes('municipal ETJ rules may still apply'))).toBe(true)
+  })
+
+  it('returns exact Clark County candidates while keeping Nevada routing fail-closed elsewhere', () => {
+    const result = discoverJurisdictionSources({
+      state: 'NV', county: 'Clark County', requestedOfficeTypes: ['assessor', 'recorder', 'gis', 'planning_zoning', 'building'], now: new Date('2026-07-22T00:00:00Z'),
+    })
+
+    expect(result.sources).toEqual([
+      expect.objectContaining({ adapterId: 'nv-clark-county-offices-v1', officeType: 'assessor', url: 'https://www.clarkcountynv.gov/government/assessor/' }),
+      expect.objectContaining({ adapterId: 'nv-clark-county-offices-v1', officeType: 'recorder', url: 'https://www.clarkcountynv.gov/government/elected_officials/county_recorder/' }),
+      expect.objectContaining({ adapterId: 'nv-clark-county-offices-v1', officeType: 'gis' }),
+      expect.objectContaining({ adapterId: 'nv-clark-county-offices-v1', officeType: 'planning_zoning' }),
+      expect.objectContaining({ adapterId: 'nv-clark-county-offices-v1', officeType: 'building' }),
+    ])
+    expect(result.sources.every(source => source.candidateScope === 'COUNTY_OFFICE_CANDIDATE')).toBe(true)
+    expect(result.sources.every(source => source.authorityRationale.includes('unincorporated Clark County'))).toBe(true)
+    expect(discoverJurisdictionSources({ state: 'NV', county: 'Washoe', requestedOfficeTypes: ['assessor'] })).toEqual({
+      status: 'DISCOVERY_NEEDED', sources: [],
+    })
   })
 
   it('queues discovery metadata without creating an authority source record', async () => {

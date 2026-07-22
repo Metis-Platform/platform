@@ -47,6 +47,23 @@ describe('assembleResearchProfile manual fallback', () => {
     })
   })
 
+  it('retains county-level declaration context without deriving parcel risk', () => {
+    const retrievedAt = new Date('2026-07-22T12:00:00.000Z')
+    const profile = assembleResearchProfile('2340282', '12127', 'FL', 'Volusia', [{
+      id: 'cache-declarations', tenantId: 'tenant-1', apnNormalized: '2340282', fipsCounty: '12127',
+      source: 'fema_disaster_declarations', field: 'femaDisasterDeclarationStatus',
+      valueJson: 'RECENT_DECLARATIONS_FOUND', normalized: 'RECENT_DECLARATIONS_FOUND',
+      retrievedAt, ttlHours: 24, expiresAt: new Date('2026-07-23T12:00:00.000Z'),
+      metadata: { source: 'fema_disaster_declarations', sourceUrl: 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries' },
+    }])
+
+    expect(profile).toMatchObject({
+      femaDisasterDeclarationStatus: 'RECENT_DECLARATIONS_FOUND',
+      sources: { femaDisasterDeclarationStatus: { provider: 'fema_disaster_declarations', sourceUrl: 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries' } },
+    })
+    expect(profile).not.toHaveProperty('femaParcelRisk')
+  })
+
   it('retains source-disclosed SSURGO map-unit evidence without deriving a suitability fact', () => {
     const retrievedAt = new Date('2026-07-16T12:00:00.000Z')
     const profile = assembleResearchProfile('13275012', '04013', 'AZ', 'Maricopa', [{

@@ -24,6 +24,8 @@ const CACHE_PROFILE_FIELDS = new Set([
   'zoningDescription',
   'floodZone',
   'floodPanel',
+  'femaDisasterDeclarationStatus',
+  'femaRecentDisasterDeclarations',
   'brownfieldFlag',
   'undergroundTankFlag',
   'epaCwaFacilitySearchStatus',

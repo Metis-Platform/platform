@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   upsert: vi.fn(),
   fetchFloodZone: vi.fn(),
+  fetchFemaDisasterDeclarations: vi.fn(),
   fetchNwiWetlands: vi.fn(),
   fetchSsurgoMapUnit: vi.fn(),
   fetchUsgsElevation: vi.fn(),
@@ -12,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
   fetchOfficialVolusiaParcelFacts: vi.fn(),
+  fetchOfficialPalmBeachParcelFacts: vi.fn(),
+  fetchOfficialOrangeParcelFacts: vi.fn(),
   fetchOfficialHarrisParcelFacts: vi.fn(),
   fetchFlDorParcel: vi.fn(),
 }))
@@ -22,6 +25,10 @@ vi.mock('@/lib/db', () => ({
 vi.mock('./sources/fema-nfhl', () => ({
   FEMA_NFHL_SOURCE_URL: 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer',
   fetchFloodZone: mocks.fetchFloodZone,
+}))
+vi.mock('./sources/fema-disaster-declarations', () => ({
+  FEMA_DISASTER_DECLARATIONS_SOURCE_URL: 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries',
+  fetchFemaDisasterDeclarations: mocks.fetchFemaDisasterDeclarations,
 }))
 vi.mock('./sources/fws-nwi', () => ({
   FWS_NWI_SOURCE_URL: 'https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0',
@@ -55,6 +62,16 @@ vi.mock('./sources/harris-property-appraiser', () => ({
   harrisParcelQueryUrl: (apn: string) => `https://services.arcgis.com/su8ic9KbA7PYVxPS/arcgis/rest/services/Harris_County_Parcels/FeatureServer/1/query?where=HCAD_NUM%3D%27${apn}%27`,
   fetchOfficialHarrisParcelFacts: mocks.fetchOfficialHarrisParcelFacts,
 }))
+vi.mock('./sources/palm-beach-property-appraiser', () => ({
+  PALM_BEACH_FIPS: '12099',
+  palmBeachParcelQueryUrl: (apn: string) => `https://pbcpao.gov/Property/Details?parcelId=${apn}`,
+  fetchOfficialPalmBeachParcelFacts: mocks.fetchOfficialPalmBeachParcelFacts,
+}))
+vi.mock('./sources/orange-property-appraiser', () => ({
+  ORANGE_FIPS: '12095',
+  orangeParcelQueryUrl: (apn: string) => `https://vgispublic.ocpafl.org/server/rest/services/DynamicForJs/OCPA/MapServer/4/query?where=PARCEL%3D%27${apn}%27`,
+  fetchOfficialOrangeParcelFacts: mocks.fetchOfficialOrangeParcelFacts,
+}))
 vi.mock('./sources/census-acs', () => ({
   CENSUS_ACS_2024_SOURCE_URL: 'https://api.census.gov/data/2024/acs/acs5',
   fetchDemographics: mocks.fetchDemographics,
@@ -79,6 +96,10 @@ describe('parcel enrichment cache provenance', () => {
     mocks.findMany.mockResolvedValue([])
     mocks.upsert.mockResolvedValue({})
     mocks.fetchFloodZone.mockResolvedValue({ floodZone: 'X', floodPanel: '12127C0360J' })
+    mocks.fetchFemaDisasterDeclarations.mockResolvedValue({
+      femaDisasterDeclarationStatus: 'RECENT_DECLARATIONS_FOUND',
+      femaRecentDisasterDeclarations: [{ disasterNumber: 4834, declarationDate: '2024-10-11T00:00:00.000Z', incidentType: 'Hurricane' }],
+    })
     mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam', soilFarmlandClassification: 'All areas are prime farmland' })
     mocks.fetchUsgsElevation.mockResolvedValue({ elevationFeet: 46.9 })
@@ -88,6 +109,14 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
     mocks.fetchOfficialVolusiaParcelFacts.mockResolvedValue({
       lotSizeSqFt: 5_000, lotSizeAcres: 0.1148, landUseCode: 'VACANT RES', improved: false,
+    })
+    mocks.fetchOfficialPalmBeachParcelFacts.mockResolvedValue({
+      lotSizeSqFt: 50_094, lotSizeAcres: 1.15, assessedValue: 92_060, assessedYear: 2025,
+      landUseCode: 'VACANT', improved: false, frontageLinearFt: 209, lotDepthFt: 239,
+      zoning: 'AR', zoningDescription: 'AGRICULTURAL RESIDENTIAL',
+    })
+    mocks.fetchOfficialOrangeParcelFacts.mockResolvedValue({
+      lotSizeSqFt: 10_890, lotSizeAcres: 0.25, assessedValue: 125_000, landUseCode: '0100', improved: true,
     })
     mocks.fetchOfficialHarrisParcelFacts.mockResolvedValue({
       lotSizeSqFt: 11_988, lotSizeAcres: 0.2752, assessedValue: 77_920,
@@ -106,6 +135,23 @@ describe('parcel enrichment cache provenance', () => {
         metadata: {
           source: 'fema_nfhl',
           sourceUrl: 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer',
+        },
+      }),
+    }))
+  })
+
+  it('caches the exact county-level OpenFEMA result without requiring coordinates', async () => {
+    const result = await enrichParcel('0002340282', '12127', undefined, undefined, 'tenant-1')
+
+    expect(result.errors).toEqual([])
+    expect(mocks.fetchFemaDisasterDeclarations).toHaveBeenCalledWith('12127')
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'fema_disaster_declarations',
+        field: 'femaDisasterDeclarationStatus',
+        metadata: {
+          source: 'fema_disaster_declarations',
+          sourceUrl: 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries',
         },
       }),
     }))
@@ -134,9 +180,9 @@ describe('parcel enrichment cache provenance', () => {
   })
 
   it('reports unsupported Florida parcel coverage without pretending to make an API call', async () => {
-    const result = await enrichParcel('1234567890', '12095', undefined, undefined, 'tenant-1')
+    const result = await enrichParcel('1234567890', '12097', undefined, undefined, 'tenant-1')
 
-    expect(result.apiCalls).toBe(1)
+    expect(result.apiCalls).toBe(2)
     expect(result.errors).toEqual([])
     expect(result.gaps).toContainEqual({
       source: 'fl_dor',
@@ -164,6 +210,41 @@ describe('parcel enrichment cache provenance', () => {
     expect(result.gaps).toContainEqual({
       source: 'harris_property_appraiser', fields: ['assessedYear', 'landUseCode', 'improved', 'marketValueEstimate'],
     })
+  })
+
+  it('uses the official Orange parcel baseline and preserves exact query provenance', async () => {
+    const result = await enrichParcel('152541080010', '12095', undefined, undefined, 'tenant-1')
+
+    expect(mocks.fetchOfficialOrangeParcelFacts).toHaveBeenCalledWith({ apn: '152541080010', fipsCounty: '12095' })
+    expect(mocks.fetchFlDorParcel).not.toHaveBeenCalled()
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'orange_property_appraiser', field: 'assessedValue', normalized: 125_000,
+        metadata: {
+          source: 'orange_property_appraiser',
+          sourceUrl: 'https://vgispublic.ocpafl.org/server/rest/services/DynamicForJs/OCPA/MapServer/4/query?where=PARCEL%3D%27152541080010%27',
+        },
+      }),
+    }))
+    expect(result.gaps).toContainEqual({ source: 'orange_property_appraiser', fields: ['assessedYear', 'marketValueEstimate'] })
+  })
+
+  it('uses the official Palm Beach parcel baseline without promoting assessor value into market value', async () => {
+    const result = await enrichParcel('00414218000001860', '12099', undefined, undefined, 'tenant-1')
+
+    expect(mocks.fetchOfficialPalmBeachParcelFacts).toHaveBeenCalledWith({ apn: '00414218000001860', fipsCounty: '12099' })
+    expect(mocks.fetchFlDorParcel).not.toHaveBeenCalled()
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'palm_beach_property_appraiser', field: 'frontageLinearFt', normalized: 209,
+        metadata: {
+          source: 'palm_beach_property_appraiser',
+          sourceUrl: 'https://pbcpao.gov/Property/Details?parcelId=00414218000001860',
+        },
+      }),
+    }))
+    expect(result.profile).not.toHaveProperty('marketValueEstimate')
+    expect(result.gaps).toContainEqual({ source: 'palm_beach_property_appraiser', fields: ['marketValueEstimate'] })
   })
 
   it('reports empty and partial source output without mislabeling explicit negative evidence', async () => {

@@ -4,6 +4,7 @@ import type { ParcelProfile } from '@/lib/exit-engine/types'
 import { CENSUS_ACS_2024_SOURCE_URL, fetchDemographics } from './sources/census-acs'
 import { EPA_ECHO_CWA_SOURCE_URL, fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
+import { FEMA_DISASTER_DECLARATIONS_SOURCE_URL, fetchFemaDisasterDeclarations } from './sources/fema-disaster-declarations'
 import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
 import { fetchElectricUtility, HIFLD_ELECTRIC_RETAIL_TERRITORIES_SOURCE_URL } from './sources/hifld-electric'
 import {
@@ -16,6 +17,11 @@ import {
   PALM_BEACH_FIPS,
   palmBeachParcelQueryUrl,
 } from './sources/palm-beach-property-appraiser'
+import {
+  fetchOfficialOrangeParcelFacts,
+  orangeParcelQueryUrl,
+  ORANGE_FIPS,
+} from './sources/orange-property-appraiser'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
@@ -173,6 +179,12 @@ function buildSourcePlans(
       fields: ['medianHouseholdIncome', 'renterOccupancyPct', 'vacancyRatePct', 'populationDensity'],
       fetch: async () => fetchDemographics(fipsCounty),
     },
+    {
+      source: 'fema_disaster_declarations',
+      sourceUrl: FEMA_DISASTER_DECLARATIONS_SOURCE_URL,
+      fields: ['femaDisasterDeclarationStatus', 'femaRecentDisasterDeclarations'],
+      fetch: async () => fetchFemaDisasterDeclarations(fipsCounty),
+    },
   ]
 
   if (lat != null && lon != null) {
@@ -287,6 +299,21 @@ function parcelBaselinePlan(apnNormalized: string, fipsCounty: string): SourcePl
     }
   }
 
+  if (fipsCounty === ORANGE_FIPS) {
+    let sourceUrl: string | undefined
+    try {
+      sourceUrl = orangeParcelQueryUrl(apnNormalized)
+    } catch {
+      // The fetch path reports the invalid identifier as a fail-closed source gap.
+    }
+    return {
+      source: 'orange_property_appraiser',
+      sourceUrl,
+      fields: [...PARCEL_FACT_FIELDS],
+      fetch: async () => fetchOfficialOrangeParcelFacts({ apn: apnNormalized, fipsCounty }),
+    }
+  }
+
   if (fipsCounty.startsWith('12')) {
     return {
       source: 'fl_dor',
@@ -365,6 +392,8 @@ function isProfileKey(field: string): field is keyof ParcelProfile {
     'lotDepthFt',
     'floodZone',
     'floodPanel',
+    'femaDisasterDeclarationStatus',
+    'femaRecentDisasterDeclarations',
     'wetlandsPresent',
     'wetlandsNwiStatus',
     'soilMapUnitKey',

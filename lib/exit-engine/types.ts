@@ -72,6 +72,8 @@ export interface ParcelProfile {
   zoningDescription?: string
   floodZone?: string
   floodPanel?: string
+  femaDisasterDeclarationStatus?: 'RECENT_DECLARATIONS_FOUND' | 'NO_RECENT_DECLARATIONS_RETURNED'
+  femaRecentDisasterDeclarations?: Array<{ disasterNumber: number; declarationDate: string; incidentType: string }>
   wetlandsPresent?: boolean
   wetlandsNwiStatus?: 'MAPPED_FEATURE' | 'NO_MAPPED_FEATURE'
   soilMapUnitKey?: string

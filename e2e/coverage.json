@@ -39,6 +39,90 @@
       }
     },
     {
+      "id": "investor-create-tax-deed-deal",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires successful integration preflight and a reset-safe Tax Deed fixture.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_CREATED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/new?strategy=TAX_DEED",
+        "actions": [
+          { "userAction": "Complete the required Tax Deed deal form and save", "expectedRequest": "Tax Deed server action createDeed" }
+        ],
+        "persistedOutcome": "A fixture-tenant Tax Deed exists and its correlated DEAL_CREATED event contains only deal identity.",
+        "cleanup": "The integration fixture reset removes the created deal and its dependent records."
+      }
+    },
+    {
+      "id": "investor-create-foreclosure-deal",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires successful integration preflight and a reset-safe Foreclosure fixture.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_CREATED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/new?strategy=FORECLOSURE",
+        "actions": [
+          { "userAction": "Complete the required Foreclosure deal form and save", "expectedRequest": "Foreclosure server action createForeclosure" }
+        ],
+        "persistedOutcome": "A fixture-tenant Foreclosure deal exists and its correlated DEAL_CREATED event contains only deal identity.",
+        "cleanup": "The integration fixture reset removes the created deal and its dependent records."
+      }
+    },
+    {
+      "id": "investor-create-land-deal",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires successful integration preflight and a reset-safe Land fixture.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_CREATED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/new?strategy=LAND",
+        "actions": [
+          { "userAction": "Complete the required Land deal form and save", "expectedRequest": "Land server action createLand" }
+        ],
+        "persistedOutcome": "A fixture-tenant Land deal exists and its correlated DEAL_CREATED event contains only deal identity.",
+        "cleanup": "The integration fixture reset removes the created deal and its dependent records."
+      }
+    },
+    {
+      "id": "investor-create-wholesale-deal",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires successful integration preflight and a reset-safe Wholesale fixture.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_CREATED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/new?strategy=WHOLESALE",
+        "actions": [
+          { "userAction": "Complete the required Wholesale deal form and save", "expectedRequest": "Wholesale server action createWholesale" }
+        ],
+        "persistedOutcome": "A fixture-tenant Wholesale deal exists and its correlated DEAL_CREATED event contains only deal identity.",
+        "cleanup": "The integration fixture reset removes the created deal and its dependent records."
+      }
+    },
+    {
       "id": "investor-request-parcel-enrichment",
       "risk": "high",
       "mode": "mutation",
@@ -57,6 +141,27 @@
         ],
         "persistedOutcome": "The fixture-tenant parcel cache reflects the enrichment and its PARCEL_ENRICH_REQUEST audit event carries the response request ID.",
         "cleanup": "The integration fixture reset removes the parcel cache record."
+      }
+    },
+    {
+      "id": "investor-trace-tax-lien-lifecycle",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires a reset-safe active tax-lien fixture and deterministic removal of the redemption transaction and audit evidence.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_MARKED_NOT_WON, DEAL_RELISTED_AS_LEAD, LIEN_REDEMPTION_RECORDED, and DEAL_DELETED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureTaxLienDealId}",
+        "actions": [
+          { "userAction": "Mark the fixture lien Not Won, re-list it, record a fixture redemption, then delete it", "expectedRequest": "Tax-lien server actions markNotWon, relistAsLead, recordRedemption, and deleteLien" }
+        ],
+        "persistedOutcome": "Each lifecycle save writes the expected request-correlated audit event with deal/transaction identity only; redemption metadata excludes amount and date.",
+        "cleanup": "The integration fixture reset removes or restores the fixture deal, redemption transaction, and related audit events."
       }
     },
     {
@@ -141,6 +246,27 @@
         ],
         "persistedOutcome": "The fixture jurisdiction has a current reviewed authority boundary and its JURISDICTION_AUTHORITY_BOUNDARY_PUBLISHED audit event carries the response request ID.",
         "cleanup": "The integration fixture reset removes the authority-boundary record."
+      }
+    },
+    {
+      "id": "super-admin-record-canonical-county-acceptance",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/canonical-acceptance.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated super-admin fixture and deterministic reset of canonical acceptance history.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "JURISDICTION_CANONICAL_ACCEPTANCE_RECORDED"
+      },
+      "journey": {
+        "entryPoint": "/admin/rules/{fixtureJurisdictionId}",
+        "actions": [
+          { "userAction": "Enter the exact contract case, immutable evidence reference, outcome, and summary, then record acceptance", "expectedRequest": "POST /api/admin/jurisdictions/{fixtureJurisdictionId}/canonical-acceptance" }
+        ],
+        "persistedOutcome": "The fixture jurisdiction has the current acceptance decision and its JURISDICTION_CANONICAL_ACCEPTANCE_RECORDED audit event carries the response request ID without the summary or evidence URL.",
+        "cleanup": "The integration fixture reset removes canonical acceptance records."
       }
     },
     {
@@ -333,7 +459,7 @@
       "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "CONTACT_CREATED, CONTACT_UPDATED, and CONTACT_DELETED" },
       "journey": {
         "entryPoint": "/dashboard/contacts/new",
-        "actions": [{ "userAction": "Create fixture contact details, edit the contact, and delete it", "expectedRequest": "POST /api/contacts, PUT /api/contacts/{fixtureContactId}, then DELETE /api/contacts/{fixtureContactId}" }],
+        "actions": [{ "userAction": "Create fixture contact details, edit the contact, and delete it", "expectedRequest": "Contact server actions createContact, updateContact, and deleteContact" }],
         "persistedOutcome": "The fixture contact lifecycle has correlated create, update, and delete events without PII, contact stage/type, or notes in audit metadata.",
         "cleanup": "The integration fixture reset removes or restores the fixture contact and related audit events."
       }
@@ -348,7 +474,7 @@
       "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "CONTACT_ACTIVITY_CREATED and CONTACT_ACTIVITY_DELETED" },
       "journey": {
         "entryPoint": "/dashboard/contacts/{fixtureContactId}",
-        "actions": [{ "userAction": "Save a fixture-safe contact activity and then delete it", "expectedRequest": "POST /api/contacts/{fixtureContactId}/activity then DELETE /api/contacts/{fixtureContactId}/activity/{fixtureActivityId}" }],
+        "actions": [{ "userAction": "Save a fixture-safe contact activity and then delete it", "expectedRequest": "Contact server actions logActivity and deleteActivity" }],
         "persistedOutcome": "The fixture contact has correlated activity create and delete events without activity type, notes, or timestamps in audit metadata.",
         "cleanup": "The integration fixture reset removes or restores the fixture activity and related audit events."
       }
@@ -456,6 +582,51 @@
         "actions": [{ "userAction": "Enter fixture-safe seller-finance details, select a same-tenant buyer, and save", "expectedRequest": "Land Note create server action" }],
         "persistedOutcome": "The fixture Land deal receives a note only when the selected buyer is tenant-owned, with a correlated LAND_NOTE_CREATED event containing only deal/note identity.",
         "cleanup": "The integration fixture reset removes the fixture note and related audit event."
+      }
+    },
+    {
+      "id": "analyst-record-land-note-payment",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/land-note.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated active Land Note fixture and deterministic payment, balance, and audit cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "NOTE_PAYMENT_LOGGED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureLandDealId}",
+        "actions": [{ "userAction": "Record one fixture-safe Land Note payment", "expectedRequest": "Land Note server action recordPayment" }],
+        "persistedOutcome": "Only a note owned by the fixture deal records a payment, balance update, and correlated NOTE_PAYMENT_LOGGED event containing only deal/note/transaction identity.",
+        "cleanup": "The integration fixture reset restores the note balance and removes the payment transaction and related audit event."
+      }
+    },
+    {
+      "id": "analyst-update-land-disposition-and-default-note",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/land-disposition.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated Land deal and note fixture with deterministic restoration of disposition, note status, and audit events.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "LAND_DISPOSITION_UPDATED and LAND_NOTE_DEFAULTED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureLandDealId}",
+        "actions": [{ "userAction": "Save a fixture disposition, then default the fixture Land Note", "expectedRequest": "Land server actions updateLandDisposition and defaultLandNote" }],
+        "persistedOutcome": "The fixture deal records correlated disposition/default events containing only deal/note identity; a note belonging to any other deal is refused.",
+        "cleanup": "The integration fixture reset restores disposition/note state and removes related audit evidence."
+      }
+    },
+    {
+      "id": "analyst-create-delete-land-comp",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/land-comp.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated Land deal fixture and deterministic comp/audit cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "LAND_COMP_CREATED and LAND_COMP_DELETED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureLandDealId}",
+        "actions": [{ "userAction": "Add a fixture-safe raw land comp, then delete it", "expectedRequest": "Land Comp server actions createLandComp and deleteLandComp" }],
+        "persistedOutcome": "The fixture deal records correlated create/delete events containing only deal/comp identity; pricing and notes are excluded from audit metadata.",
+        "cleanup": "The integration fixture reset removes any fixture comp and related audit events."
       }
     }
   ]

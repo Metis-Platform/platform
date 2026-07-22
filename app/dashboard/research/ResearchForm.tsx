@@ -485,6 +485,7 @@ export default function ResearchForm({ jurisdictions }: Props) {
               <ParcelFact label="Lot depth" field="lotDepthFt" parcel={data.parcel} value={data.parcel.lotDepthFt != null ? `${data.parcel.lotDepthFt.toLocaleString()} ft` : undefined} />
               <ParcelFact label="Zoning" field="zoning" parcel={data.parcel} value={data.parcel.zoning} />
               <ParcelFact label="Flood zone" field="floodZone" parcel={data.parcel} value={data.parcel.floodZone} />
+              <ParcelFact label="FEMA recent county declarations" field="femaDisasterDeclarationStatus" parcel={data.parcel} value={data.parcel.femaDisasterDeclarationStatus === 'RECENT_DECLARATIONS_FOUND' ? data.parcel.femaRecentDisasterDeclarations?.map(declaration => `${declaration.declarationDate.slice(0, 10)} — ${declaration.incidentType} (DR-${declaration.disasterNumber})`).join('; ') : data.parcel.femaDisasterDeclarationStatus === 'NO_RECENT_DECLARATIONS_RETURNED' ? 'No declarations returned (not a parcel-risk or clearance determination)' : undefined} />
               <ParcelFact label="Road frontage" field="roadFrontage" parcel={data.parcel} value={data.parcel.roadFrontage} />
               <ParcelFact label="Assessed value" field="assessedValue" parcel={data.parcel} value={data.parcel.assessedValue != null ? fmtCurrency(data.parcel.assessedValue) : undefined} />
               <ParcelFact label="Market estimate" field="marketValueEstimate" parcel={data.parcel} value={data.parcel.marketValueEstimate != null ? fmtCurrency(data.parcel.marketValueEstimate) : undefined} />
@@ -501,6 +502,11 @@ export default function ResearchForm({ jurisdictions }: Props) {
             {data.location?.status === 'CENSUS_ADDRESS' && (
               <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 Location came from your address through the <a href={data.location.sourceUrl} target="_blank" rel="noreferrer" className="underline">Census Geocoder</a>{data.location.matchedAddress ? `: ${data.location.matchedAddress}` : ''}. Verify parcel identity and governing authority before relying on location-dependent conclusions.
+              </p>
+            )}
+            {data.parcel.femaDisasterDeclarationStatus && (
+              <p className="mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+                OpenFEMA declaration history is county-level historical context only. It does not determine parcel loss, property condition, insurance, flood risk, environmental conditions, permitting, or buildability.
               </p>
             )}
             {data.geography?.landUseAuthority.status === 'UNRESOLVED' && (

@@ -60,6 +60,21 @@ const ADAPTERS: JurisdictionAdapter[] = [
     },
   },
   {
+    id: 'az-apache-county-offices-v1',
+    state: 'AZ',
+    county: 'Apache',
+    officeTypes: ['assessor', 'recorder', 'gis', 'planning_zoning', 'building'],
+    authorityOwner: 'Apache County elected offices and government departments',
+    scopeNote: 'Community Development candidates require parcel-level resolution of municipal, tribal, and other governing authority before relying on county development sources.',
+    sourceUrls: {
+      assessor: 'https://www.apachecountyaz.gov/assessor',
+      recorder: 'https://www.apachecountyaz.gov/Recorder/',
+      gis: 'https://www.apachecountyaz.gov/GIS',
+      planning_zoning: 'https://www.apachecountyaz.gov/Community-Development',
+      building: 'https://www.apachecountyaz.gov/Community-Development',
+    },
+  },
+  {
     id: 'tx-harris-county-offices-v1',
     state: 'TX',
     county: 'Harris',
@@ -73,6 +88,21 @@ const ADAPTERS: JurisdictionAdapter[] = [
       gis: 'https://oce.harriscountytx.gov/Divisions/IT-Asset-Management/Geographic-Information-Systems-GIS',
       planning_zoning: 'https://oce.harriscountytx.gov/Services/Permits/Platting',
       building: 'https://oce.harriscountytx.gov/Services/Permits/Civil',
+    },
+  },
+  {
+    id: 'nv-clark-county-offices-v1',
+    state: 'NV',
+    county: 'Clark',
+    officeTypes: ['assessor', 'recorder', 'gis', 'planning_zoning', 'building'],
+    authorityOwner: 'Clark County elected offices and government departments',
+    scopeNote: 'Planning and building candidates apply to unincorporated Clark County; resolve the parcel municipality, overlays, and other governing authorities before relying on them.',
+    sourceUrls: {
+      assessor: 'https://www.clarkcountynv.gov/government/assessor/',
+      recorder: 'https://www.clarkcountynv.gov/government/elected_officials/county_recorder/',
+      gis: 'https://www.clarkcountynv.gov/government/departments/information_technology/it_home/our_core_work/gis',
+      planning_zoning: 'https://www.clarkcountynv.gov/government/departments/comprehensive_planning_department/',
+      building: 'https://www.clarkcountynv.gov/building',
     },
   },
 ]

@@ -2,9 +2,11 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { auth } from '@clerk/nextjs/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 import type { ContactType, ContactPipelineStage, ContactActivityType } from '@/app/generated/prisma'
 
 export type ContactFormState = {
@@ -39,9 +41,22 @@ export async function createContact(
   const state = (formData.get('state') as string)?.trim() || null
   const zip = (formData.get('zip') as string)?.trim() || null
   const notes = (formData.get('notes') as string)?.trim() || null
+  const requestId = requestIdFromHeaders(await headers())
 
-  const contact = await db.contact.create({
-    data: { tenantId: tenant.id, type, pipelineStage, firstName, lastName, company, email, phone, address, city, state, zip, notes },
+  const contact = await db.$transaction(async tx => {
+    const created = await tx.contact.create({
+      data: { tenantId: tenant.id, type, pipelineStage, firstName, lastName, company, email, phone, address, city, state, zip, notes },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'CONTACT_CREATED',
+        meta: { contactId: created.id },
+      },
+    })
+    return created
   })
 
   redirect(`/dashboard/contacts/${contact.id}`)
@@ -78,10 +93,22 @@ export async function updateContact(
   const state = (formData.get('state') as string)?.trim() || null
   const zip = (formData.get('zip') as string)?.trim() || null
   const notes = (formData.get('notes') as string)?.trim() || null
+  const requestId = requestIdFromHeaders(await headers())
 
-  await db.contact.update({
-    where: { id: contactId },
-    data: { type, pipelineStage, firstName, lastName, company, email, phone, address, city, state, zip, notes },
+  await db.$transaction(async tx => {
+    await tx.contact.update({
+      where: { id: contactId },
+      data: { type, pipelineStage, firstName, lastName, company, email, phone, address, city, state, zip, notes },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'CONTACT_UPDATED',
+        meta: { contactId },
+      },
+    })
   })
 
   revalidatePath(`/dashboard/contacts/${contactId}`)
@@ -102,8 +129,20 @@ export async function deleteContact(
 
   const existing = await db.contact.findUnique({ where: { id: contactId, tenantId: tenant.id } })
   if (!existing) return { error: 'Contact not found' }
+  const requestId = requestIdFromHeaders(await headers())
 
-  await db.contact.delete({ where: { id: contactId } })
+  await db.$transaction(async tx => {
+    await tx.contact.delete({ where: { id: contactId } })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'CONTACT_DELETED',
+        meta: { contactId },
+      },
+    })
+  })
 
   revalidatePath('/dashboard/contacts')
   redirect('/dashboard/contacts')
@@ -127,9 +166,21 @@ export async function logActivity(
   const notes = (formData.get('notes') as string)?.trim() || null
   const occurredAtRaw = (formData.get('occurredAt') as string)?.trim()
   const occurredAt = occurredAtRaw ? new Date(occurredAtRaw) : new Date()
+  const requestId = requestIdFromHeaders(await headers())
 
-  await db.contactActivity.create({
-    data: { contactId, tenantId: tenant.id, type, notes, occurredAt },
+  await db.$transaction(async tx => {
+    const activity = await tx.contactActivity.create({
+      data: { contactId, tenantId: tenant.id, type, notes, occurredAt },
+    })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'CONTACT_ACTIVITY_CREATED',
+        meta: { contactId, activityId: activity.id },
+      },
+    })
   })
 
   revalidatePath(`/dashboard/contacts/${contactId}`)
@@ -150,8 +201,20 @@ export async function deleteActivity(
 
   const activity = await db.contactActivity.findUnique({ where: { id: activityId, tenantId: tenant.id } })
   if (!activity || activity.contactId !== contactId) return { error: 'Activity not found' }
+  const requestId = requestIdFromHeaders(await headers())
 
-  await db.contactActivity.delete({ where: { id: activityId } })
+  await db.$transaction(async tx => {
+    await tx.contactActivity.delete({ where: { id: activityId } })
+    await tx.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId,
+        action: 'CONTACT_ACTIVITY_DELETED',
+        meta: { contactId, activityId },
+      },
+    })
+  })
 
   revalidatePath(`/dashboard/contacts/${contactId}`)
   return {}

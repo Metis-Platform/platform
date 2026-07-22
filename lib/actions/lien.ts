@@ -2,14 +2,15 @@
 
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
-import { emitAuditEvent } from '@/lib/audit'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type LienFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -132,6 +133,7 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
 
   const data = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     if (data.status === 'LEAD' && data.researchSnapshotId) {
@@ -163,9 +165,11 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
           },
         })
         await tx.prePurchaseResearchSnapshot.update({ where: { id: data.researchSnapshotId }, data: { consumedDealId: created.id } })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
         return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN', status: 'LEAD', researchSnapshotId: data.researchSnapshotId }, userId)
       dealId = deal.id
       redirect(`/dashboard/deals/${dealId}`)
     }
@@ -177,41 +181,51 @@ export async function createLien(_prev: LienFormState, formData: FormData): Prom
     })
 
     if (data.status === 'LEAD') {
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_LIEN, status: DealStatus.LEAD,
-          notes: data.notes || null,
-          taxLien: {
-            create: {
-              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
-              maxBid: (data.maxBid && data.maxBid !== '') ? Number(data.maxBid) : null,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_LIEN, status: DealStatus.LEAD,
+            notes: data.notes || null,
+            taxLien: {
+              create: {
+                auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+                maxBid: (data.maxBid && data.maxBid !== '') ? Number(data.maxBid) : null,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof ActiveSchema>
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_LIEN, status: DealStatus.ACTIVE,
-          notes: d.notes || null,
-          taxLien: {
-            create: {
-              certificateNumber: d.certificateNumber,
-              faceAmount: d.faceAmount,
-              interestRate: d.interestRate / 100,
-              issueDate: new Date(`${d.issueDate}T12:00:00.000Z`),
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_LIEN, status: DealStatus.ACTIVE,
+            notes: d.notes || null,
+            taxLien: {
+              create: {
+                certificateNumber: d.certificateNumber,
+                faceAmount: d.faceAmount,
+                interestRate: d.interestRate / 100,
+                issueDate: new Date(`${d.issueDate}T12:00:00.000Z`),
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
       await generateEventsForDeal(deal.id, tenant.id)
       await applyTenantWorkflowRules(tenant.id, deal.id)
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_LIEN' }, userId)
       dealId = deal.id
     }
   } catch (err) {
@@ -322,6 +336,7 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
 
   const data = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     if (data.status === 'LEAD' && data.researchSnapshotId) {
@@ -341,9 +356,11 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
           taxDeed: { create: { auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null, maxBid: data.maxBid ? Number(data.maxBid) : null } },
         } })
         await tx.prePurchaseResearchSnapshot.update({ where: { id: data.researchSnapshotId }, data: { consumedDealId: created.id } })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
         return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED', status: 'LEAD', researchSnapshotId: data.researchSnapshotId }, userId)
       dealId = deal.id
       redirect(`/dashboard/deals/${dealId}`)
     }
@@ -355,20 +372,25 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
     })
 
     if (data.status === 'LEAD') {
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_DEED, status: DealStatus.LEAD,
-          notes: data.notes || null,
-          taxDeed: {
-            create: {
-              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
-              maxBid: data.maxBid ? Number(data.maxBid) : null,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_DEED, status: DealStatus.LEAD,
+            notes: data.notes || null,
+            taxDeed: {
+              create: {
+                auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+                maxBid: data.maxBid ? Number(data.maxBid) : null,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof DeedActiveSchema>
@@ -377,24 +399,29 @@ export async function createDeed(_prev: LienFormState, formData: FormData): Prom
         ? new Date(saleDateObj.getTime() + d.redemptionPeriodDays * 86_400_000)
         : null
 
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.TAX_DEED, status: DealStatus.ACTIVE,
-          notes: d.notes || null,
-          taxDeed: {
-            create: {
-              saleDate: saleDateObj,
-              openingBid: d.openingBid ? Number(d.openingBid) : null,
-              winningBid: d.winningBid,
-              redemptionPeriodDays: d.redemptionPeriodDays ?? null,
-              redemptionDeadline,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.TAX_DEED, status: DealStatus.ACTIVE,
+            notes: d.notes || null,
+            taxDeed: {
+              create: {
+                saleDate: saleDateObj,
+                openingBid: d.openingBid ? Number(d.openingBid) : null,
+                winningBid: d.winningBid,
+                redemptionPeriodDays: d.redemptionPeriodDays ?? null,
+                redemptionDeadline,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
       await generateEventsForDeal(deal.id, tenant.id)
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'TAX_DEED' }, userId)
       dealId = deal.id
     }
   } catch (err) {
@@ -425,6 +452,7 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
 
   const data = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     if (data.status === 'LEAD' && data.researchSnapshotId) {
@@ -444,9 +472,11 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
           foreclosure: { create: { foreclosureType: data.foreclosureType, auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null, maxBid: data.maxBid ? Number(data.maxBid) : null, estimatedLiens: data.estimatedLiens ? Number(data.estimatedLiens) : null } },
         } })
         await tx.prePurchaseResearchSnapshot.update({ where: { id: data.researchSnapshotId }, data: { consumedDealId: created.id } })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
         return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE', status: 'LEAD', researchSnapshotId: data.researchSnapshotId }, userId)
       dealId = deal.id
       redirect(`/dashboard/deals/${dealId}`)
     }
@@ -458,42 +488,52 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
     })
 
     if (data.status === 'LEAD') {
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.FORECLOSURE, status: DealStatus.LEAD,
-          notes: data.notes || null,
-          foreclosure: {
-            create: {
-              foreclosureType: data.foreclosureType,
-              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
-              maxBid: data.maxBid ? Number(data.maxBid) : null,
-              estimatedLiens: data.estimatedLiens ? Number(data.estimatedLiens) : null,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.FORECLOSURE, status: DealStatus.LEAD,
+            notes: data.notes || null,
+            foreclosure: {
+              create: {
+                foreclosureType: data.foreclosureType,
+                auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+                maxBid: data.maxBid ? Number(data.maxBid) : null,
+                estimatedLiens: data.estimatedLiens ? Number(data.estimatedLiens) : null,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof ForeclosureActiveSchema>
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.FORECLOSURE, status: DealStatus.ACTIVE,
-          notes: d.notes || null,
-          foreclosure: {
-            create: {
-              foreclosureType: d.foreclosureType,
-              auctionDate: new Date(`${d.auctionDate}T12:00:00.000Z`),
-              openingBid: d.openingBid ? Number(d.openingBid) : null,
-              winningBid: d.winningBid,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.FORECLOSURE, status: DealStatus.ACTIVE,
+            notes: d.notes || null,
+            foreclosure: {
+              create: {
+                foreclosureType: d.foreclosureType,
+                auctionDate: new Date(`${d.auctionDate}T12:00:00.000Z`),
+                openingBid: d.openingBid ? Number(d.openingBid) : null,
+                winningBid: d.winningBid,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
       await generateEventsForDeal(deal.id, tenant.id)
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE' }, userId)
       dealId = deal.id
     }
   } catch (err) {
@@ -511,17 +551,32 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
 export async function markNotWon(dealId: string, note: string | null): Promise<{ error?: string }> {
   const result = await getCurrentUser()
   if (!result) return { error: 'Not authenticated.' }
-  const { tenant } = result
+  const { tenant, user } = result
 
   try {
     const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
     if (!deal) return { error: 'Deal not found.' }
     if (deal.status !== 'LEAD') return { error: 'Only Lead deals can be marked Not Won.' }
 
-    await db.deal.update({
-      where: { id: dealId },
-      data: { status: 'NOT_WON' as DealStatus, notes: note || deal.notes || null },
+    const requestId = requestIdFromHeaders(await headers())
+    const changed = await db.$transaction(async tx => {
+      const updated = await tx.deal.updateMany({
+        where: { id: dealId, tenantId: tenant.id, status: DealStatus.LEAD },
+        data: { status: DealStatus.NOT_WON, notes: note || deal.notes || null },
+      })
+      if (updated.count !== 1) return false
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'DEAL_MARKED_NOT_WON',
+          meta: { dealId },
+        },
+      })
+      return true
     })
+    if (!changed) return { error: 'Only Lead deals can be marked Not Won.' }
     return {}
   } catch (err) {
     console.error('[markNotWon]', err)
@@ -536,7 +591,7 @@ export async function markNotWon(dealId: string, note: string | null): Promise<{
 export async function relistAsLead(dealId: string, auctionDate: string | null): Promise<{ error?: string }> {
   const result = await getCurrentUser()
   if (!result) return { error: 'Not authenticated.' }
-  const { tenant } = result
+  const { tenant, user } = result
 
   try {
     const deal = await db.deal.findUnique({
@@ -546,14 +601,32 @@ export async function relistAsLead(dealId: string, auctionDate: string | null): 
     if (!deal) return { error: 'Deal not found.' }
     if ((deal.status as string) !== 'NOT_WON') return { error: 'Only Not Won deals can be re-listed.' }
 
-    await db.deal.update({ where: { id: dealId }, data: { status: DealStatus.LEAD } })
+    const requestId = requestIdFromHeaders(await headers())
+    const changed = await db.$transaction(async tx => {
+      const updated = await tx.deal.updateMany({
+        where: { id: dealId, tenantId: tenant.id, status: DealStatus.NOT_WON },
+        data: { status: DealStatus.LEAD },
+      })
+      if (updated.count !== 1) return false
 
-    if (auctionDate) {
-      const dateVal = new Date(`${auctionDate}T12:00:00.000Z`)
-      if (deal.taxLien) await db.dealTaxLien.update({ where: { dealId }, data: { auctionDate: dateVal } })
-      else if (deal.taxDeed) await db.dealTaxDeed.update({ where: { dealId }, data: { auctionDate: dateVal } })
-      else if (deal.foreclosure) await db.dealForeclosure.update({ where: { dealId }, data: { auctionDate: dateVal } })
-    }
+      if (auctionDate) {
+        const dateVal = new Date(`${auctionDate}T12:00:00.000Z`)
+        if (deal.taxLien) await tx.dealTaxLien.update({ where: { dealId }, data: { auctionDate: dateVal } })
+        else if (deal.taxDeed) await tx.dealTaxDeed.update({ where: { dealId }, data: { auctionDate: dateVal } })
+        else if (deal.foreclosure) await tx.dealForeclosure.update({ where: { dealId }, data: { auctionDate: dateVal } })
+      }
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'DEAL_RELISTED_AS_LEAD',
+          meta: { dealId },
+        },
+      })
+      return true
+    })
+    if (!changed) return { error: 'Only Not Won deals can be re-listed.' }
     return {}
   } catch (err) {
     console.error('[relistAsLead]', err)
@@ -573,20 +646,20 @@ export async function recordRedemption(
 ): Promise<{ error?: string }> {
   const result = await getCurrentUser()
   if (!result) return { error: 'Not authenticated.' }
-  const { tenant } = result
+  const { tenant, user } = result
 
   try {
-    const deal = await db.deal.findUnique({ where: { id: dealId, tenantId: tenant.id } })
-    if (!deal) return { error: 'Deal not found.' }
-
     const dateVal = redemptionDate ?? new Date()
+    const requestId = requestIdFromHeaders(await headers())
 
-    await db.$transaction([
-      db.dealTaxLien.update({
+    const recorded = await db.$transaction(async tx => {
+      const deal = await tx.deal.findFirst({ where: { id: dealId, tenantId: tenant.id }, select: { id: true } })
+      if (!deal) return false
+      await tx.dealTaxLien.update({
         where: { dealId },
         data: { redemptionAmount, redemptionDate: dateVal, isRedeemed: true },
-      }),
-      db.financialTransaction.create({
+      })
+      const transaction = await tx.financialTransaction.create({
         data: {
           dealId,
           tenantId: tenant.id,
@@ -595,8 +668,19 @@ export async function recordRedemption(
           date: dateVal,
           description: 'Redemption received',
         },
-      }),
-    ])
+      })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'LIEN_REDEMPTION_RECORDED',
+          meta: { dealId, transactionId: transaction.id },
+        },
+      })
+      return true
+    })
+    if (!recorded) return { error: 'Deal not found.' }
 
     return {}
   } catch (err) {
@@ -616,7 +700,23 @@ export async function deleteLien(dealId: string): Promise<{ error?: string }> {
   if (!hasRole(user.role, 'ANALYST')) return { error: 'Insufficient permissions.' }
 
   try {
-    await db.deal.delete({ where: { id: dealId, tenantId: tenant.id } })
+    const requestId = requestIdFromHeaders(await headers())
+    const deleted = await db.$transaction(async tx => {
+      const deal = await tx.deal.findFirst({ where: { id: dealId, tenantId: tenant.id }, select: { id: true } })
+      if (!deal) return false
+      await tx.deal.delete({ where: { id: deal.id } })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          requestId,
+          action: 'DEAL_DELETED',
+          meta: { dealId: deal.id },
+        },
+      })
+      return true
+    })
+    if (!deleted) return { error: 'Deal not found.' }
     return {}
   } catch (err) {
     console.error('[deleteLien]', err)

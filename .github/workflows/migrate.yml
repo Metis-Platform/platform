@@ -28,6 +28,6 @@ jobs:
         run: npm ci
 
       - name: Apply migrations
-        run: npx prisma migrate deploy
+        run: npx tsx scripts/migrate-deploy.ts
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

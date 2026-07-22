@@ -78,7 +78,6 @@ export function normalizePalmBeachParcelModel(model: PbcModel): Partial<ParcelPr
     zoningDescription: stringValue(detail.ZoningDesc),
     assessedValue: numberFromUnknown(assessment.AssessedValue),
     assessedYear: numberFromUnknown(assessment.TaxYear) ?? numberFromUnknown(detail.TaxYear),
-    marketValueEstimate: numberFromUnknown(appraisal.TotalMarketValue),
   }
 }
 
