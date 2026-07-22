@@ -43,7 +43,8 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Admin email audit privacy (#490) | Merged: super-admin email audit events retain only safe delivery totals and target scope. Submitted subject and body never enter audit metadata; broadcast and tenant-targeted route coverage prove the boundary. |
 | Wholesale buyer outreach (#492) | Merged: a linked Buyer contact’s five most recent CRM activities are shown read-only on its Wholesale deal with a direct CRM handoff. The declared browser inspection journey remains explicitly pending the authenticated QA-fixture prerequisite. |
 | FEMA county declaration context (#494) | Merged: preliminary research retrieves a short, exact-FIPS OpenFEMA declaration summary nationwide with source provenance and explicit county-level limitations. |
-| Dependency audit remediation (#497) | In progress: production Sharp and compatible development-only dependency findings are patched through pinned overrides; production audit is clean and only Prisma development-server findings remain. |
+| Dependency audit remediation (#497) | Merged: production Sharp and compatible development-only dependency findings are patched through pinned overrides; production audit is clean and only Prisma development-server findings remain. |
+| Clark County NV discovery candidates (#500) | In progress: exact official Assessor, Recorder, GIS, Planning, and Building leads are available for Clark County; planning/building remain explicitly limited to unincorporated county area pending jurisdiction resolution. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
