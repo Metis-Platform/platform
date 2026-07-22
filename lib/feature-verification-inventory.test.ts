@@ -1,0 +1,33 @@
+import { describe, expect, it } from 'vitest'
+import { featureVerificationInventoryGaps, validateFeatureVerificationInventory } from './feature-verification-inventory'
+
+const covered = {
+  version: 1,
+  scope: 'app-api-mutations',
+  entries: [{ target: 'app/api/example/route.ts', status: 'covered', storyId: 'example' }],
+} as const
+
+describe('feature verification mutation inventory', () => {
+  it('requires catalog linkage or an issue-linked classification', () => {
+    expect(validateFeatureVerificationInventory({ ...covered, entries: [{ target: 'app/api/example/route.ts', status: 'deferred' }] }).success).toBe(false)
+  })
+
+  it('reports unclassified routes, stale entries, bad stories, and missing specs', () => {
+    const inventory = validateFeatureVerificationInventory(covered)
+    expect(inventory.success).toBe(true)
+    if (!inventory.success) return
+
+    expect(featureVerificationInventoryGaps(
+      inventory.data,
+      ['app/api/example/route.ts', 'app/api/missing/route.ts'],
+      new Set(['other']),
+      () => false,
+      new Map([['example', 'e2e/example.spec.ts']]),
+    )).toEqual({
+      missingTargets: ['app/api/missing/route.ts'],
+      unknownTargets: [],
+      invalidStoryIds: ['app/api/example/route.ts'],
+      missingSpecs: ['app/api/example/route.ts'],
+    })
+  })
+})
