@@ -6,7 +6,7 @@
     { "target": "lib/actions/buy-hold.ts", "status": "deferred", "issue": "#512", "reason": "Deal lifecycle needs action-level audit coverage." },
     { "target": "lib/actions/buyer-blast.ts", "status": "deferred", "issue": "#512", "reason": "Outbound delivery needs a sink fixture." },
     { "target": "lib/actions/buyer.ts", "status": "deferred", "issue": "#512", "reason": "Existing buyer journeys need direct server-action execution proof." },
-    { "target": "lib/actions/contact.ts", "status": "deferred", "issue": "#512", "reason": "Contact UI uses server actions and needs direct audit correlation." },
+    { "target": "lib/actions/contact.ts", "status": "deferred", "issue": "#512", "reason": "Server actions have unit-level audit correlation; direct browser execution awaits the isolated QA fixture." },
     { "target": "lib/actions/events.ts", "status": "deferred", "issue": "#512", "reason": "Event editing needs a deterministic fixture." },
     { "target": "lib/actions/fix-flip.ts", "status": "deferred", "issue": "#512", "reason": "Deal lifecycle needs action-level audit coverage." },
     { "target": "lib/actions/land-comp.ts", "status": "deferred", "issue": "#512", "reason": "Land comps need deterministic fixture cleanup." },
