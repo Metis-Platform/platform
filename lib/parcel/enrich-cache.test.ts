@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   upsert: vi.fn(),
   fetchFloodZone: vi.fn(),
+  fetchFemaDisasterDeclarations: vi.fn(),
   fetchNwiWetlands: vi.fn(),
   fetchSsurgoMapUnit: vi.fn(),
   fetchUsgsElevation: vi.fn(),
@@ -22,6 +23,10 @@ vi.mock('@/lib/db', () => ({
 vi.mock('./sources/fema-nfhl', () => ({
   FEMA_NFHL_SOURCE_URL: 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer',
   fetchFloodZone: mocks.fetchFloodZone,
+}))
+vi.mock('./sources/fema-disaster-declarations', () => ({
+  FEMA_DISASTER_DECLARATIONS_SOURCE_URL: 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries',
+  fetchFemaDisasterDeclarations: mocks.fetchFemaDisasterDeclarations,
 }))
 vi.mock('./sources/fws-nwi', () => ({
   FWS_NWI_SOURCE_URL: 'https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0',
@@ -79,6 +84,10 @@ describe('parcel enrichment cache provenance', () => {
     mocks.findMany.mockResolvedValue([])
     mocks.upsert.mockResolvedValue({})
     mocks.fetchFloodZone.mockResolvedValue({ floodZone: 'X', floodPanel: '12127C0360J' })
+    mocks.fetchFemaDisasterDeclarations.mockResolvedValue({
+      femaDisasterDeclarationStatus: 'RECENT_DECLARATIONS_FOUND',
+      femaRecentDisasterDeclarations: [{ disasterNumber: 4834, declarationDate: '2024-10-11T00:00:00.000Z', incidentType: 'Hurricane' }],
+    })
     mocks.fetchNwiWetlands.mockResolvedValue({ wetlandsNwiStatus: 'NO_MAPPED_FEATURE' })
     mocks.fetchSsurgoMapUnit.mockResolvedValue({ soilMapUnitKey: '627422', soilMapUnitName: 'Gila loam', soilFarmlandClassification: 'All areas are prime farmland' })
     mocks.fetchUsgsElevation.mockResolvedValue({ elevationFeet: 46.9 })
@@ -111,6 +120,23 @@ describe('parcel enrichment cache provenance', () => {
     }))
   })
 
+  it('caches the exact county-level OpenFEMA result without requiring coordinates', async () => {
+    const result = await enrichParcel('0002340282', '12127', undefined, undefined, 'tenant-1')
+
+    expect(result.errors).toEqual([])
+    expect(mocks.fetchFemaDisasterDeclarations).toHaveBeenCalledWith('12127')
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'fema_disaster_declarations',
+        field: 'femaDisasterDeclarationStatus',
+        metadata: {
+          source: 'fema_disaster_declarations',
+          sourceUrl: 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries',
+        },
+      }),
+    }))
+  })
+
   it('uses the official Volusia parcel source and retires the no-source FL DOR fetch', async () => {
     const result = await enrichParcel('0002340282', '12127', undefined, undefined, 'tenant-1')
 
@@ -136,7 +162,7 @@ describe('parcel enrichment cache provenance', () => {
   it('reports unsupported Florida parcel coverage without pretending to make an API call', async () => {
     const result = await enrichParcel('1234567890', '12095', undefined, undefined, 'tenant-1')
 
-    expect(result.apiCalls).toBe(1)
+    expect(result.apiCalls).toBe(2)
     expect(result.errors).toEqual([])
     expect(result.gaps).toContainEqual({
       source: 'fl_dor',

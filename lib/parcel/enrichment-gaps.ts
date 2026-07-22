@@ -5,6 +5,7 @@ const SOURCE_LABELS: Record<string, string> = {
   regrid: 'parcel baseline',
   census_acs: 'Census demographic context',
   fema_nfhl: 'FEMA flood map',
+  fema_disaster_declarations: 'FEMA county disaster declarations',
   fws_nwi: 'National Wetlands Inventory map',
   usda_ssurgo: 'USDA soil map unit',
   usgs_3dep: 'USGS ground elevation',
