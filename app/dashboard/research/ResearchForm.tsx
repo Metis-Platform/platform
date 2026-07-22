@@ -9,6 +9,7 @@ import { researchDealHref } from '@/lib/research-deal-handoff'
 import { PARCEL_FACT_PROVENANCE_LABEL, parcelFactProvenance, parcelFactTimestampLabel } from '@/lib/parcel/provenance'
 import { parcelEnrichmentGapLabels } from '@/lib/parcel/enrichment-gaps'
 import type { BidGate } from '@/lib/parcel/bid-gates'
+import type { InvestmentDecision } from '@/lib/investment-decision/decision'
 
 type Jurisdiction = {
   id: string
@@ -23,6 +24,7 @@ type ResearchResponse = {
   results: ExitResult[]
   mao: MaoResult[]
   bidGates: BidGate[]
+  decision: InvestmentDecision
   jurisdiction: { id: string; state: string; county: string } | null
   handoff?: { id: string; expiresAt: string } | null
   location?: {
@@ -447,6 +449,39 @@ export default function ResearchForm({ jurisdictions }: Props) {
             </div>
           )}
 
+          <section className={`rounded-xl border p-6 ${
+            data.decision.status === 'PASS' ? 'border-red-200 bg-red-50'
+            : data.decision.status === 'PURSUE' ? 'border-emerald-200 bg-emerald-50'
+            : 'border-amber-200 bg-amber-50'
+          }`}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Recommended action</p>
+                <h2 className="mt-1 text-lg font-semibold text-zinc-900">{decisionLabel(data.decision.status)}</h2>
+                {data.decision.recommendedExitLabel && (
+                  <p className="mt-1 text-sm font-medium text-zinc-800">Best current exit: {data.decision.recommendedExitLabel}</p>
+                )}
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                data.decision.status === 'PASS' ? 'bg-red-100 text-red-700'
+                : data.decision.status === 'PURSUE' ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-100 text-amber-700'
+              }`}>{decisionLabel(data.decision.status)}</span>
+            </div>
+            <p className="mt-3 text-sm text-zinc-800">{data.decision.summary}</p>
+            <ul className="mt-3 space-y-1 text-xs text-zinc-700">
+              {data.decision.reasons.map(reason => <li key={reason}>• {reason}</li>)}
+            </ul>
+            {data.decision.bidGuidance ? (
+              <p className="mt-3 rounded-lg border border-zinc-200 bg-white/70 px-3 py-2 text-xs text-zinc-700">
+                Raw-land bid range: {fmtCurrency(data.decision.bidGuidance.conservative)} conservative · {fmtCurrency(data.decision.bidGuidance.moderate)} moderate · {fmtCurrency(data.decision.bidGuidance.aggressive)} aggressive. {data.decision.bidGuidance.basis}
+              </p>
+            ) : (
+              <p className="mt-3 text-xs text-zinc-600">No bid range is shown until raw-land classification and comparable evidence support it.</p>
+            )}
+            <p className="mt-3 text-xs font-medium text-zinc-800">Next action: {data.decision.nextAction}</p>
+          </section>
+
           <section className="rounded-xl border border-zinc-200 bg-white p-6">
             <div className="mb-4">
               <h2 className="text-sm font-semibold text-zinc-900">Bid research gates</h2>
@@ -808,6 +843,15 @@ function ParcelFact({
       )}
     </div>
   )
+}
+
+function decisionLabel(status: InvestmentDecision['status']): string {
+  switch (status) {
+    case 'PASS': return 'Pass'
+    case 'PURSUE': return 'Pursue'
+    case 'VERIFY_BEFORE_ACTION': return 'Verify before action'
+    case 'INSUFFICIENT_EVIDENCE': return 'Insufficient evidence'
+  }
 }
 
 function fmtCurrency(value: number): string {
