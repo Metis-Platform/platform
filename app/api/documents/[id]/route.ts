@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
 import { deleteObject } from '@/lib/r2'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { userId, orgId } = await auth()
@@ -23,7 +24,18 @@ export async function DELETE(
 
   // Delete from R2 first, then DB — if R2 fails we won't have an orphan DB record
   await deleteObject(doc.r2Key)
-  await db.document.delete({ where: { id } })
+  await db.$transaction(async transaction => {
+    await transaction.document.delete({ where: { id: doc.id } })
+    await transaction.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'DOCUMENT_DELETED',
+        meta: { documentId: doc.id, dealId: doc.dealId },
+      },
+    })
+  })
 
   return new NextResponse(null, { status: 204 })
 }
