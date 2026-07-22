@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   compareJurisdictionCoveragePriority,
+  deriveJurisdictionLaunchTier,
+  summarizeJurisdictionLaunchTiers,
   summarizeJurisdictionCoverage,
   type JurisdictionCoverageInput,
 } from './jurisdiction-coverage'
@@ -66,5 +68,30 @@ describe('jurisdiction coverage', () => {
 
     expect([available, tracked, requested].sort(compareJurisdictionCoveragePriority).map(row => row.id))
       .toEqual(['a', 'b', 'c'])
+  })
+
+  it('does not elevate stale, blocked, partial, or unauthoritative evidence above Tier C', () => {
+    expect(deriveJurisdictionLaunchTier({
+      criticalQuestionCount: 4, verifiedCurrentCriticalClaimCount: 3,
+      verifiedSourceCount: 1, staleClaimCount: 0, blockedClaimCount: 0,
+    })).toBe('TIER_C')
+    expect(deriveJurisdictionLaunchTier({
+      criticalQuestionCount: 4, verifiedCurrentCriticalClaimCount: 4,
+      verifiedSourceCount: 1, staleClaimCount: 1, blockedClaimCount: 0,
+    })).toBe('TIER_C')
+    expect(deriveJurisdictionLaunchTier({
+      criticalQuestionCount: 4, verifiedCurrentCriticalClaimCount: 4,
+      verifiedSourceCount: 0, staleClaimCount: 0, blockedClaimCount: 0,
+    })).toBe('TIER_C')
+  })
+
+  it('reports demand-weighted Tier B readiness without substituting county count for demand', () => {
+    const tierB = { ...summarizeJurisdictionCoverage({ ...base, id: 'b', researchRequestCount: 1 }), launchTier: 'TIER_B' as const }
+    const tierC = { ...summarizeJurisdictionCoverage({ ...base, id: 'c', trackedPropertyCount: 9 }), launchTier: 'TIER_C' as const }
+
+    expect(summarizeJurisdictionLaunchTiers([tierB, tierC])).toMatchObject({
+      tierBCountyCount: 1, tierCCountyCount: 1,
+      tierBDemandCount: 1, tierCDemandCount: 9, tierBDemandShare: 0.1,
+    })
   })
 })

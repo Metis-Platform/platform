@@ -47,6 +47,19 @@ export type JurisdictionCoverageRow = {
   verifiedSourceCount: number
   trackedPropertyCount: number
   researchRequestCount: number
+  criticalQuestionCount: number
+  verifiedCurrentCriticalClaimCount: number
+  launchTier: JurisdictionLaunchTier
+}
+
+export type JurisdictionLaunchTier = 'TIER_B' | 'TIER_C'
+
+export type JurisdictionLaunchTierSummary = {
+  tierBCountyCount: number
+  tierCCountyCount: number
+  tierBDemandCount: number
+  tierCDemandCount: number
+  tierBDemandShare: number | null
 }
 
 export type JurisdictionCoverageInput = {
@@ -108,6 +121,10 @@ export function summarizeJurisdictionCoverage(
   const now = input.now ?? new Date()
   let staleClaimCount = 0
   let blockedClaimCount = 0
+  const criticalQuestionKeys = new Set(JURISDICTION_QUESTIONS
+    .filter(question => question.risk === 'CRITICAL')
+    .map(question => `${question.section}.${question.fieldKey}`))
+  let verifiedCurrentCriticalClaimCount = 0
   for (const key of trustedFields) {
     const claim = activeByField.get(key)!
     if (
@@ -123,7 +140,26 @@ export function summarizeJurisdictionCoverage(
       !claim.freshness ||
       claimFreshnessStatus(claim.freshness, now) === 'STALE'
     ) staleClaimCount += 1
+
+    if (
+      criticalQuestionKeys.has(key) &&
+      claim.verificationState === 'VERIFIED' &&
+      claim.freshness != null &&
+      claimFreshnessStatus(claim.freshness, now) === 'CURRENT' &&
+      !input.pendingCandidates.some(candidate =>
+        `${candidate.section}.${candidate.fieldKey}` === key &&
+        claimValuesConflict(claim, extractedClaimValue(candidate.extractedValue)),
+      )
+    ) verifiedCurrentCriticalClaimCount += 1
   }
+
+  const launchTier = deriveJurisdictionLaunchTier({
+    criticalQuestionCount: criticalQuestionKeys.size,
+    verifiedCurrentCriticalClaimCount,
+    verifiedSourceCount: input.verifiedSourceCount,
+    staleClaimCount,
+    blockedClaimCount,
+  })
 
   return {
     id: input.id,
@@ -144,6 +180,40 @@ export function summarizeJurisdictionCoverage(
     verifiedSourceCount: input.verifiedSourceCount,
     trackedPropertyCount: input.trackedPropertyCount,
     researchRequestCount: input.researchRequestCount,
+    criticalQuestionCount: criticalQuestionKeys.size,
+    verifiedCurrentCriticalClaimCount,
+    launchTier,
+  }
+}
+
+export function deriveJurisdictionLaunchTier(input: {
+  criticalQuestionCount: number
+  verifiedCurrentCriticalClaimCount: number
+  verifiedSourceCount: number
+  staleClaimCount: number
+  blockedClaimCount: number
+}): JurisdictionLaunchTier {
+  if (
+    input.criticalQuestionCount > 0 &&
+    input.verifiedCurrentCriticalClaimCount === input.criticalQuestionCount &&
+    input.verifiedSourceCount > 0 &&
+    input.staleClaimCount === 0 &&
+    input.blockedClaimCount === 0
+  ) return 'TIER_B'
+  return 'TIER_C'
+}
+
+export function summarizeJurisdictionLaunchTiers(rows: JurisdictionCoverageRow[]): JurisdictionLaunchTierSummary {
+  const tierBRows = rows.filter(row => row.launchTier === 'TIER_B')
+  const demand = (row: JurisdictionCoverageRow) => row.researchRequestCount + row.trackedPropertyCount
+  const tierBDemandCount = tierBRows.reduce((sum, row) => sum + demand(row), 0)
+  const totalDemand = rows.reduce((sum, row) => sum + demand(row), 0)
+  return {
+    tierBCountyCount: tierBRows.length,
+    tierCCountyCount: rows.length - tierBRows.length,
+    tierBDemandCount,
+    tierCDemandCount: totalDemand - tierBDemandCount,
+    tierBDemandShare: totalDemand === 0 ? null : tierBDemandCount / totalDemand,
   }
 }
 
