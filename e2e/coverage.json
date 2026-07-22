@@ -529,6 +529,21 @@
         "persistedOutcome": "The fixture deal records correlated disposition/default events containing only deal/note identity; a note belonging to any other deal is refused.",
         "cleanup": "The integration fixture reset restores disposition/note state and removes related audit evidence."
       }
+    },
+    {
+      "id": "analyst-create-delete-land-comp",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/land-comp.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated Land deal fixture and deterministic comp/audit cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "LAND_COMP_CREATED and LAND_COMP_DELETED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureLandDealId}",
+        "actions": [{ "userAction": "Add a fixture-safe raw land comp, then delete it", "expectedRequest": "Land Comp server actions createLandComp and deleteLandComp" }],
+        "persistedOutcome": "The fixture deal records correlated create/delete events containing only deal/comp identity; pricing and notes are excluded from audit metadata.",
+        "cleanup": "The integration fixture reset removes any fixture comp and related audit events."
+      }
     }
   ]
 }

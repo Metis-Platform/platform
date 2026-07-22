@@ -3,8 +3,10 @@
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { hasStrategy } from '@/lib/entitlements'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type LandCompFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -43,20 +45,26 @@ export async function createLandComp(
   if (!deal) return { message: 'Deal not found.' }
 
   const d = parsed.data
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
-    await db.landComp.create({
-      data: {
-        dealId,
-        tenantId:  tenant.id,
-        address:   d.address,
-        apn:       d.apn,
-        acres:     d.acres,
-        salePrice: d.salePrice,
-        saleDate:  new Date(`${d.saleDate}T12:00:00.000Z`),
-        sourceUrl: d.sourceUrl,
-        notes:     d.notes || null,
-      },
+    await db.$transaction(async tx => {
+      const comp = await tx.landComp.create({
+        data: {
+          dealId,
+          tenantId: tenant.id,
+          address: d.address,
+          apn: d.apn,
+          acres: d.acres,
+          salePrice: d.salePrice,
+          saleDate: new Date(`${d.saleDate}T12:00:00.000Z`),
+          sourceUrl: d.sourceUrl,
+          notes: d.notes || null,
+        },
+      })
+      await tx.auditEvent.create({
+        data: { tenantId: tenant.id, userId, requestId, action: 'LAND_COMP_CREATED', meta: { dealId, compId: comp.id } },
+      })
     })
   } catch (err) {
     console.error('[createLandComp]', err)
@@ -78,6 +86,13 @@ export async function deleteLandComp(dealId: string, compId: string): Promise<vo
   const tenant = await db.tenant.findUnique({ where: { clerkOrgId: orgId } })
   if (!tenant) return
 
-  await db.landComp.deleteMany({ where: { id: compId, dealId, tenantId: tenant.id } })
+  const requestId = requestIdFromHeaders(await headers())
+  await db.$transaction(async tx => {
+    const deleted = await tx.landComp.deleteMany({ where: { id: compId, dealId, tenantId: tenant.id } })
+    if (deleted.count !== 1) return
+    await tx.auditEvent.create({
+      data: { tenantId: tenant.id, userId, requestId, action: 'LAND_COMP_DELETED', meta: { dealId, compId } },
+    })
+  })
   revalidatePath(`/dashboard/deals/${dealId}`)
 }
