@@ -3,9 +3,11 @@
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { emitAuditEvent } from '@/lib/audit'
 import { hasStrategy } from '@/lib/entitlements'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 export type LandNoteFormState = { errors?: Record<string, string[]>; message?: string }
 
@@ -57,24 +59,43 @@ export async function createLandNote(
 
   const d = parsed.data
   const buyerContactId = (formData.get('buyerContactId') as string)?.trim() || null
+  if (buyerContactId) {
+    const buyer = await db.contact.findFirst({
+      where: { id: buyerContactId, tenantId: tenant.id, type: 'BUYER' },
+      select: { id: true },
+    })
+    if (!buyer) return { message: 'Buyer not found.' }
+  }
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
-    await db.landNote.create({
-      data: {
-        dealId,
-        tenantId:        tenant.id,
-        buyerContactId,
-        buyerName:       d.buyerName ?? null,
-        buyerEmail:      d.buyerEmail ?? null,
-        buyerPhone:      d.buyerPhone ?? null,
-        principal:       d.principal,
-        interestRate:    d.interestRate / 100, // store as fraction
-        termMonths:      d.termMonths,
-        paymentAmount:   d.paymentAmount,
-        firstPaymentDate: new Date(`${d.firstPaymentDate}T12:00:00.000Z`),
-        balance:         d.principal, // starts at full principal
-        notes:           d.notes || null,
-      },
+    await db.$transaction(async tx => {
+      const note = await tx.landNote.create({
+        data: {
+          dealId,
+          tenantId:        tenant.id,
+          buyerContactId,
+          buyerName:       d.buyerName ?? null,
+          buyerEmail:      d.buyerEmail ?? null,
+          buyerPhone:      d.buyerPhone ?? null,
+          principal:       d.principal,
+          interestRate:    d.interestRate / 100, // store as fraction
+          termMonths:      d.termMonths,
+          paymentAmount:   d.paymentAmount,
+          firstPaymentDate: new Date(`${d.firstPaymentDate}T12:00:00.000Z`),
+          balance:         d.principal, // starts at full principal
+          notes:           d.notes || null,
+        },
+      })
+      await tx.auditEvent.create({
+        data: {
+          tenantId: tenant.id,
+          userId,
+          requestId,
+          action: 'LAND_NOTE_CREATED',
+          meta: { dealId, noteId: note.id },
+        },
+      })
     })
   } catch (err) {
     console.error('[createLandNote]', err)

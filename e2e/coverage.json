@@ -434,6 +434,21 @@
         "persistedOutcome": "The fixture deal clears its linked buyer with a correlated BUYER_UNLINKED_FROM_DEAL event containing only deal/contact identity.",
         "cleanup": "The integration fixture reset restores or removes the fixture relation and related audit event."
       }
+    },
+    {
+      "id": "analyst-create-land-note",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/land-note.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture with a Land deal, same-tenant buyer, and deterministic note/audit cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "LAND_NOTE_CREATED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureLandDealId}",
+        "actions": [{ "userAction": "Enter fixture-safe seller-finance details, select a same-tenant buyer, and save", "expectedRequest": "Land Note create server action" }],
+        "persistedOutcome": "The fixture Land deal receives a note only when the selected buyer is tenant-owned, with a correlated LAND_NOTE_CREATED event containing only deal/note identity.",
+        "cleanup": "The integration fixture reset removes the fixture note and related audit event."
+      }
     }
   ]
 }
