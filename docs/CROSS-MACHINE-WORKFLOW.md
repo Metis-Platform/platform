@@ -15,10 +15,12 @@ npm run context:check
 ```
 
 Configure required service credentials outside Git. Use `.env.example` as the variable-name
-checklist; never copy secret values through a commit or chat. Each machine receives its own
-revocable, non-production credential set from the approved secret manager. A lost laptop, WSL
-installation, Codespace, or VPS is handled by revoking that machine's credentials—not by rotating
-or sharing a production secret.
+checklist; never copy secret values through a commit or chat. LastPass is the approved human-access
+vault for Metis development: each machine receives its own revocable, non-production credential
+set from the Metis QA / Development folder. A lost laptop, WSL installation, Codespace, or VPS is
+handled by revoking that machine's credentials—not by rotating or sharing a production secret. See
+the [QA provisioning runbook](QA-PROVISIONING-RUNBOOK.md) for the required service identities and
+browser-test-user setup.
 
 `APP_ENV=production` is prohibited for local work. Until isolated QA services are provisioned,
 the current live stack is shared integration and mutation/browser tests remain blocked by #289.
