@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { db } from '@/lib/db'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const BodySchema = z.object({
   dealId:   z.string(),
@@ -41,8 +42,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid key' }, { status: 400 })
   }
 
-  const doc = await db.document.create({
-    data: { tenantId: tenant.id, dealId, fileName, fileSize, mimeType, r2Key, docType },
+  const doc = await db.$transaction(async transaction => {
+    const created = await transaction.document.create({
+      data: { tenantId: tenant.id, dealId, fileName, fileSize, mimeType, r2Key, docType },
+    })
+    await transaction.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'DOCUMENT_CREATED',
+        // Document metadata can expose investor information; retain identity only.
+        meta: { documentId: created.id, dealId },
+      },
+    })
+    return created
   })
 
   return NextResponse.json(doc, { status: 201 })

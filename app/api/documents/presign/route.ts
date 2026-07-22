@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { randomUUID } from 'crypto'
 import { syncUserToDatabase } from '@/lib/sync-user'
 import { getUploadUrl } from '@/lib/r2'
+import { db } from '@/lib/db'
 
 const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
@@ -42,6 +43,9 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { dealId, fileName, mimeType, docType } = parsed.data
+
+  const deal = await db.deal.findFirst({ where: { id: dealId, tenantId: tenant.id }, select: { id: true } })
+  if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
   if (!ALLOWED_MIME_TYPES.has(mimeType)) {
     return NextResponse.json({ error: 'File type not supported' }, { status: 400 })
