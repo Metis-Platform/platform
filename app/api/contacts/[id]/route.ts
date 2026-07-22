@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const updateSchema = z.object({
   type: z.enum(['OWNER','ATTORNEY','AGENT','LENDER','BUYER','SELLER','AGENCY','CONTRACTOR','TENANT','VENDOR','OTHER']).optional(),
@@ -43,25 +44,57 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { tenant } = synced
   const { id } = await params
 
-  const existing = await db.contact.findUnique({ where: { id, tenantId: tenant.id } })
-  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
   const parsed = updateSchema.safeParse(await req.json())
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const contact = await db.contact.update({ where: { id }, data: parsed.data })
+  const contact = await db.$transaction(async transaction => {
+    const existing = await transaction.contact.findFirst({
+      where: { id, tenantId: tenant.id },
+      select: { id: true },
+    })
+    if (!existing) return null
+
+    const updated = await transaction.contact.update({ where: { id: existing.id }, data: parsed.data })
+    await transaction.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'CONTACT_UPDATED',
+        meta: { contactId: existing.id },
+      },
+    })
+    return updated
+  })
+  if (!contact) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ contact })
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const synced = await syncUserToDatabase()
   if (!synced) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { tenant } = synced
   const { id } = await params
 
-  const existing = await db.contact.findUnique({ where: { id, tenantId: tenant.id } })
-  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const deleted = await db.$transaction(async transaction => {
+    const existing = await transaction.contact.findFirst({
+      where: { id, tenantId: tenant.id },
+      select: { id: true },
+    })
+    if (!existing) return false
 
-  await db.contact.delete({ where: { id } })
+    await transaction.contact.delete({ where: { id: existing.id } })
+    await transaction.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'CONTACT_DELETED',
+        meta: { contactId: existing.id },
+      },
+    })
+    return true
+  })
+  if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ ok: true })
 }

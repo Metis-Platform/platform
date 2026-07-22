@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { syncUserToDatabase } from '@/lib/sync-user'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 import type { ContactType, ContactPipelineStage } from '@/app/generated/prisma'
 
 const CONTACT_TYPES: ContactType[] = ['OWNER','ATTORNEY','AGENT','LENDER','BUYER','SELLER','AGENCY','CONTRACTOR','TENANT','VENDOR','OTHER']
@@ -67,8 +68,21 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { type, pipelineStage, ...rest } = parsed.data
-  const contact = await db.contact.create({
-    data: { tenantId: tenant.id, type, pipelineStage: pipelineStage ?? 'LEAD', ...rest },
+  const contact = await db.$transaction(async transaction => {
+    const created = await transaction.contact.create({
+      data: { tenantId: tenant.id, type, pipelineStage: pipelineStage ?? 'LEAD', ...rest },
+    })
+    await transaction.auditEvent.create({
+      data: {
+        tenantId: tenant.id,
+        userId: synced.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'CONTACT_CREATED',
+        // Contact fields are PII and notes can be sensitive; retain identity only.
+        meta: { contactId: created.id },
+      },
+    })
+    return created
   })
 
   return NextResponse.json({ contact }, { status: 201 })
