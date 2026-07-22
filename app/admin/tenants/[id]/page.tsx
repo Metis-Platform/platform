@@ -21,6 +21,8 @@ const ACTION_ICON: Record<string, string> = {
   CONTACT_CREATED: '👤',
   CONTACT_UPDATED: '👤',
   CONTACT_DELETED: '👤',
+  CONTACT_ACTIVITY_CREATED: '💬',
+  CONTACT_ACTIVITY_DELETED: '💬',
   LOGIN: '🔑',
 }
 
@@ -38,6 +40,8 @@ const ACTION_LABEL: Record<string, string> = {
   CONTACT_CREATED: 'Contact created',
   CONTACT_UPDATED: 'Contact updated',
   CONTACT_DELETED: 'Contact deleted',
+  CONTACT_ACTIVITY_CREATED: 'Contact activity created',
+  CONTACT_ACTIVITY_DELETED: 'Contact activity deleted',
   LOGIN: 'Logged in',
 }
 
