@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getCurrentUser, hasRole } from '@/lib/auth'
+import { requestIdFromHeaders } from '@/lib/request-correlation'
 
 const CommentSchema = z.object({
   body: z.string().trim().min(1).max(2000),
@@ -33,13 +34,27 @@ export async function POST(
   const parsed = CommentSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const comment = await db.taskComment.create({
-    data: {
-      taskId: task.id,
-      userId: result.user.id,
-      body: parsed.data.body,
-    },
-    include: { user: { select: { id: true, name: true, email: true } } },
+  const comment = await db.$transaction(async (transaction) => {
+    const created = await transaction.taskComment.create({
+      data: {
+        taskId: task.id,
+        userId: result.user.id,
+        body: parsed.data.body,
+      },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    })
+
+    await transaction.auditEvent.create({
+      data: {
+        tenantId: result.tenant.id,
+        userId: result.user.id,
+        requestId: requestIdFromHeaders(req.headers),
+        action: 'TASK_COMMENT_CREATED',
+        meta: { taskId: task.id, commentId: created.id },
+      },
+    })
+
+    return created
   })
 
   return NextResponse.json({
