@@ -12,6 +12,11 @@ import {
   HARRIS_FIPS,
   harrisParcelQueryUrl,
 } from './sources/harris-property-appraiser'
+import {
+  fetchOfficialOrangeParcelFacts,
+  orangeParcelQueryUrl,
+  ORANGE_FIPS,
+} from './sources/orange-property-appraiser'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
@@ -263,6 +268,21 @@ function parcelBaselinePlan(apnNormalized: string, fipsCounty: string): SourcePl
       sourceUrl,
       fields: [...PARCEL_FACT_FIELDS],
       fetch: async () => fetchOfficialHarrisParcelFacts({ apn: apnNormalized, fipsCounty }),
+    }
+  }
+
+  if (fipsCounty === ORANGE_FIPS) {
+    let sourceUrl: string | undefined
+    try {
+      sourceUrl = orangeParcelQueryUrl(apnNormalized)
+    } catch {
+      // The fetch path reports the invalid identifier as a fail-closed source gap.
+    }
+    return {
+      source: 'orange_property_appraiser',
+      sourceUrl,
+      fields: [...PARCEL_FACT_FIELDS],
+      fetch: async () => fetchOfficialOrangeParcelFacts({ apn: apnNormalized, fipsCounty }),
     }
   }
 

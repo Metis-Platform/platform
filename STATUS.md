@@ -48,7 +48,8 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Evidence-based coverage tiers (#502) | Merged — PR #503: the coverage dashboard derives Tier B only from a complete current, unblocked, verified critical-claim bundle with a verified authority and reports demand-weighted readiness. |
 | Canonical county acceptance (#504) | Merged — PR #505: an append-only, super-admin-only acceptance record stores the exact contract version, case reference, immutable evidence link, outcome, reviewer/time, and nonsensitive summary. Only a current passed record layered on live Tier B evidence derives Tier A; replacements, failures, and old contracts cannot. |
 | Migration connectivity resilience (#506) | Merged — PR #507: after the #505 migration workflow hit a transient Neon P1001 and succeeded unchanged on retry, the main-only deploy now retries connectivity failures only. |
-| Apache County AZ discovery candidates (#508) | In progress: demand-backed Apache County has a tracked property but no sources; exact official review-only candidates are being added with municipal, tribal, and other authority limitations retained. |
+| Apache County AZ discovery candidates (#508) | Merged — PR #509: demand-backed Apache County now has exact official review-only candidates with municipal, tribal, and other authority limitations retained. |
+| Orange County FL parcel baseline (#510) | Complete in this branch: the official OCPA service supplies parcel interior location, acreage, assessed value, land-use code, and conservative improvement evidence with exact query provenance; it never supplies zoning, market value, permitting, or buildability conclusions. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
@@ -209,7 +210,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 ## Next Up
 
 1. Finish the founding Volusia acceptance evidence: authoritative frontage/depth, governing zoning scope, and the county/title/permitting nonconforming-lot determination remain unresolved.
-2. Continue demand-driven national and county parcel-source coverage; unsupported Florida counties still have no configured official or commercial parcel baseline.
+2. Continue demand-driven national and county parcel-source coverage; Orange County now has an official OCPA baseline, while unsupported Florida counties still remain explicit gaps.
 3. Complete #295 with fresh-clone macOS and approved remote-Linux acceptance evidence, while owner-authorized QA provisioning remains the blocker for mutation/browser proof.
 
 ---

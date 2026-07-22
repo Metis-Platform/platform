@@ -22,6 +22,7 @@ import {
   type OfficialParcelLocation,
 } from '@/lib/parcel/sources/volusia-property-appraiser'
 import { resolveMaricopaOfficialParcelLocation } from '@/lib/parcel/sources/maricopa-property-assessor'
+import { resolveOrangeOfficialParcelLocation } from '@/lib/parcel/sources/orange-property-appraiser'
 import { resolveCountyLandUseAuthority } from '@/lib/jurisdiction-land-use-authority'
 import { lookupUnincorporatedAuthorityBoundaryClaimIds } from '@/lib/jurisdiction-authority-boundary'
 import { COUNTY_LAND_USE_AUTHORITY_SCOPE_FIELD } from '@/lib/jurisdiction-question-library'
@@ -95,6 +96,10 @@ export async function POST(req: Request) {
         fipsCounty: normalized.fipsCounty,
       })
       officialParcelLocation ??= await resolveMaricopaOfficialParcelLocation({
+        apn: normalized.normalized,
+        fipsCounty: normalized.fipsCounty,
+      })
+      officialParcelLocation ??= await resolveOrangeOfficialParcelLocation({
         apn: normalized.normalized,
         fipsCounty: normalized.fipsCounty,
       })
