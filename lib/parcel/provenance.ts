@@ -2,7 +2,7 @@ import type { ParcelFieldSource } from '@/lib/exit-engine/types'
 
 export type ParcelFactProvenance = 'OFFICIAL' | 'ESTIMATED' | 'MANUAL' | 'UNVERIFIED' | 'MISSING'
 
-const OFFICIAL_PROVIDERS = new Set(['fema_nfhl', 'epa_echo', 'usgs_3dep', 'usgs_3dhp', 'volusia_property_appraiser', 'volusia_arcgis'])
+const OFFICIAL_PROVIDERS = new Set(['fema_nfhl', 'epa_echo', 'usgs_3dep', 'usgs_3dhp', 'volusia_property_appraiser', 'harris_property_appraiser', 'volusia_arcgis'])
 
 export function parcelFactProvenance(
   field: string,

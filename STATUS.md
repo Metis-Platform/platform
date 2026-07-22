@@ -2,7 +2,7 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-21
+> Last updated: 2026-07-22
 
 ---
 
@@ -36,6 +36,8 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Unverified county land-use guard (#426) | The route now also rejects the inverse inference: no Census incorporated-place result is not proof of county authority. Every non-lien exit remains conditional and names the unresolved governing authority until an authority-specific source verifies it; county tax-sale facts remain separate. |
 | Authority save trace coverage (#436) | Authority-scope and unincorporated-boundary publication now write tenant-scoped, request-correlated audit events inside the same transactions as their saved records. The CI-enforced feature-test catalog declares both precise super-admin click/save journeys and cleanup conditions; browser execution remains blocked on isolated QA reset approval (#289). |
 | Read-only browser evidence workflow (#438) | A manually dispatched GitHub Actions workflow now accepts a supplied non-production URL, runs the guarded read-only Playwright suite, and retains HTML/test artifacts even on failure. The guard refuses the production domain; it does not authorize mutation tests. |
+| Land Note buyer isolation (#482) | PR #483 confirms that a Land Note buyer contact belongs to the active tenant and is a BUYER before creating the note; note creation and its safe request-correlated audit event are atomic. |
+| Harris County official parcel baseline (#484) | In progress: the official HCAD GIS layer is reachable from the app runtime and is being added as a tenant-cached, non-PII parcel baseline for Harris County, TX. It will expose only lot area and appraised value with exact query provenance; it will not infer market value, zoning, authority, or improvement state. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---

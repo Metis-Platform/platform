@@ -24,4 +24,9 @@ describe('parcel enrichment data gaps', () => {
     expect(parcelEnrichmentGapLabels([], [{ source: 'volusia_property_appraiser' }]))
       .toEqual(['Volusia Property Appraiser parcel facts'])
   })
+
+  it('names an incomplete official Harris parcel response', () => {
+    expect(parcelEnrichmentGapLabels([], [{ source: 'harris_property_appraiser' }]))
+      .toEqual(['Harris Central Appraisal District parcel facts'])
+  })
 })

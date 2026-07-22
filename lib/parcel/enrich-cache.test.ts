@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   fetchEpaFlags: vi.fn(),
   fetchDemographics: vi.fn(),
   fetchOfficialVolusiaParcelFacts: vi.fn(),
+  fetchOfficialHarrisParcelFacts: vi.fn(),
   fetchFlDorParcel: vi.fn(),
 }))
 
@@ -49,6 +50,11 @@ vi.mock('./sources/volusia-property-appraiser', () => ({
   volusiaParcelQueryUrl: (apn: string) => `https://maps5.vcgov.org/arcgis/rest/services/Basemap/MapServer/6/query?where=ALTKEY%3D${Number(apn)}`,
   fetchOfficialVolusiaParcelFacts: mocks.fetchOfficialVolusiaParcelFacts,
 }))
+vi.mock('./sources/harris-property-appraiser', () => ({
+  HARRIS_FIPS: '48201',
+  harrisParcelQueryUrl: (apn: string) => `https://services.arcgis.com/su8ic9KbA7PYVxPS/arcgis/rest/services/Harris_County_Parcels/FeatureServer/1/query?where=HCAD_NUM%3D%27${apn}%27`,
+  fetchOfficialHarrisParcelFacts: mocks.fetchOfficialHarrisParcelFacts,
+}))
 vi.mock('./sources/census-acs', () => ({
   CENSUS_ACS_2024_SOURCE_URL: 'https://api.census.gov/data/2024/acs/acs5',
   fetchDemographics: mocks.fetchDemographics,
@@ -82,6 +88,9 @@ describe('parcel enrichment cache provenance', () => {
     mocks.fetchDemographics.mockResolvedValue({ medianHouseholdIncome: 80_000 })
     mocks.fetchOfficialVolusiaParcelFacts.mockResolvedValue({
       lotSizeSqFt: 5_000, lotSizeAcres: 0.1148, landUseCode: 'VACANT RES', improved: false,
+    })
+    mocks.fetchOfficialHarrisParcelFacts.mockResolvedValue({
+      lotSizeSqFt: 11_988, lotSizeAcres: 0.2752, assessedValue: 77_920,
     })
   })
 
@@ -135,6 +144,26 @@ describe('parcel enrichment cache provenance', () => {
     })
     expect(mocks.fetchOfficialVolusiaParcelFacts).not.toHaveBeenCalled()
     expect(mocks.fetchFlDorParcel).not.toHaveBeenCalled()
+  })
+
+  it('uses the official Harris parcel baseline and preserves the exact query provenance', async () => {
+    const result = await enrichParcel('0221090010009', '48201', undefined, undefined, 'tenant-1')
+
+    expect(mocks.fetchOfficialHarrisParcelFacts).toHaveBeenCalledWith({ apn: '0221090010009', fipsCounty: '48201' })
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        source: 'harris_property_appraiser',
+        field: 'assessedValue',
+        normalized: 77_920,
+        metadata: {
+          source: 'harris_property_appraiser',
+          sourceUrl: 'https://services.arcgis.com/su8ic9KbA7PYVxPS/arcgis/rest/services/Harris_County_Parcels/FeatureServer/1/query?where=HCAD_NUM%3D%270221090010009%27',
+        },
+      }),
+    }))
+    expect(result.gaps).toContainEqual({
+      source: 'harris_property_appraiser', fields: ['assessedYear', 'landUseCode', 'improved', 'marketValueEstimate'],
+    })
   })
 
   it('reports empty and partial source output without mislabeling explicit negative evidence', async () => {

@@ -6,6 +6,11 @@ import { EPA_ECHO_CWA_SOURCE_URL, fetchEpaFlags } from './sources/epa-echo'
 import { FEMA_NFHL_SOURCE_URL, fetchFloodZone } from './sources/fema-nfhl'
 import { FWS_NWI_SOURCE_URL, fetchNwiWetlands } from './sources/fws-nwi'
 import { fetchElectricUtility, HIFLD_ELECTRIC_RETAIL_TERRITORIES_SOURCE_URL } from './sources/hifld-electric'
+import {
+  fetchOfficialHarrisParcelFacts,
+  HARRIS_FIPS,
+  harrisParcelQueryUrl,
+} from './sources/harris-property-appraiser'
 import { fetchRegridParcel } from './sources/regrid'
 import { SOURCE_TTL_HOURS, type ParcelSourceName } from './sources/types'
 import { USDA_SSURGO_SOURCE_URL, fetchSsurgoMapUnit } from './sources/usda-ssurgo'
@@ -236,6 +241,21 @@ function parcelBaselinePlan(apnNormalized: string, fipsCounty: string): SourcePl
       sourceUrl,
       fields: [...PARCEL_FACT_FIELDS],
       fetch: async () => fetchOfficialVolusiaParcelFacts({ apn: apnNormalized, fipsCounty }),
+    }
+  }
+
+  if (fipsCounty === HARRIS_FIPS) {
+    let sourceUrl: string | undefined
+    try {
+      sourceUrl = harrisParcelQueryUrl(apnNormalized)
+    } catch {
+      // The fetch path reports the invalid identifier as a fail-closed source gap.
+    }
+    return {
+      source: 'harris_property_appraiser',
+      sourceUrl,
+      fields: [...PARCEL_FACT_FIELDS],
+      fetch: async () => fetchOfficialHarrisParcelFacts({ apn: apnNormalized, fipsCounty }),
     }
   }
 
