@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "scope": "server-action-modules",
+  "entries": [
+    { "target": "lib/actions/ai-extract.ts", "status": "deferred", "issue": "#512", "reason": "AI extraction requires a disposable provider and document fixture." },
+    { "target": "lib/actions/buy-hold.ts", "status": "deferred", "issue": "#512", "reason": "Deal lifecycle needs action-level audit coverage." },
+    { "target": "lib/actions/buyer-blast.ts", "status": "deferred", "issue": "#512", "reason": "Outbound delivery needs a sink fixture." },
+    { "target": "lib/actions/buyer.ts", "status": "deferred", "issue": "#512", "reason": "Existing buyer journeys need direct server-action execution proof." },
+    { "target": "lib/actions/contact.ts", "status": "deferred", "issue": "#512", "reason": "Contact UI uses server actions and needs direct audit correlation." },
+    { "target": "lib/actions/events.ts", "status": "deferred", "issue": "#512", "reason": "Event editing needs a deterministic fixture." },
+    { "target": "lib/actions/fix-flip.ts", "status": "deferred", "issue": "#512", "reason": "Deal lifecycle needs action-level audit coverage." },
+    { "target": "lib/actions/land-comp.ts", "status": "deferred", "issue": "#512", "reason": "Land comps need deterministic fixture cleanup." },
+    { "target": "lib/actions/land-disposition.ts", "status": "deferred", "issue": "#512", "reason": "Disposition changes need deterministic fixture cleanup." },
+    { "target": "lib/actions/land-note.ts", "status": "deferred", "issue": "#512", "reason": "Only note creation is declared; payment changes remain unverified." },
+    { "target": "lib/actions/land.ts", "status": "deferred", "issue": "#512", "reason": "Deal lifecycle needs action-level audit coverage." },
+    { "target": "lib/actions/lien.ts", "status": "deferred", "issue": "#512", "reason": "Only creation is declared; lifecycle transitions remain unverified." },
+    { "target": "lib/actions/mf-lp.ts", "status": "deferred", "issue": "#512", "reason": "LP operations need deterministic fixture cleanup." },
+    { "target": "lib/actions/multifamily-businessplan.ts", "status": "deferred", "issue": "#512", "reason": "Business-plan saves need fixture and audit proof." },
+    { "target": "lib/actions/multifamily-rentroll.ts", "status": "deferred", "issue": "#512", "reason": "Rent-roll saves need fixture and audit proof." },
+    { "target": "lib/actions/multifamily-t12.ts", "status": "deferred", "issue": "#512", "reason": "T12 saves need fixture and audit proof." },
+    { "target": "lib/actions/multifamily.ts", "status": "deferred", "issue": "#512", "reason": "Deal lifecycle needs action-level audit coverage." },
+    { "target": "lib/actions/note-servicing.ts", "status": "deferred", "issue": "#512", "reason": "Notice delivery and payoff actions need bounded fixtures." },
+    { "target": "lib/actions/rehab-budget.ts", "status": "deferred", "issue": "#512", "reason": "Rehab saves need fixture and audit proof." },
+    { "target": "lib/actions/rental-expenses.ts", "status": "deferred", "issue": "#512", "reason": "Expense saves need fixture and audit proof." },
+    { "target": "lib/actions/rules.ts", "status": "deferred", "issue": "#512", "reason": "Admin rule operations need isolated jurisdiction fixtures." },
+    { "target": "lib/actions/section8.ts", "status": "deferred", "issue": "#512", "reason": "Section 8 saves need fixture and audit proof." },
+    { "target": "lib/actions/wholesale.ts", "status": "deferred", "issue": "#512", "reason": "Deal lifecycle needs action-level audit coverage." }
+  ]
+}
