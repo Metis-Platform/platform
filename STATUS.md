@@ -57,6 +57,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Land Comp trace coverage | Raw Land Comp creation and deletion now write atomic, tenant-scoped, request-correlated evidence containing only deal/comp identity. The catalog declares the create/delete journey and reset cleanup; hosted execution remains blocked by #289. |
 | Tax Lien creation trace coverage | Tax Lien lead, active, and research-handoff creation now record `DEAL_CREATED` atomically with the deal. The event contains only deal identity; APN, address, bid, and notes remain outside audit metadata. |
 | Tax Deed creation trace coverage | Tax Deed lead, active, and research-handoff creation now record `DEAL_CREATED` atomically with the deal. The catalog declares the dedicated Tax Deed save and reset-cleanup journey; hosted execution remains blocked by #289. |
+| Foreclosure creation trace coverage | Foreclosure lead, active, and research-handoff creation now record `DEAL_CREATED` atomically with the deal. The catalog declares the dedicated Foreclosure save and reset-cleanup journey; hosted execution remains blocked by #289. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
