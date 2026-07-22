@@ -60,6 +60,27 @@
       }
     },
     {
+      "id": "investor-trace-tax-lien-lifecycle",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires a reset-safe active tax-lien fixture and deterministic removal of the redemption transaction and audit evidence.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_MARKED_NOT_WON, DEAL_RELISTED_AS_LEAD, LIEN_REDEMPTION_RECORDED, and DEAL_DELETED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureTaxLienDealId}",
+        "actions": [
+          { "userAction": "Mark the fixture lien Not Won, re-list it, record a fixture redemption, then delete it", "expectedRequest": "Tax-lien server actions markNotWon, relistAsLead, recordRedemption, and deleteLien" }
+        ],
+        "persistedOutcome": "Each lifecycle save writes the expected request-correlated audit event with deal/transaction identity only; redemption metadata excludes amount and date.",
+        "cleanup": "The integration fixture reset removes or restores the fixture deal, redemption transaction, and related audit events."
+      }
+    },
+    {
       "id": "investor-run-pre-purchase-research",
       "risk": "critical",
       "mode": "mutation",
