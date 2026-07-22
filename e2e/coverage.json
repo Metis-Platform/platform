@@ -314,6 +314,21 @@
         "persistedOutcome": "The fixture deal records correlated create and delete events for the financial transaction without amount, type, date, or description in audit metadata.",
         "cleanup": "The integration fixture reset removes or restores the transaction and related audit events."
       }
+    },
+    {
+      "id": "analyst-create-update-delete-contact",
+      "risk": "high",
+      "mode": "mutation",
+      "spec": "e2e/contact-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated analyst fixture and deterministic contact cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "CONTACT_CREATED, CONTACT_UPDATED, and CONTACT_DELETED" },
+      "journey": {
+        "entryPoint": "/dashboard/contacts/new",
+        "actions": [{ "userAction": "Create fixture contact details, edit the contact, and delete it", "expectedRequest": "POST /api/contacts, PUT /api/contacts/{fixtureContactId}, then DELETE /api/contacts/{fixtureContactId}" }],
+        "persistedOutcome": "The fixture contact lifecycle has correlated create, update, and delete events without PII, contact stage/type, or notes in audit metadata.",
+        "cleanup": "The integration fixture reset removes or restores the fixture contact and related audit events."
+      }
     }
   ]
 }

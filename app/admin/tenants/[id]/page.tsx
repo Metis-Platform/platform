@@ -18,6 +18,9 @@ const ACTION_ICON: Record<string, string> = {
   TASK_DELETED: '🗑️',
   FINANCIAL_TRANSACTION_CREATED: '💵',
   FINANCIAL_TRANSACTION_DELETED: '💵',
+  CONTACT_CREATED: '👤',
+  CONTACT_UPDATED: '👤',
+  CONTACT_DELETED: '👤',
   LOGIN: '🔑',
 }
 
@@ -32,6 +35,9 @@ const ACTION_LABEL: Record<string, string> = {
   TASK_DELETED: 'Task deleted',
   FINANCIAL_TRANSACTION_CREATED: 'Financial transaction created',
   FINANCIAL_TRANSACTION_DELETED: 'Financial transaction deleted',
+  CONTACT_CREATED: 'Contact created',
+  CONTACT_UPDATED: 'Contact updated',
+  CONTACT_DELETED: 'Contact deleted',
   LOGIN: 'Logged in',
 }
 
