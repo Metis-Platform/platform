@@ -499,6 +499,21 @@
         "persistedOutcome": "The fixture Land deal receives a note only when the selected buyer is tenant-owned, with a correlated LAND_NOTE_CREATED event containing only deal/note identity.",
         "cleanup": "The integration fixture reset removes the fixture note and related audit event."
       }
+    },
+    {
+      "id": "analyst-record-land-note-payment",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/land-note.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires an isolated active Land Note fixture and deterministic payment, balance, and audit cleanup.",
+      "evidence": { "fixtureSet": "integration-v1", "responseHeader": "x-request-id", "auditAction": "NOTE_PAYMENT_LOGGED" },
+      "journey": {
+        "entryPoint": "/dashboard/deals/{fixtureLandDealId}",
+        "actions": [{ "userAction": "Record one fixture-safe Land Note payment", "expectedRequest": "Land Note server action recordPayment" }],
+        "persistedOutcome": "Only a note owned by the fixture deal records a payment, balance update, and correlated NOTE_PAYMENT_LOGGED event containing only deal/note/transaction identity.",
+        "cleanup": "The integration fixture reset restores the note balance and removes the payment transaction and related audit event."
+      }
     }
   ]
 }

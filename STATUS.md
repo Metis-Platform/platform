@@ -51,7 +51,8 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Apache County AZ discovery candidates (#508) | Merged — PR #509: demand-backed Apache County now has exact official review-only candidates with municipal, tribal, and other authority limitations retained. |
 | Orange County FL parcel baseline (#510) | Merged — PR #511: the official OCPA service supplies parcel interior location, acreage, assessed value, land-use code, and conservative improvement evidence with exact query provenance; it never supplies zoning, market value, permitting, or buildability conclusions. |
 | Mutation verification inventory (#512) | Merged — PR #513 inventories every mutating API route and PR #514 inventories server-action modules. This branch tightens that CI guard to every exported server action, so all currently unproven click/save operations are individually deferred with their exact fixture/audit evidence. |
-| Tax-lien lifecycle trace coverage | This branch atomically records opaque request-correlated evidence for Not Won, relist, redemption, and deletion. The feature catalog declares the exact four-save browser journey and cleanup; hosted execution remains blocked by #289. |
+| Tax-lien lifecycle trace coverage | Merged — PR #517 atomically records opaque request-correlated evidence for Not Won, relist, redemption, and deletion. The feature catalog declares the exact four-save browser journey and cleanup; hosted execution remains blocked by #289. |
+| Land Note payment trace coverage | This branch makes payment recording tenant/deal-scoped and atomic with an opaque request-correlated audit event. The catalog declares its independent save journey and cleanup; hosted execution remains blocked by #289. |
 | Verification boundary | Adapter/cache/profile/route tests cover the repaired contract. Hosted writes and authenticated browser mutations remain blocked by #289; official FEMA and public production checks are read-only. |
 
 ---
