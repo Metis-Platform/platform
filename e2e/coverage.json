@@ -81,6 +81,27 @@
       }
     },
     {
+      "id": "investor-create-land-deal",
+      "risk": "critical",
+      "mode": "mutation",
+      "spec": "e2e/deal-lifecycle.spec.ts",
+      "status": "blocked-by-289",
+      "notes": "Requires successful integration preflight and a reset-safe Land fixture.",
+      "evidence": {
+        "fixtureSet": "integration-v1",
+        "responseHeader": "x-request-id",
+        "auditAction": "DEAL_CREATED"
+      },
+      "journey": {
+        "entryPoint": "/dashboard/deals/new?strategy=LAND",
+        "actions": [
+          { "userAction": "Complete the required Land deal form and save", "expectedRequest": "Land server action createLand" }
+        ],
+        "persistedOutcome": "A fixture-tenant Land deal exists and its correlated DEAL_CREATED event contains only deal identity.",
+        "cleanup": "The integration fixture reset removes the created deal and its dependent records."
+      }
+    },
+    {
       "id": "investor-request-parcel-enrichment",
       "risk": "high",
       "mode": "mutation",
