@@ -27,7 +27,7 @@
     { "target": "lib/actions/land-disposition.ts#updateLandDisposition", "status": "covered", "storyId": "analyst-update-land-disposition-and-default-note" },
     { "target": "lib/actions/land-note.ts#createLandNote", "status": "covered", "storyId": "analyst-create-land-note" },
     { "target": "lib/actions/land-note.ts#recordPayment", "status": "covered", "storyId": "analyst-record-land-note-payment" },
-    { "target": "lib/actions/land.ts#createLand", "status": "deferred", "issue": "#512", "reason": "Deal creation needs a reset-safe fixture and direct action audit proof." },
+    { "target": "lib/actions/land.ts#createLand", "status": "covered", "storyId": "investor-create-land-deal" },
     { "target": "lib/actions/land.ts#syncLandFromResearch", "status": "deferred", "issue": "#512", "reason": "Research sync needs a deterministic parcel fixture and audit proof." },
     { "target": "lib/actions/land.ts#updateLand", "status": "deferred", "issue": "#512", "reason": "Deal update needs a reset-safe fixture and direct action audit proof." },
     { "target": "lib/actions/lien.ts#convertToActive", "status": "deferred", "issue": "#512", "reason": "Lien lifecycle transition needs a reset-safe fixture and audit proof." },
