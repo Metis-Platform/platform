@@ -7,7 +7,6 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { generateEventsForDeal } from '@/lib/rules-engine'
 import { applyTenantWorkflowRules } from '@/lib/workflow-rules'
-import { emitAuditEvent } from '@/lib/audit'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { StrategyType, DealStatus } from '@/app/generated/prisma'
 import { hasStrategy } from '@/lib/entitlements'
@@ -453,6 +452,7 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
 
   const data = parsed.data
   let dealId: string
+  const requestId = requestIdFromHeaders(await headers())
 
   try {
     if (data.status === 'LEAD' && data.researchSnapshotId) {
@@ -472,9 +472,11 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
           foreclosure: { create: { foreclosureType: data.foreclosureType, auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null, maxBid: data.maxBid ? Number(data.maxBid) : null, estimatedLiens: data.estimatedLiens ? Number(data.estimatedLiens) : null } },
         } })
         await tx.prePurchaseResearchSnapshot.update({ where: { id: data.researchSnapshotId }, data: { consumedDealId: created.id } })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
         return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE', status: 'LEAD', researchSnapshotId: data.researchSnapshotId }, userId)
       dealId = deal.id
       redirect(`/dashboard/deals/${dealId}`)
     }
@@ -486,42 +488,52 @@ export async function createForeclosure(_prev: LienFormState, formData: FormData
     })
 
     if (data.status === 'LEAD') {
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.FORECLOSURE, status: DealStatus.LEAD,
-          notes: data.notes || null,
-          foreclosure: {
-            create: {
-              foreclosureType: data.foreclosureType,
-              auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
-              maxBid: data.maxBid ? Number(data.maxBid) : null,
-              estimatedLiens: data.estimatedLiens ? Number(data.estimatedLiens) : null,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.FORECLOSURE, status: DealStatus.LEAD,
+            notes: data.notes || null,
+            foreclosure: {
+              create: {
+                foreclosureType: data.foreclosureType,
+                auctionDate: data.auctionDate ? new Date(`${data.auctionDate}T12:00:00.000Z`) : null,
+                maxBid: data.maxBid ? Number(data.maxBid) : null,
+                estimatedLiens: data.estimatedLiens ? Number(data.estimatedLiens) : null,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE', status: 'LEAD' }, userId)
       dealId = deal.id
     } else {
       const d = data as z.infer<typeof ForeclosureActiveSchema>
-      const deal = await db.deal.create({
-        data: {
-          tenantId: tenant.id, propertyId: property.id,
-          strategyType: StrategyType.FORECLOSURE, status: DealStatus.ACTIVE,
-          notes: d.notes || null,
-          foreclosure: {
-            create: {
-              foreclosureType: d.foreclosureType,
-              auctionDate: new Date(`${d.auctionDate}T12:00:00.000Z`),
-              openingBid: d.openingBid ? Number(d.openingBid) : null,
-              winningBid: d.winningBid,
+      const deal = await db.$transaction(async tx => {
+        const created = await tx.deal.create({
+          data: {
+            tenantId: tenant.id, propertyId: property.id,
+            strategyType: StrategyType.FORECLOSURE, status: DealStatus.ACTIVE,
+            notes: d.notes || null,
+            foreclosure: {
+              create: {
+                foreclosureType: d.foreclosureType,
+                auctionDate: new Date(`${d.auctionDate}T12:00:00.000Z`),
+                openingBid: d.openingBid ? Number(d.openingBid) : null,
+                winningBid: d.winningBid,
+              },
             },
           },
-        },
+        })
+        await tx.auditEvent.create({
+          data: { tenantId: tenant.id, userId, requestId, action: 'DEAL_CREATED', meta: { dealId: created.id } },
+        })
+        return created
       })
       await generateEventsForDeal(deal.id, tenant.id)
-      await emitAuditEvent(tenant.id, 'DEAL_CREATED', { dealId: deal.id, strategy: 'FORECLOSURE' }, userId)
       dealId = deal.id
     }
   } catch (err) {
