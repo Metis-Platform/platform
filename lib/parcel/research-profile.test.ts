@@ -53,7 +53,7 @@ describe('assembleResearchProfile manual fallback', () => {
       id: 'cache-declarations', tenantId: 'tenant-1', apnNormalized: '2340282', fipsCounty: '12127',
       source: 'fema_disaster_declarations', field: 'femaDisasterDeclarationStatus',
       valueJson: 'RECENT_DECLARATIONS_FOUND', normalized: 'RECENT_DECLARATIONS_FOUND',
-      retrievedAt, ttlHours: 24, expiresAt: new Date('2026-07-23T12:00:00.000Z'),
+      retrievedAt, ttlHours: 24, expiresAt: new Date('2099-07-23T12:00:00.000Z'),
       metadata: { source: 'fema_disaster_declarations', sourceUrl: 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries' },
     }])
 
