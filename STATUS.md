@@ -2,7 +2,7 @@
 
 > Updated after every PR merge. One-stop snapshot for session start.
 > Strategy: `STRATEGY.md` | Architecture: `ARCHITECTURE.md` | Sprint queue: `ACTIVE-SPRINT.md`
-> Last updated: 2026-07-22
+> Last updated: 2026-07-23
 
 ---
 
@@ -12,7 +12,7 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 
 ---
 
-## Current Session (2026-07-20) — Multi-state acceptance, nationwide baseline repair, and runtime parity
+## Current Session (2026-07-23) — Decision support, parcel gates, and framework security
 
 | Work | Result |
 |---|---|
@@ -51,7 +51,9 @@ Post-beta initiatives produced substantial jurisdiction, parcel, exit-engine, an
 | Apache County AZ discovery candidates (#508) | Merged — PR #509: demand-backed Apache County now has exact official review-only candidates with municipal, tribal, and other authority limitations retained. |
 | Orange County FL parcel baseline (#510) | Merged — PR #511: the official OCPA service supplies parcel interior location, acreage, assessed value, land-use code, and conservative improvement evidence with exact query provenance; it never supplies zoning, market value, permitting, or buildability conclusions. |
 | Palm Beach County parcel bid gates (#495) | PR #498 adds official PBCPA parcel acreage, dimensions, land use, improvement state, zoning label, and assessed-value evidence with exact provenance. The investor result keeps zoning/buildability, flood/wetlands, access/utilities, HOA/POA, title/tax-deed, and economics gates unresolved until independent diligence; assessor value is not promoted into market value or a bid clearance. |
-| Mutation verification inventory (#512) | Merged — PR #513 inventories every mutating API route and PR #514 inventories server-action modules. This branch tightens that CI guard to every exported server action, so all currently unproven click/save operations are individually deferred with their exact fixture/audit evidence. |
+| Investment decision packet (#526) | PR #527 makes one conservative decision, best current supported exit, reasons, next action, and any evidence-supported raw-land bid range the top pre-purchase result. Unresolved gates remain unresolved; incomplete records and unavailable capital do not become a parcel clearance or physical blocker. |
+| Next.js security patch (#529) | Next.js and its ESLint contract move from 16.2.6 to the official 16.2.11 security patch, clearing the newly disclosed high-severity production audit finding. The full audit retains only the known Prisma development-server findings. A FEMA cache test whose fixed expiry elapsed on 2026-07-23 now uses a durable future fixture boundary. |
+| Mutation verification inventory (#512) | PR #513 inventories every mutating API route and PR #514 inventories every exported server action. CI now requires each surface to map to a declared journey/spec, an issue-linked deferred fixture need, or a narrow non-UI exclusion. |
 | Tax-lien lifecycle trace coverage | Merged — PR #517 atomically records opaque request-correlated evidence for Not Won, relist, redemption, and deletion. The feature catalog declares the exact four-save browser journey and cleanup; hosted execution remains blocked by #289. |
 | Land Note payment trace coverage | Merged — PR #518 makes payment recording tenant/deal-scoped and atomic with an opaque request-correlated audit event. The catalog declares its independent save journey and cleanup; hosted execution remains blocked by #289. |
 | Land disposition trace coverage | Merged — PR #519 records tenant/deal-scoped, request-correlated evidence for disposition updates and same-deal Land Note defaults. The catalog declares the save/default journey and cleanup; hosted execution remains blocked by #289. |
@@ -125,7 +127,7 @@ Run `gh pr list --state open` — this file does not mirror PR state.
 | Land Note buyer isolation and trace coverage | PR #483 requires a same-tenant BUYER contact when a Land Note references one, preventing cross-tenant contact attachment. Note creation is atomic with a request-correlated event containing only deal/note identity, never buyer PII or seller-finance terms. |
 | HIFLD electric retail territory baseline | PR #458 queries the official HIFLD retail-service-territory layer at the research point and records returned utility territory names/types or an explicit no-territory result with source provenance. This is preliminary map evidence only; it never asserts a service drop, capacity, cost, connection, utility approval, or buildability. |
 | Production dependency hardening | Issue #338 identified 11 production audit findings. PR #339 moves the Prisma CLI to build tooling and resolves PostCSS to 8.5.19; PR #340 replaces the vulnerable `react-simple-maps` D3 chain. The combined production-only audit reports zero findings. |
-| Dependency audit maintenance (#408, #497) | `npm audit --omit=dev` is zero findings after pinning Sharp 0.35.3. Compatible overrides resolve high-severity development-only `brace-expansion` and `fast-uri` findings. The full audit retains three moderate findings only through Prisma 7's `@prisma/dev` → `@hono/node-server` development-server chain; the project does not use `serveStatic`, and `npm audit fix --dry-run` identifies no safe lockfile change. |
+| Dependency audit maintenance (#408, #497, #529) | `npm audit --omit=dev` is zero findings after pinning Sharp 0.35.3 and moving Next.js to the official 16.2.11 security patch. Compatible overrides resolve high-severity development-only `brace-expansion` and `fast-uri` findings. The full audit retains three moderate findings only through Prisma 7's `@prisma/dev` → `@hono/node-server` development-server chain; the project does not use `serveStatic`, and no compatible lockfile-only fix is available. |
 | Spreadsheet import containment | Issue #290 removes the vulnerable XLS/XLSX parser and retains only bounded CSV input. PR #349 aligns the file picker, formula-safe error exports, and declared-payload rejection; #350 adds tenant-safe request-correlated import audit evidence and route-level proof that oversized requests do not reach multipart parsing. |
 | Immutable jurisdiction evidence | Issue #314 archives the exact Jina Markdown reviewed by AI under non-overwriting SHA-256 R2 keys and records every retrieval, including unchanged content. New AI candidates and claims retain server-trusted snapshot provenance; legacy snapshot-less AI candidates fail closed. This is a transformed evidence representation, not mislabeled original county source bytes. Freshness and contradiction controls shipped in #316/#318; researched migration and coverage workflows remain in #296. |
 | Jurisdiction claim freshness and re-review | Issue #316 makes volatility a versioned question-catalog policy, schedules every new claim from its evidence retrieval time, and exposes current/review-due/stale state in investor and super-admin views. Reconfirmation requires a newer unchanged snapshot from the same source, exact-version concurrency, and an append-only copied-evidence decision. Existing unclassified claims fail closed as immediately stale; contradictions, researched migration, and coverage workflows remain in #296. |
